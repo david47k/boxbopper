@@ -1,0 +1,10 @@
+########
+##    ##
+# * ** #
+#OOOOOO#
+# ** * #
+##  & ##
+########
+
+moves required: 40 or less
+solution: LLULUURURRRDULDDRLLLUURDLDDDRRULDLURRDRU

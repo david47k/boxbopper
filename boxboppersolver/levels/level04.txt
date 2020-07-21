@@ -1,0 +1,11 @@
+########
+###OO###
+### O###
+##  *O##
+## *  ##
+#  #** #
+#  &   #
+########
+
+moves required: 56
+solution: LUURRUULDLDDDRRUUDDRRULDLLLUURRURDLLLDDRRUURULDDDRUULLUU
