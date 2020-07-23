@@ -2,10 +2,43 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Hello wasm-pack!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Box Bopper</title>
+    <style>
+      * { box-sizing: border-box; outline: 0; margin: 0; }
+      body { background: #0d0d47; color: #aaa; font-family: sans-serif; display: flex; flex-direction: column; }
+      canvas {
+        border: 2px solid black;
+      }
+      #pre  { flex: 0 0 1em; }
+      #post { flex: 0 1 1em; }
+      #vmid { flex: 1 0 95vh; display: flex; }
+      @media (height < 40em) { #vmid { flex: 1 0 90vh; } }
+      @media (height < 35em) { #vmid { flex: 1 0 85vh; } }
+      @media (height < 16em) { #vmid { flex: 1 0 13em; } }
+
+      #hleft     { flex: 0 0 12em; padding: 0 1em 0 1em; }
+      #hright    { flex: 0 1  1em; }
+      #container { flex: 1 1 40em; }
+
+      #move_history { font-family: 'Courier New', Courier, monospace; }
+
+      [cloak] { display: none; }
+    </style>
   </head>
   <body>
-    <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
-    <script src="./bootstrap.js"></script>
+    <div id="pre"><noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript></div>
+    <div id="vmid">
+      <div id="hleft">
+        <h3>Box Bopper!</h3>
+        <br>
+        <button id="prev_button">prev level</button>
+        <button id="next_button">next level</button>
+        <p id="scoreboard">&nbsp;</p>
+      </div>
+      <div id="container"></div>
+      <div id="hright"></div>
+    </div>
+    <div id="post"><script src="./bootstrap.js"></script></div>
   </body>
 </html>

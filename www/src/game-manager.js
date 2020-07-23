@@ -1,4 +1,4 @@
-import { Game, Vector, Level, Move, Object, load_builtin } from 'wasm-game';
+import { Game, Vector, Level, Move, Obj, load_builtin } from 'wasm-game';
 import CONFIG from './config';
 import { View } from './view';
 import { Controller } from './controller';
@@ -7,44 +7,85 @@ import Storage from './storage';
 export class GameManager {
 	constructor() {
 		this.levelNumber = 0;
-		this.baseLevel = load_builtin(this.levelNumber);
-		this.restart();
-		this.view = new View(
-			this.game,
-			this.render.bind(this)
-		);
+		this.restart(this.levelNumber);
+		this.view = new View(this.game.get_level_width(),this.game.get_level_height());
 		this.controller = new Controller();
+
+		document.getElementById("prev_button").addEventListener('click', function() {
+			document.gameManager.prevLevel();
+		});
+		document.getElementById("next_button").addEventListener('click', function() {
+			document.gameManager.nextLevel();
+		});
+		
+		this.view.container.addEventListener('click', function(ev) {
+			var gm = document.gameManager;
+			var x = Math.floor(ev.offsetX / gm.view.unitOnScreen);
+			var y = Math.floor(ev.offsetY / gm.view.unitOnScreen);
+			// if in same y as human, apply L/R to try and make x match
+			var diff = 0;
+			var m;
+			if(gm.game.human_pos.as_array()[1] == y) {
+				diff = x - gm.game.human_pos.as_array()[0];
+				console.log("x: ", x, " y: ", y);
+
+				if(diff > 0) {
+					m = 1;
+				} else if(diff < 0) {
+					m = 3;
+					diff = Math.abs(diff);
+				}
+			} else if(gm.game.human_pos.as_array()[0] == x) {
+				diff = y - gm.game.human_pos.as_array()[1];
+				if(diff > 0) {
+					m = 2;
+				} else if(diff < 0) {
+					m = 0;
+					diff = Math.abs(diff);
+				}
+			}
+			if(diff <= 0 || diff > 50) return; // no clear direction or something screwy
+			for(var i=0;i<diff;i++) {
+				gm.game.apply_move_js(m);
+			}
+		});
+		document.gameManager = this;			// need to persist the object in the document, our callbacks aren't getting called with correct this
 	}
 
-	restart() {
-		this.game = new Game(this.baseLevel);
-		console.log(this.game);
-		this.lastUpdate = undefined;
+	restart(levelNum) {	
+		this.bestScore = Storage.getBestScore(this.levelNumber);
+		this.game = new Game(this.levelNumber);
+		this.levelTitle = this.game.get_level_title();
+		if(this.view) {
+			this.view.setUp(this.game.get_level_width(),this.game.get_level_height());
+		}
+	}
+
+	nextLevel() {
+		if(this.levelNumber < this.game.get_max_level_number()) this.levelNumber += 1;
+		this.restart(this.levelNumber);
+	}
+
+	prevLevel() {
+		this.levelNumber -= 1;
+		if(this.levelNumber < 0) this.levelNumber = 0;
+		this.restart(this.levelNumber);
 	}
 
 	render() {
-		this.view.render(this.game);
+		var gm = document.gameManager;
+		if(gm.game.have_win_condition()) {
+			if(isNaN(parseInt(Storage.getBestScore(gm.levelNumber))) || gm.game.num_moves < Storage.getBestScore(gm.levelNumber)) {
+				gm.bestScore = gm.game.num_moves;
+				Storage.setBestScore(gm.levelNumber, gm.bestScore);
+			}
+		}
+		if(gm.game) gm.view.render(gm.game, gm.game.human_pos);
 	}
 
-	tick() {
-		const lastUpdate = Date.now();
-		if(this.lastUpdate) {
-			this.game.process(lastUpdate - this.lastUpdate, this.controller.movement);
-/*			if(this.game.is_over()) {
-				this.restart();
-				return;
-			}				*/
-/*			if(this.game.score > Storage.getBestScore()) {
-				//localStorage.setItem('bestScore',this.game.score);
-				Storage.setBestScore(this.game.score);
-			} */
-		}
-		this.lastUpdate = lastUpdate;
+	runOnTimer() {
+		setInterval(this.render, 1000/CONFIG.FPS);
 		this.render();
-	}
-	
-	run() {
-		setInterval(this.tick.bind(this), 1000 / CONFIG.FPS);
 	}
 	
 }

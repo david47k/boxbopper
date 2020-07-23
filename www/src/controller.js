@@ -1,24 +1,25 @@
 
-import { Move } from "wasm-game";
-
-const MOVEMENT_KEYS = {
-	[Move::Up]: [87,38],
-	[Move::Right]: [68, 39],
-	[Move::Down]: [83,40],
-	[Move::Left]: [65,37],
-	'reset': [82],
-}
+//import { Move } from "wasm-game";
 
 export class Controller {
 	constructor() {
-		window.addEventListener('keydown', ({ which }) => {
-			this.movement = Object.keys(MOVEMENT_KEYS).find(key => MOVEMENT_KEYS[key].includes(which));
+		window.addEventListener('keydown', (ev) => {
+			var which = ev.which;
+			if(which == 82) { // R
+				document.gameManager.restart(document.gameManager.levelNumber);
+			} else if(which == 78) { // N
+				document.gameManager.nextLevel();
+			} else if(which == 80) { // P
+				document.gameManager.prevLevel();
+			} else if((which == 32 || which == 13) && document.gameManager.game.have_win_condition()) { // space or enter
+				document.gameManager.nextLevel();
+			} else {
+				document.gameManager.game.process_keys([which]);
+			}
 		});
 		window.addEventListener('keyup', ({ which }) => {
-			if(this.movement == Object.keys(MOVEMENT_KEYS).find(key => MOVEMENT_KEYS[key].includes(which))) {
 				// we can only consider a keyup if it applys to the current keydown that we have
-				this.movement = undefined;
-			}
+				// this.movement = undefined;
 		});
 	}
 }

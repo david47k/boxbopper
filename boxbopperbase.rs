@@ -12,7 +12,7 @@ mod utils;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-use js_sys::Array;
+use js_sys::{Array,JsString};
 
 // use
 
@@ -46,6 +46,12 @@ impl Vector {
 	pub fn double(&self) -> Vector {
 		Vector(self.0 * 2, self.1 * 2)
 	}
+	pub fn scale_by(&self, n: i32) -> Vector {
+		Vector(self.0 * n, self.1 * n)
+	}
+	pub fn as_array(&self) -> Array {
+		[ self.0, self.1 ].iter().map(|m| JsValue::from(*m)).collect()
+	}
 	fn to_usize(&self) -> (usize,usize) {
 		(self.0 as usize, self.1 as usize)
 	}
@@ -54,7 +60,7 @@ impl Vector {
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq)]
-pub enum Move { Up, Right, Down, Left }
+pub enum Move { Up=0, Right=1, Down=2, Left=3 }
 
 impl Move {
 	pub fn to_vector(&self) -> Vector {
@@ -73,13 +79,13 @@ impl Move {
 			Move::Left  => String::from("L"),
 		}
 	}
-	pub fn from_u32(n: u32) -> Move {
+	pub fn from_u32(n: u32) -> Option<Move> {
 		match n {
-			0 => Move::Up,
-			1 => Move::Right,
-			2 => Move::Down,
-			3 => Move::Left,
-			_ => panic!("invalid u32 in Move::from_u32"),
+			0 => Some(Move::Up),
+			1 => Some(Move::Right),
+			2 => Some(Move::Down),
+			3 => Some(Move::Left),
+			_ => None,
 		}
 	}
 }
@@ -89,18 +95,18 @@ pub const ALLMOVES: [Move; 4] = [ Move::Up, Move::Right, Move::Down, Move::Left 
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq)]
-pub enum Object { Wall, Space, Boulder, Hole, Human, HumanInHole, BoulderInHole }
+pub enum Obj { Wall=0, Space=1, Boulder=2, Hole=3, Human=4, HumanInHole=5, BoulderInHole=6 }
 
-impl Object {
+impl Obj {
 	pub fn to_char(&self) -> char {
 		match self {
-			Object::Wall => '#',
-			Object::Space => ' ',
-			Object::Boulder => '*',
-			Object::Hole => 'O',
-			Object::Human => '&',
-			Object::HumanInHole => '%',
-			Object::BoulderInHole => '@',
+			Obj::Wall => '#',
+			Obj::Space => ' ',
+			Obj::Boulder => '*',
+			Obj::Hole => 'O',
+			Obj::Human => '&',
+			Obj::HumanInHole => '%',
+			Obj::BoulderInHole => '@',
 		}
 	}
 }
@@ -113,21 +119,16 @@ pub struct Level {
 	w: usize,
 	h: usize,
 	human_pos: Vector,
-	data: Vec::<Object>,
+	data: Vec::<Obj>,
 }
 
-#[wasm_bindgen]
-impl Level {
-	pub fn get_data(&self) -> Array {
-		self.data.clone().into_iter().map(|m| JsValue::from(m as u32)).collect()
-	}
-}
 
 #[wasm_bindgen]
 pub struct Game {
-	num_moves: u32,
+	pub level_number: u32,
+	pub num_moves: u32,
 	move_history: Vec::<Move>,
-	human_pos: Vector,
+	pub human_pos: Vector,
 	level: Level,
 }
 
@@ -138,14 +139,14 @@ impl Game {
 		for movedir in ALLMOVES.iter() {
 			let hp = self.human_pos;
 			match self.get_object_at_point(&hp.add(&movedir.to_vector())) {
-				Object::Space | Object::Hole => {
+				Obj::Space | Obj::Hole => {
 					options.push(*movedir);
 				}
-				Object::Boulder | Object::BoulderInHole => { 
+				Obj::Boulder | Obj::BoulderInHole => { 
 					// What's past the boulder? We can push into Space and Hole, nothing else.
 					//match get_object_in_dir(self, &hp, &d.double()) {
 					match self.get_object_at_point(&hp.add(&movedir.to_vector().double())) {
-						Object::Space | Object::Hole => { options.push(*movedir); },
+						Obj::Space | Obj::Hole => { options.push(*movedir); },
 						_ => {}				
 					}
 				}
@@ -170,8 +171,8 @@ impl Game {
 		let idx = self.human_pos.to_index(&self.level.w);
 		let human_obj = self.level.data[idx];
 		let new_obj = match human_obj {
-			Object::Human => { Object::Space },
-			Object::HumanInHole => { Object::Hole },
+			Obj::Human => { Obj::Space },
+			Obj::HumanInHole => { Obj::Hole },
 			_ => { panic!("Human not in tracked location!"); }
 		};
 		self.level.data[idx] = new_obj;
@@ -183,24 +184,24 @@ impl Game {
 		// check destination point
 		let obj = self.level.data[idx];
 		let new_obj = match obj {
-			Object::Space => { Object::Human },
-			Object::Hole  => { Object::HumanInHole },
-			Object::Boulder | Object::BoulderInHole => {  
+			Obj::Space => { Obj::Human },
+			Obj::Hole  => { Obj::HumanInHole },
+			Obj::Boulder | Obj::BoulderInHole => {  
 				// Move boulder in to next square
 				let boulder_pt = &self.human_pos.add(&_move.to_vector().double());
 				let i = boulder_pt.to_index(&self.level.w);
 				let o = self.level.data[i];
-				if o == Object::Hole {
-					self.level.data[i] = Object::BoulderInHole;
+				if o == Obj::Hole {
+					self.level.data[i] = Obj::BoulderInHole;
 				} else {
-					self.level.data[i] = Object::Boulder;
+					self.level.data[i] = Obj::Boulder;
 				}
 			
 				// We pushed the boulder
-				if obj == Object::BoulderInHole {
-					Object::HumanInHole
+				if obj == Obj::BoulderInHole {
+					Obj::HumanInHole
 				} else {
-					Object::Human
+					Obj::Human
 				}
 			},
 			_ => { panic!("Human not allowed there!"); }
@@ -212,12 +213,23 @@ impl Game {
 	}
 }
 
+// these ones are accessible via js
 #[wasm_bindgen]
 impl Game {
 	#[wasm_bindgen(constructor)]
-	pub fn new(base_level: &Level) -> Game {
+	pub fn new(mut levelnum: u32) -> Game {
+		// restarts the game, using builtin levels
+		if levelnum as usize >= BUILTIN_LEVELS.len() {
+			levelnum = (BUILTIN_LEVELS.len()-1) as u32;
+		}
+		let base_level = load_builtin(levelnum as usize).unwrap(); 
+		return Game::new_from_level(&base_level,levelnum);
+	}
+
+	pub fn new_from_level(base_level: &Level, levelnum: u32) -> Game {
 		// restarts the game, using what's in base_level
 		Game {
+			level_number: levelnum,
 			num_moves: 0,
 			move_history: Vec::<Move>::new(),
 			human_pos: base_level.human_pos.clone(),
@@ -230,7 +242,39 @@ impl Game {
 			}
 		}
 	}
+
+	pub fn get_level_data(&self) -> Array {
+		self.level.data.clone().into_iter().map(|obj| JsValue::from(obj as u32)).collect()
+	}
 	
+	pub fn get_level_width(&self) -> u32 {
+		self.level.w as u32
+	}
+	
+	pub fn get_level_height(&self) -> u32 {
+		self.level.h as u32
+	}
+	pub fn get_level_title(&self) -> JsString {
+		return JsString::from(self.level.title.as_str());
+	}
+
+	pub fn get_max_level_number(&self) -> u32 {
+		(BUILTIN_LEVELS.len() - 1) as u32
+	}
+
+	pub fn process_keys(&mut self, keys: Array) {
+		// which keys are currently held down
+		if keys.length()==1 {
+			match keys.get(0).as_f64().unwrap() as u32 {		// or something like .get(0).dyn_into::<u32>.unwrap()
+				87 | 38 => self.apply_move(&Move::Up),
+			 	68 | 39 => self.apply_move(&Move::Right),
+			 	83 | 40 => self.apply_move(&Move::Down),
+			 	65 | 37 => self.apply_move(&Move::Left),
+				_       => {},
+			}
+		}
+	}
+
 	pub fn get_move_history(&self) -> Array {
 		self.move_history.clone().into_iter().map(|m| JsValue::from(m as u32)).collect()
 	}	
@@ -238,7 +282,7 @@ impl Game {
 	pub fn have_win_condition(&self) -> bool {
 		for obj in self.level.data.iter() {
 			match obj {
-				Object::Boulder | Object::Hole | Object::HumanInHole => return false,
+				Obj::Boulder | Obj::Hole | Obj::HumanInHole => return false,
 				_ => {},
 			};
 		}
@@ -259,10 +303,10 @@ impl Game {
 		println!();
 	}
 	
-	pub fn get_object_at_point(&self, point: &Vector) -> Object {
+	pub fn get_object_at_point(&self, point: &Vector) -> Obj {
 		// bounds check point
 		if point.to_usize().0 >= self.level.w || point.to_usize().1 >= self.level.h {
-			return Object::Wall;
+			return Obj::Wall;
 		}
 		
 		// fetch object
@@ -275,7 +319,11 @@ impl Game {
 	}	
 
 	pub fn apply_move_js(&mut self, _move: u32) {
-		self.apply_move(&Move::from_u32(_move));
+		let result = Move::from_u32(_move);
+		match result {
+			Some(m) => self.apply_move(&m),
+			None  => {},
+		}
 	}
 
 }
@@ -290,7 +338,7 @@ pub fn load_level(filename: &str) -> Result<Level,String> {
     let buffered = BufReader::new(input);
 	let mut count: usize = 0;
 	let mut w = 0;
-	let mut data = Vec::<Object>::new();
+	let mut data = Vec::<Obj>::new();
 	let mut human_pos: Vector = Vector(0,0);
 
     for line in buffered.lines() {		
@@ -357,7 +405,7 @@ pub fn load_builtin(number: usize) -> Option<Level> {
 	// process string
 	let mut count: usize = 0;
 	let mut w = 0;
-	let mut data = Vec::<Object>::new();
+	let mut data = Vec::<Obj>::new();
 	let mut human_pos: Vector = Vector(0,0);
 	let mut level_title: String = String::from("Untitled");
 
@@ -378,7 +426,7 @@ pub fn load_builtin(number: usize) -> Option<Level> {
 		if txt.len() == w {	
 			// split line into characters
 			for (i,c) in txt.char_indices() {		// chars() is iterator
-				if c == '&' || c == '@' {
+				if c == '&' || c == '%' {
 					// found human_pos
 					human_pos = Vector(i.try_into().unwrap(),(count-1).try_into().unwrap());
 				}
@@ -426,15 +474,15 @@ pub fn moves_to_string(moves: &Vec::<Move>) -> String {
 }
 
 
-pub fn char_to_obj(c: &char) -> Result<Object,String> {
+pub fn char_to_obj(c: &char) -> Result<Obj,String> {
 	return match c {
-		'#' => Ok(Object::Wall),
-		' ' => Ok(Object::Space),
-		'*' => Ok(Object::Boulder),
-		'O' => Ok(Object::Hole),
-		'&' => Ok(Object::Human),
-		'%' => Ok(Object::HumanInHole),
-		'@' => Ok(Object::BoulderInHole),
+		'#' => Ok(Obj::Wall),
+		' ' => Ok(Obj::Space),
+		'*' => Ok(Obj::Boulder),
+		'O' => Ok(Obj::Hole),
+		'&' => Ok(Obj::Human),
+		'%' => Ok(Obj::HumanInHole),
+		'@' => Ok(Obj::BoulderInHole),
 		_ => Err("Char does not represent a valid object".to_string()),
 	};
 }

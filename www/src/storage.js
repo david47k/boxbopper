@@ -1,4 +1,10 @@
 export default {
-	//getBestScore: () => parseInt(localStorage.bestScore) || 0,
-	//setBestScore: (bestScore) => localStorage.setItem('bestScore', bestScore)
+	getBestScore: function(levelnum) {
+		var x = parseInt(localStorage.getItem('bxbop_bestScore_'+levelnum));
+		if(isNaN(x)) return 'unsolved';
+		return x;
+	},
+	setBestScore: function(levelnum,bestScore) {
+		localStorage.setItem('bxbop_bestScore_'+levelnum, bestScore);
+	},
 }

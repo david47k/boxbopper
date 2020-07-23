@@ -7,8 +7,9 @@ use std::io::BufRead;
 
 //mod boxbopperbase;
 
-use boxbopperbase::{Move,Game,load_builtin};
-
+use boxbopperbase::{Move,Game};
+mod builtins;
+use builtins::BUILTIN_LEVELS;
 
 pub fn get_user_input() -> String {
 	let mut line = String::new();
@@ -33,10 +34,9 @@ fn main() -> Result<(),String> {
 	
 	// load level
 	//let base_level = load_level(&filename)?;
-	let mut current_level: usize = 0;
-	let mut base_level = load_builtin(current_level).unwrap();
+	let mut current_level: u32 = 0;
 	
-	let mut state = Game::new(&base_level);
+	let mut state = Game::new(0);
 	
 	loop {
 		&state.display();
@@ -44,15 +44,14 @@ fn main() -> Result<(),String> {
 		if state.have_win_condition() {
 			println!(r"\  /\  / | |\ |");
 			println!(r" \/  \/  | | \|");
-			current_level += 1;
-			base_level = match load_builtin(current_level) {
-				Some(lvl) => lvl,
-				None => {
-					println!("All levels complete!");
-					break;
-				},
+			if current_level < BUILTIN_LEVELS.len() as u32 {
+				current_level += 1;
+			} else {			
+				println!("All levels complete!");
+				break;
 			};
-			state = Game::new(&base_level);
+			state = Game::new(current_level);
+			println!("Level {}", current_level);
 			&state.display();
 		}
 		
@@ -67,7 +66,17 @@ fn main() -> Result<(),String> {
 	
 		match c {
 			'q' | 'Q' => break,
-			'`' => state = Game::new(&base_level),
+			'`' => state = Game::new(current_level),
+			'n' =>  { if current_level < BUILTIN_LEVELS.len() as u32 {
+						current_level += 1;
+						state = Game::new(current_level);
+						println!("Level {}", current_level);
+					}},
+			'p' => { if current_level > 0 {
+						current_level -= 1;
+						state = Game::new(current_level);
+						println!("Level {}", current_level);
+					}},
 			'u' | 'U' => state.apply_move(&Move::Up),
 			'r' | 'R' => state.apply_move(&Move::Right),
 			'd' | 'D' => state.apply_move(&Move::Down),

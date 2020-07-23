@@ -1,69 +1,144 @@
+import { Vector, Game, Level, Obj } from "wasm-game";
+
 const getRange = length => [...Array(length).keys()];
 
 export class View {
-	constructor(gameWidth, gameHeight, onViewChange = () => {}) {
-		this.gameWidth = gameWidth;
-		this.gameHeight = gameHeight;
+	constructor(gwidth, gheight) {
+		this.gameWidth = gwidth;
+		this.gameHeight = gheight;
 		this.container = document.getElementById('container');
-		this.onViewChange = onViewChange;
-		this.setUp();
-		window.addEventListener('resize', () => {
-			const [child] = this.container.children;
-			if(child) {
-				this.container.removeChild(child);
-			}
-			this.setUp();
-			this.onViewChange();
+		this.scoreboard = document.getElementById('scoreboard');
+		
+		this.srcBlockSize = 64; // a default
+		this.srcImage = new Image();   // Create new img element
+		this.srcImage.loading = "eager";
+		this.srcImage.addEventListener('load', function() {
+			console.log("image loaded"); 
+			document.gameManager.view.setUp(document.gameManager.game.get_level_width(), document.gameManager.game.get_level_height());
 		});
+		
+		window.addEventListener('resize', () => {
+			this.setUp(document.gameManager.game.get_level_width(), document.gameManager.game.get_level_height());
+		});
+		this.setUp(gwidth, gheight);
 	}
 
-	setUp() {
+	setUp(gameWidth, gameHeight) {
 		console.log('setting up ...')
-		const { width, height } = this.container.getBoundingClientRect();
-		this.unitOnScreen = Math.min( width / this.gameWidth,
-			height / this.gameHeight );
-		this.projectDistance = distance => distance * this.unitOnScreen;
-		this.projectPosition = position => position.scale_by(this.unitOnScreen);
 
+		const [child] = this.container.children;
+		if(child) {
+			this.container.removeChild(child);
+		}
+
+		const { width, height } = this.container.getBoundingClientRect();
+		this.unitOnScreen = Math.floor(Math.min( width / gameWidth,	height / gameHeight ));
+		this.unitOnScreen = ( Math.floor(this.unitOnScreen / 4) * 4 );	// canvas drawImage is crappy, reduce aliasing artifacts
+		if(this.unitOnScreen > 256) this.unitOnScreen = 256; // reducing aliasing artifacts - can also split src into individual sprites
+		console.log("screen unit:", this.unitOnScreen)
+
+/*		*** not yet supported by browsers other than chrome
+		this.srcImageBitmapPromise = createImageBitmap(this.srcImage, 0, 0, (4*this.srcBlockSize), (8*this.srcBlockSize), { resizeWidth: (4*this.unitOnScreen), resizeHeight: (8*this.unitOnScreen), resizeQuality: "high" })
+		.then( function(ib) {
+			document.gameManager.view.srcImageBitmap = ib;
+		}, function() {
+			console.log("Failed to create ImageBitmap");
+		}); 
+*/
+
+		// Because ImageBitmap options aren't yet widely supported, and OffscreenCanvas isn't widely supported,
+		// we are using pre-sized images. we can scale down and it looks OK, but we can't scale up.
+		// blocksizes 64, 128, 192, 256
+		// we return because this method will get called again once the image is loaded
+		if(this.unitOnScreen <= 64 && this.srcBlockSize != 64) {
+			this.srcBlockSize = 64;
+			this.srcImage.src = 'bitmap_64.png';
+			return;
+		} else if(this.unitOnScreen > 64 && this.unitOnScreen <= 128 && this.srcBlockSize != 128) {
+			this.srcBlockSize = 128;
+			this.srcImage.src = 'bitmap_128.png';
+			return;
+		} else if(this.unitOnScreen > 128 && this.unitOnScreen <= 192 && this.srcBlockSize != 192) {
+			this.srcBlockSize = 192;
+			this.srcImage.src = 'bitmap_192.png';
+			return;
+		} else if(this.unitOnScreen > 192 && this.unitOnScreen <= 256 && this.srcBlockSize != 256) {
+			this.srcBlockSize = 256;
+			this.srcImage.src = 'bitmap_256.png';
+			return;
+		}
+
+		this.scaleToScreen = distance => distance * this.unitOnScreen;
+		//this.projectPosition = position => position.scale_by(this.unitOnScreen);
+
+	
 		const canvas = document.createElement('canvas');
 		this.container.appendChild(canvas);
 		this.context = canvas.getContext('2d');
-		canvas.setAttribute('width',this.projectDistance(this.gameWidth));
-		canvas.setAttribute('height',this.projectDistance(this.gameHeight));
+		canvas.setAttribute('width',this.scaleToScreen(gameWidth));
+		canvas.setAttribute('height',this.scaleToScreen(gameHeight));
+	}
+	
+	renderImg(dx, dy, sx, sy) {
+		sx = sx * this.srcBlockSize;
+		sy = sy * this.srcBlockSize;
+		if(this.srcImage.complete && this.context) {
+			this.context.drawImage(this.srcImage,sx,sy,this.srcBlockSize,this.srcBlockSize,this.scaleToScreen(dx),this.scaleToScreen(dy),this.unitOnScreen,this.unitOnScreen);
+		}
 	}
 
-	render(food, snake, score, bestScore) {
-		this.context.clearRect(0,0,this.context.canvas.width,this.context.canvas.height);
-		this.context.globalAlpha = 0.2;
-		this.context.fillStyle = 'black';
-		getRange(this.gameWidth).forEach(column =>
-			getRange(this.gameHeight)
-			.filter(row=>(column+row)%2===1)
-			.forEach(row=>
-			this.context.fillRect(
-				column*this.unitOnScreen,
-				row*this.unitOnScreen,
-				this.unitOnScreen,
-				this.unitOnScreen
-			)));
-		this.context.globalAlpha=1;
+	render(game) {
+		// render level
+		const levelData = game.get_level_data();
+		getRange(game.get_level_height()).forEach( function(y) {
+			getRange(game.get_level_width()).forEach( function(x) {
+				var obj = levelData[y * game.get_level_width() + x];
+				if(obj == Obj.Wall) { 
+					this.renderImg(x,y,0,0);
+				} else if(obj == Obj.Space) {
+					this.renderImg(x,y,0,1);
+				} else if(obj == Obj.Boulder) {
+					this.renderImg(x,y,0,1);
+					this.renderImg(x,y,0,2);
+				} else if(obj == Obj.Hole) {
+					this.renderImg(x,y,0,1);
+					this.renderImg(x,y,0,3);
+				} else if(obj == Obj.Human) { 
+					this.renderImg(x,y,0,1);
+					this.renderImg(x,y,0,4);
+				} else if(obj == Obj.HumanInHole) {
+					this.renderImg(x,y,0,1);
+					this.renderImg(x,y,0,3);
+					this.renderImg(x,y,0,4);
+				} else if(obj == Obj.BoulderInHole) {
+					this.renderImg(x,y,0,1);
+					this.renderImg(x,y,0,3);
+					this.renderImg(x,y,0,2);
+				}
+			}, this);
+		}, this);
+		
+		// render human
+		this.renderImg(game.human_pos[0], game.human_pos[1], 0, 4);
 
-		const projectedFood = this.projectPosition(food);
-		this.context.beginPath();
-		this.context.arc(projectedFood.x,projectedFood.y,
-			this.unitOnScreen / 2.5, 0, 2*Math.PI);
-		this.context.fillStyle = '#e74c3c';
-		this.context.fill();
-
-		this.context.lineWidth = this.unitOnScreen;
-		this.context.strokeStyle = '#3498db';
-		this.context.beginPath();
-		snake.map(this.projectPosition).forEach(
-			({x,y}) => this.context.lineTo(x,y)
-		);
-		this.context.stroke();
-
-		document.getElementById('current-score').innerText = score;
-		document.getElementById('best-score').innerText = bestScore;
+		// render scoreboard
+		var postfix = "";
+		if(document.gameManager.game.have_win_condition()) {
+			var mh = "<span id=\"move_history\">";
+			document.gameManager.game.get_move_history().forEach( function(c,i) {
+				if(i%10==0) { mh += '<br>' }
+				if(c==0) { mh += 'U' }
+				else if(c==1) { mh += 'R' }
+				else if(c==2) { mh += 'D' }
+				else if(c==3) { mh += 'L' }
+			});
+			mh += "</span>";
+			postfix = "<br>Move history: " + mh + "<br><br>" +
+				"You solved the puzzle!" + "<br>";
+		}
+		this.scoreboard.innerHTML = "<br>Level " + document.gameManager.levelNumber + "<br>" + document.gameManager.levelTitle + "<br><br>"
+		+ "Moves: " + document.gameManager.game.num_moves +"<br>"
+		+ "Best: " + document.gameManager.bestScore + "<br>"
+		+ postfix;
 	}
 }
