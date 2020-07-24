@@ -22,12 +22,12 @@ pub fn get_user_input() -> String {
 
 
 fn main() -> Result<(),String> {
-	let mut filename: String = String::from("levels/level01.txt");
+	let mut _filename: String = String::from("levels/level01.txt");
 	
 	let mut count = 0;
 	for env in std::env::args() {
 		if count > 0 {
-			filename = env;
+			_filename = env;
 		}
 		count += 1;
 	}

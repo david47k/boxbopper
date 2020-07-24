@@ -105,11 +105,9 @@ export class View {
 					this.renderImg(x,y,0,3);
 				} else if(obj == Obj.Human) { 
 					this.renderImg(x,y,0,1);
-					this.renderImg(x,y,0,4);
 				} else if(obj == Obj.HumanInHole) {
 					this.renderImg(x,y,0,1);
 					this.renderImg(x,y,0,3);
-					this.renderImg(x,y,0,4);
 				} else if(obj == Obj.BoulderInHole) {
 					this.renderImg(x,y,0,1);
 					this.renderImg(x,y,0,3);
@@ -119,26 +117,36 @@ export class View {
 		}, this);
 		
 		// render human
-		this.renderImg(game.human_pos[0], game.human_pos[1], 0, 4);
+		var trans = game.get_transitions_js();
+		if(trans && trans.length > 0) {
+			trans.forEach( function(ti) {
+				if(ti.obj==Obj.Human) {
+					document.gameManager.view.renderImg(ti.x,ti.y,0,4);
+				}
+			});
+		} 
+		else {
+			// why this not work!
+			this.renderImg(game.human_pos[0], game.human_pos[1], 0, 4);
+		}
 
 		// render scoreboard
-		var postfix = "";
-		if(document.gameManager.game.have_win_condition()) {
-			var mh = "<span id=\"move_history\">";
-			document.gameManager.game.get_move_history().forEach( function(c,i) {
-				if(i%10==0) { mh += '<br>' }
-				if(c==0) { mh += 'U' }
-				else if(c==1) { mh += 'R' }
-				else if(c==2) { mh += 'D' }
-				else if(c==3) { mh += 'L' }
+		var gm = document.gameManager;
+		if(gm.game.have_win_condition()) {
+			var mt = "";
+			gm.game.get_move_history().forEach( function(c,i) {
+				if(i%5==0) { mt += ' ' }
+				if(c==0) { mt += 'U' }
+				else if(c==1) { mt += 'R' }
+				else if(c==2) { mt += 'D' }
+				else if(c==3) { mt += 'L' }
 			});
-			mh += "</span>";
-			postfix = "<br>Move history: " + mh + "<br><br>" +
-				"You solved the puzzle!" + "<br>";
+			document.getElementById("moves_taken").innerHTML = mt;
+			document.getElementById("solved").innerHTML = "You solved the puzzle!";
 		}
-		this.scoreboard.innerHTML = "<br>Level " + document.gameManager.levelNumber + "<br>" + document.gameManager.levelTitle + "<br><br>"
-		+ "Moves: " + document.gameManager.game.num_moves +"<br>"
-		+ "Best: " + document.gameManager.bestScore + "<br>"
-		+ postfix;
+		document.getElementById("level_num").innerHTML = gm.levelNumber;
+		document.getElementById("level_title").innerHTML = gm.levelTitle;
+		document.getElementById("best_score").innerHTML = gm.bestScore;
+		document.getElementById("num_moves").innerHTML = gm.game.num_moves;
 	}
 }

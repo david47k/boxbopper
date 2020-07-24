@@ -7,7 +7,9 @@ import Storage from './storage';
 export class GameManager {
 	constructor() {
 		this.levelNumber = 0;
+		this.transitionList = [];
 		this.restart(this.levelNumber);
+		document.getElementById('prev_button').disabled = (this.levelNumber==0);
 		this.view = new View(this.game.get_level_width(),this.game.get_level_height());
 		this.controller = new Controller();
 
@@ -16,6 +18,9 @@ export class GameManager {
 		});
 		document.getElementById("next_button").addEventListener('click', function() {
 			document.gameManager.nextLevel();
+		});
+		document.getElementById("retry_button").addEventListener('click', function() {
+			document.gameManager.restart(document.gameManager.levelNumber);
 		});
 		
 		this.view.container.addEventListener('click', function(ev) {
@@ -58,6 +63,8 @@ export class GameManager {
 		this.levelTitle = this.game.get_level_title();
 		if(this.view) {
 			this.view.setUp(this.game.get_level_width(),this.game.get_level_height());
+			document.getElementById('prev_button').disabled = (levelNum==0);
+			document.getElementById('next_button').disabled = (levelNum==this.game.get_max_level_number());
 		}
 	}
 
