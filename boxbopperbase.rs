@@ -8,37 +8,52 @@ mod utils;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-
-use std::time::{SystemTime,UNIX_EPOCH};
-
 use wasm_bindgen::prelude::*;
 use js_sys::{Array,JsString};
-use web_sys::{console};
 
-mod builtins;
+#[cfg(target_arch = "wasm32")]
+use web_sys::console;
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::{SystemTime,UNIX_EPOCH};
+
+pub mod builtins;
 use builtins::BUILTIN_LEVELS;
 
-mod vector;
+pub mod vector;
 use vector::{Vector,Move,ALLMOVES};
 
-mod level;
+pub mod level;
 use level::{Level,load_builtin};
 
-
 // we need time in msec since unix epoch (for js compatibility)
-pub fn _get_time_rust() -> u64 {
+#[cfg(not(target_arch = "wasm32"))]
+pub fn get_time_ms() -> f64 {
     let since_the_epoch = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-	let ms = since_the_epoch.as_secs() * 1000 +
-			since_the_epoch.subsec_nanos() as u64 / 1_000_000;
-	ms
+		.expect("Time went backwards");
+	let ms: u64 = since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1_000_000;
+	let lopart: u32 = (ms & 0xFFFFFFFF) as u32; 
+	let hipart: u32 = (ms >> 32) as u32;
+	let t: f64 = f64::from(lopart) + (f64::from(hipart) * 4.294967296e9);
+	t
 }
 
+#[cfg(target_arch = "wasm32")]
 pub fn get_time_ms() -> f64 {
 	let t = (js_sys::Date::now() as u64 / 10) * 10;
 	return t as f64;
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn console_log(s: &str) {
+	println!("{}",s);
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn console_log(s: &str) {
+	console::log(&Array::from(&JsValue::from(s)));
+}
+
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq)]
@@ -108,20 +123,17 @@ impl Game {			// non-js
 	}
 	pub fn append_move(&mut self, _move : &Move) {
 		self.move_queue.insert(0, *_move);
-		console::log(&Array::from(&JsValue::from(_move.to_string() + " move appended to queue") ));
 	}
 	pub fn process_moves(&mut self)  {
 		if self.move_queue.len() == 0 { 
-			//console::log(&Array::from(&JsValue::from("process_moves: queue is zero")));
 			return; 
 		}
 		if self.sprites[0].is_moving() { 
-			console::log(&Array::from(&JsValue::from("process_moves: sprite is moving".to_string() + &self.sprites[0].is_moving().to_string())));			
 			return;
 		}			
 		
 		let	_move = self.move_queue.pop().unwrap();
-		console::log(&Array::from(&JsValue::from(_move.to_string() + " move popped from queue") ));
+		console_log("move popped from queue");
 
 		// check it is a valid option
 		if !self.get_move_options().contains(&_move) {
@@ -369,14 +381,13 @@ impl Sprite {
 			self.duration = trans.duration;
 			self.initial_xy = trans.initial_xy.clone();
 			self.final_xy = trans.final_xy.clone();
-			console::log(&Array::from(&JsValue::from(self.final_xy.0.to_string() + " starting movement") ));
 		} else {
 			// ignore the requested movement !
-			console::log(&Array::from(&JsValue::from(self.final_xy.0.to_string() + "move requested while already moving!") ));
+			console_log("move requested while already moving!");
 		}
 	}
 	pub fn is_moving(&self) -> bool {
-		(get_time_ms() < (self.initial_time + self.duration))
+		get_time_ms() < (self.initial_time + self.duration)
 	}
 
 	pub fn get_xy(&mut self) -> [f64;2] {
@@ -388,7 +399,6 @@ impl Sprite {
 		if t >= (self.initial_time + self.duration) {
 			// update location
 			// self.initial_xy = Vector(self.final_xy.0, self.final_xy.1);
-			// console::log(&Array::from(&JsValue::from("post movement 1")));
 
 			return [self.final_xy.0.into(), self.final_xy.1.into()];
 		}
@@ -396,8 +406,8 @@ impl Sprite {
 		let mut delta: f64 = (t - self.initial_time) / self.duration;
 		if delta > 1_f64 {
 			delta = 1_f64;
-			self.initial_xy = Vector(self.final_xy.0, self.final_xy.1);
-			console::log(&Array::from(&JsValue::from("post movement 2")));
+			self.initial_xy = self.final_xy.clone();
+			console_log("post movement 2");
 		}
 		let nx = delta * f64::from(self.final_xy.0 - self.initial_xy.0) + f64::from(self.initial_xy.0);
 		let ny = delta * f64::from(self.final_xy.1 - self.initial_xy.1) + f64::from(self.initial_xy.1);

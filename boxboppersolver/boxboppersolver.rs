@@ -7,7 +7,8 @@
 
 //mod boxbopperbase;
 
-use boxbopperbase::{Move,Game,load_level};
+use boxbopperbase::{Game};
+use boxbopperbase::level::{load_level};
 
 fn main() -> Result<(),String> {
 	let mut filename: String = String::from("levels/level01.txt");
@@ -23,7 +24,7 @@ fn main() -> Result<(),String> {
 	// load level
 	let base_level = load_level(&filename)?;
 	
-	let state = Game::new(&base_level);
+	let state = Game::new_from_level(&base_level,0);
 	
 	loop {
 		// TODO
