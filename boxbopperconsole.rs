@@ -5,9 +5,15 @@ use std::io;
 use std::io::BufRead;
 //use std::fs::File;
 
-//mod boxbopperbase;
+mod boxbopperbase;
+use ::boxbopperbase::{Game};
 
-use boxbopperbase::{Move,Game};
+mod vector;
+use vector::{Vector,Move,ALLMOVES};
+
+mod level;
+use level::{Level,load_builtin};
+
 mod builtins;
 use builtins::BUILTIN_LEVELS;
 
@@ -41,7 +47,7 @@ fn main() -> Result<(),String> {
 	loop {
 		&state.display();
 		
-		if state.have_win_condition() {
+		if state.level.have_win_condition() {
 			println!(r"\  /\  / | |\ |");
 			println!(r" \/  \/  | | \|");
 			if current_level < BUILTIN_LEVELS.len() as u32 {

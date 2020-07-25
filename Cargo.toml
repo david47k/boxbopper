@@ -32,6 +32,12 @@ wee_alloc = { version = "0.4.5", optional = true }
 
 js-sys = "0.3.32"
 
+[dependencies.web-sys]
+version = "0.3.42"
+default-features = false # do not include the default features, and optionally
+                         # cherry-pick individual features
+features = ["console"]
+
 [dev-dependencies]
 wasm-bindgen-test = "0.3.13"
 

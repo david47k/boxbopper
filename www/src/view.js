@@ -68,7 +68,7 @@ export class View {
 			return;
 		}
 
-		this.scaleToScreen = distance => distance * this.unitOnScreen;
+		this.scaleToScreen = distance => Math.round(distance * this.unitOnScreen);
 		//this.projectPosition = position => position.scale_by(this.unitOnScreen);
 
 	
@@ -88,6 +88,9 @@ export class View {
 	}
 
 	render(game) {
+		// process moves first... not sure if we are calling view::render directly anywhere, we should just call gm::render
+
+
 		// render level
 		const levelData = game.get_level_data();
 		getRange(game.get_level_height()).forEach( function(y) {
@@ -117,18 +120,12 @@ export class View {
 		}, this);
 		
 		// render human
-		var trans = game.get_transitions_js();
-		if(trans && trans.length > 0) {
-			trans.forEach( function(ti) {
-				if(ti.obj==Obj.Human) {
-					document.gameManager.view.renderImg(ti.x,ti.y,0,4);
-				}
-			});
-		} 
-		else {
-			// why this not work!
-			this.renderImg(game.human_pos[0], game.human_pos[1], 0, 4);
-		}
+		var sprites = game.get_sprites_js();
+		sprites.forEach( function(spriteinfo) {
+			if(spriteinfo.obj==Obj.Human) {
+				document.gameManager.view.renderImg(spriteinfo.x,spriteinfo.y,0,4);
+			}
+		});
 
 		// render scoreboard
 		var gm = document.gameManager;
@@ -143,6 +140,9 @@ export class View {
 			});
 			document.getElementById("moves_taken").innerHTML = mt;
 			document.getElementById("solved").innerHTML = "You solved the puzzle!";
+		} else {
+			document.getElementById("moves_taken").innerHTML = "";
+			document.getElementById("solved").innerHTML = "";
 		}
 		document.getElementById("level_num").innerHTML = gm.levelNumber;
 		document.getElementById("level_title").innerHTML = gm.levelTitle;

@@ -51,7 +51,7 @@ export class GameManager {
 			}
 			if(diff <= 0 || diff > 50) return; // no clear direction or something screwy
 			for(var i=0;i<diff;i++) {
-				gm.game.apply_move_js(m);
+				gm.game.append_move_js(m);
 			}
 		});
 		document.gameManager = this;			// need to persist the object in the document, our callbacks aren't getting called with correct this
@@ -87,7 +87,10 @@ export class GameManager {
 				Storage.setBestScore(gm.levelNumber, gm.bestScore);
 			}
 		}
-		if(gm.game) gm.view.render(gm.game, gm.game.human_pos);
+		if(gm.game) {
+			gm.game.process_moves_js();
+			gm.view.render(gm.game, gm.game.human_pos);
+		}
 	}
 
 	runOnTimer() {
