@@ -1,8 +1,8 @@
-/target
-/pkg
+target
+pkg
 *.lock
 www/package-lock.json
-www/node_modules/
-www/.bin/
-boxboppersolver/target/
+www/node_modules
+boxbopperconsole/target
+boxboppersolver/target
 
