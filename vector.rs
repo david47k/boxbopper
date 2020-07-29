@@ -6,7 +6,7 @@ use js_sys::Array;
 // A point and a direction can both be implemented as a Vector
 
 #[wasm_bindgen]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Vector (pub i32, pub i32);
 
 #[wasm_bindgen]

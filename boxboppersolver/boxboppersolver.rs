@@ -4,6 +4,7 @@
 //use std::io;
 //use std::io::{BufReader,BufRead};
 //use std::fs::File;
+use std::cmp::Ordering;
 
 //mod boxbopperbase;
 
@@ -32,6 +33,8 @@ struct PathNodeMap {
 	moves_taken: Vec::<Move>,
 }
 
+const AMOVES: [Move;4] = [ Move::Right, Move::Down, Move::Left, Move::Up ];
+
 impl PathNodeMap {
 	pub fn new_from_level(level: &Level) -> PathNodeMap {				// start the game this way
 		let mut map = PathNodeMap {
@@ -55,7 +58,7 @@ impl PathNodeMap {
 		
 		for tnidx in self.tail_nodes.iter() {									// for each tail node
 			let tnode = &self.nodes[*tnidx];
-			for movedir in ALLMOVES.iter() {							// for each possible move
+			for movedir in AMOVES.iter() {							// for each possible move
 				let pt = tnode.pt;									
 				let npt = pt.add(&movedir.to_vector());						// what is in this direction? let's find out	
 				match self.level.get_obj_at_pt(&npt) {
@@ -81,14 +84,17 @@ impl PathNodeMap {
 					}
 					Obj::Boulder | Obj::BoulderInHole => { 
 						// What's past the boulder? We can push into Space and Hole, nothing else.
-						match self.level.get_obj_at_pt(&pt.add(&movedir.to_vector().double())) {
+						let bnpt = &pt.add(&movedir.to_vector().double());
+						match self.level.get_obj_at_pt(bnpt) {
 							Obj::Space | Obj::Hole => { 
 								// yep, its a keymove, save key move
-								let km = KeyMove {
-									pn: tnode.clone(),
-									push_dir: *movedir,
-								};
-								self.key_moves.push(km);
+								if !self.level.in_noboxx_pts(*bnpt) {
+									let km = KeyMove {
+										pn: tnode.clone(),
+										push_dir: *movedir,
+									};
+									self.key_moves.push(km);
+								}
 							},
 							_ => {} // can't push the boxx				
 						}
@@ -181,9 +187,6 @@ impl PathNodeMap {
 	pub fn is_level_complete(&self) -> bool {				// after we take a key move, we need to check if we've won the game
 		self.level.have_win_condition()	
 	}
-	pub fn get_movelist() -> String {					// when we win the game, we need to see what moves we took to get here
-		"movelist: todo".to_string()		
-	}
 	pub fn display_state(&self) {
 		println!("nodes: {}   tail_nodes: {}   key_moves: {}",self.nodes.len(), self.tail_nodes.len(), self.key_moves.len());
 		println!("key_moves:");
@@ -212,6 +215,36 @@ impl PathNodeMap {
 		path.reverse();
 		path
 	}
+	pub fn method_two(map: &mut PathNodeMap, depth: u32, max_steps: &mut u32) {
+		if depth == 2 {
+			println!("{}...", moves_to_string(&map.moves_taken));
+		}
+		while !map.is_map_complete() {
+			map.step();
+		}
+		// sort by which is shorter
+		map.key_moves.sort_unstable_by(|a,b| if a.pn.steps<b.pn.steps { Ordering::Less }
+			else if a.pn.steps==b.pn.steps { Ordering::Equal }
+			else { Ordering::Greater }
+		);
+		for km in map.key_moves.iter() {
+			let mut nmap = map.new_by_applying_key_move(km);
+			//println!("For km at {},{}, human at {},{}",km.pn.pt.0,km.pn.pt.1,nmap.level.human_pos.0,nmap.level.human_pos.1);
+			//println!("  {} steps: {}", nmap.nodes[0].steps, moves_to_string(&nmap.moves_taken));
+			if nmap.is_level_complete() {
+				if nmap.nodes[0].steps < *max_steps {
+					*max_steps = nmap.nodes[0].steps;
+					println!("----- Level complete! -----");
+					// Track moves we took to get here!
+					println!("Solution in {} moves",nmap.nodes[0].steps);
+					println!("Solution: {}", moves_to_string(&nmap.moves_taken));
+				}
+			} else if nmap.nodes[0].steps < *max_steps {
+				PathNodeMap::method_two(&mut nmap,depth+1,max_steps);
+			}
+		}
+	}
+	
 }
 
 
@@ -232,54 +265,78 @@ fn main() -> Result<(),String> {
 	let mut filename: String = String::from("levels/level01.txt");
 	
 	let mut count = 0;
-	for env in std::env::args() {
-		if count > 0 {
-			filename = env;
-		}
+	let mut max_steps: u32 = 1000;
+	let mut method: u32 = 1;
+	let args: Vec::<String> = std::env::args().collect();
+	for arg in args {
 		count += 1;
+		if count == 2 {
+			filename = arg;
+		} else if count == 3 {
+			max_steps = arg.parse().unwrap();
+		} else if count == 4 {
+			method = arg.parse().unwrap();
+		}
 	}
 	
 	// load level
 	let base_level = load_level(&filename).expect("Unable to load level file");
-	let mut base_map = PathNodeMap::new_from_level(&base_level);
+	let base_map = PathNodeMap::new_from_level(&base_level);
 	display_level(&base_level);
 	base_map.display_state();
 
 	let mut maps = Vec::<PathNodeMap>::new();
 	maps.push(base_map);
 	
+	let mut have_solution = false;
 	let mut count = 0;
-	while count < 100 {
-		count += 1;
-		println!("----- Depth {} loop start -----", count);
-		for map in maps.iter_mut() {
-			while !map.is_map_complete() {
-				map.step();
-			}
-			//map.display_state();
-		}
 
-		println!("----- Depth {} applying key moves -----", count);
-		let mut nextmaps = Vec::<PathNodeMap>::new();
-		println!("Number of maps: {}", maps.len());
-		for map in maps.iter_mut() {
-			for km in map.key_moves.iter() {
-				let nmap = map.new_by_applying_key_move(km);
-				//println!("For km at {},{}, human at {},{}",km.pn.pt.0,km.pn.pt.1,nmap.level.human_pos.0,nmap.level.human_pos.1);
-				//println!("  {} steps: {}", nmap.nodes[0].steps, moves_to_string(&nmap.moves_taken));
-				if nmap.is_level_complete() {
-					println!("----- Level complete! -----");
-					// Track moves we took to get here!
-					return Ok(());
+	// method 1
+	if method == 1 {
+		while count < 50 {
+			count += 1;
+			println!("----- Depth {} loop start -----", count);
+			for map in maps.iter_mut() {
+				while !map.is_map_complete() {
+					map.step();
 				}
-				nextmaps.push(nmap);
+				//map.display_state();
+			}
+
+			println!("----- Depth {} applying key moves -----", count);
+			let mut nextmaps = Vec::<PathNodeMap>::new();
+			println!("Number of maps: {}", maps.len());
+			for map in maps.iter_mut() {
+				for km in map.key_moves.iter() {
+					let nmap = map.new_by_applying_key_move(km);
+					//println!("For km at {},{}, human at {},{}",km.pn.pt.0,km.pn.pt.1,nmap.level.human_pos.0,nmap.level.human_pos.1);
+					//println!("  {} steps: {}", nmap.nodes[0].steps, moves_to_string(&nmap.moves_taken));
+					if nmap.is_level_complete() {
+						if !have_solution || nmap.nodes[0].steps < max_steps {
+							have_solution = true;
+							max_steps = nmap.nodes[0].steps;
+							println!("----- Level complete! -----");
+							// Track moves we took to get here!
+							println!("Solution in {} moves",nmap.nodes[0].steps);
+							println!("Solution: {}", moves_to_string(&nmap.moves_taken));
+						}
+					} else if !have_solution && nmap.nodes[0].steps < max_steps {
+						nextmaps.push(nmap);
+					}
+				}
+			}
+
+			maps.clear();
+			maps = nextmaps;
+			if maps.len() == 0 {
+				println!("No more maps to check");
+				break;
 			}
 		}
-
-		maps.clear();
-		maps = nextmaps;
+	} else if method == 2 {
+		PathNodeMap::method_two(&mut maps[0], 0, &mut max_steps);
 	}
-	
+
 	return Ok(());
 }
 

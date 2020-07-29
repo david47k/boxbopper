@@ -5,6 +5,7 @@
 title: a simple test level
 author: david47k
 description: push the box into the designated area, in order to escape the level!
+moves required: 6
 
 legend:
 # wall

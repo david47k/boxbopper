@@ -11,6 +11,34 @@ use crate::vector::Vector;
 use super::Obj;
 use crate::builtins::BUILTIN_LEVELS;
 
+const X2VARS: [[Vector;4];24] = 
+[
+[Vector(0,0),Vector(0,1),Vector(1,0),Vector(1,1)],
+[Vector(0,0),Vector(0,1),Vector(1,1),Vector(1,0)],
+[Vector(0,0),Vector(1,0),Vector(0,1),Vector(1,1)],
+[Vector(0,0),Vector(1,0),Vector(1,1),Vector(0,1)],
+[Vector(0,0),Vector(1,1),Vector(0,1),Vector(1,0)],
+[Vector(0,0),Vector(1,1),Vector(1,0),Vector(0,1)],
+[Vector(0,1),Vector(0,0),Vector(1,0),Vector(1,1)],
+[Vector(0,1),Vector(0,0),Vector(1,1),Vector(1,0)],
+[Vector(0,1),Vector(1,0),Vector(0,0),Vector(1,1)],
+[Vector(0,1),Vector(1,0),Vector(1,1),Vector(0,0)],
+[Vector(0,1),Vector(1,1),Vector(0,0),Vector(1,0)],
+[Vector(0,1),Vector(1,1),Vector(1,0),Vector(0,0)],
+[Vector(1,0),Vector(0,1),Vector(0,0),Vector(1,1)],
+[Vector(1,0),Vector(0,1),Vector(1,1),Vector(0,0)],
+[Vector(1,0),Vector(0,0),Vector(0,1),Vector(1,1)],
+[Vector(1,0),Vector(0,0),Vector(1,1),Vector(0,1)],
+[Vector(1,0),Vector(1,1),Vector(0,1),Vector(0,0)],
+[Vector(1,0),Vector(1,1),Vector(0,0),Vector(0,1)],
+[Vector(1,1),Vector(0,1),Vector(1,0),Vector(0,0)],
+[Vector(1,1),Vector(0,1),Vector(0,0),Vector(1,0)],
+[Vector(1,1),Vector(1,0),Vector(0,1),Vector(0,0)],
+[Vector(1,1),Vector(1,0),Vector(0,0),Vector(0,1)],
+[Vector(1,1),Vector(1,1),Vector(0,1),Vector(1,0)],
+[Vector(1,1),Vector(0,0),Vector(1,0),Vector(0,1)],
+];
+
 
 #[wasm_bindgen]
 #[derive(Clone)]
@@ -19,6 +47,8 @@ pub struct Level {
 	pub w: usize,
 	pub h: usize,
 	pub human_pos: Vector,
+	noboxx_pts: Vec::<Vector>,
+	boxx_pts: Vec::<Vector>,
 	data: Vec::<Obj>,
 }
 
@@ -30,6 +60,8 @@ impl Level {
 			w: self.w,
 			h: self.h,
 			human_pos: self.human_pos.clone(),
+			boxx_pts: self.boxx_pts.clone(),
+			noboxx_pts: self.noboxx_pts.clone(),
 			data: self.data.clone(),
 		}
 	}
@@ -64,6 +96,62 @@ impl Level {
 		}
 		return true;
 	}
+
+}
+
+// non-js
+impl Level {
+	pub fn do_noboxx_pts(&mut self) {
+		let mut noboxx_pts: Vec::<Vector> = Vec::new();
+		// aside from #, there are some points where box's simply can't go
+		// e.g. the 2x2 [##][# ] in any orientation (where space could be human too)
+		let block_match = [Obj::Space,Obj::Wall,Obj::Wall,Obj::Wall];
+		
+		for x in 0..self.w-1 {
+			for y in 0..self.h-1 {
+				for z in &X2VARS {
+					let pt = Vector(x as i32,y as i32);
+					let objs = [ self.get_obj_at_pt(&pt.add(&z[0])), 
+								 self.get_obj_at_pt(&pt.add(&z[1])), 
+								 self.get_obj_at_pt(&pt.add(&z[2])),
+								 self.get_obj_at_pt(&pt.add(&z[3])) ];
+					if objs == block_match {
+						noboxx_pts.push(pt.add(&z[0]));
+					} 
+				}
+			}
+		}
+		self.noboxx_pts = noboxx_pts;
+	}
+	pub fn do_boxx_pts(&mut self) {
+		let mut pts: Vec::<Vector> = Vec::new();
+		for y in 0..self.h {
+			for x in 0..self.w {
+				let pt = Vector(x.try_into().unwrap(),y.try_into().unwrap());
+				let obj = self.get_obj_at_pt(&pt);
+				if obj == Obj::Boulder || obj == Obj::BoulderInHole {
+					pts.push(pt);
+				}
+			}
+		}
+		self.boxx_pts = pts;
+	}
+	pub fn in_noboxx_pts(&self, v: Vector) -> bool {
+		self.noboxx_pts.contains(&v)
+	}
+	pub fn strip_sprites(&mut self) {
+		for idx in 0..(self.w * self.h) {
+			let obj = self.get_obj_at_idx(idx);
+			let nobj = match obj {
+				Obj::Human => Obj::Space,
+				Obj::HumanInHole => Obj::Hole,
+				Obj::Boulder => Obj::Space,
+				Obj::BoulderInHole => Obj::Hole,
+				_ => obj,
+			};
+			self.set_obj_at_idx(idx,nobj);
+		}		
+	}
 }
 
 pub fn load_level(filename: &str) -> Result<Level,String> {
@@ -90,7 +178,7 @@ pub fn load_level(filename: &str) -> Result<Level,String> {
 		if txt.len() == w {	
 			// split line into characters
 			for (i,c) in txt.char_indices() {		// chars() is iterator
-				if c == '&' || c == '@' {
+				if c == '&' || c == '%' {
 					// found human_pos
 					human_pos = Vector(i.try_into().unwrap(),count.try_into().unwrap());
 				}
@@ -117,14 +205,17 @@ pub fn load_level(filename: &str) -> Result<Level,String> {
 		panic!("Width and Height must be >= 3");
 	}
 	
-	let level = Level {
+	let mut level = Level {
 		title: String::from("Untitled"),
 		w: w,
 		h: h,
 		human_pos: human_pos,
+		noboxx_pts: Vec::new(),
+		boxx_pts: Vec::new(),
 		data: data,
 	};
-	
+	level.do_noboxx_pts();
+	level.do_boxx_pts();
 	return Ok(level);
 }
 
@@ -188,13 +279,17 @@ pub fn load_builtin(number: usize) -> Option<Level> {
 		panic!("Width and Height must be >= 3");
 	}
 	
-	let level = Level {
+	let mut level = Level {
 		title: level_title,
 		w: w,
 		h: h,
+		noboxx_pts: Vec::new(),
+		boxx_pts: Vec::new(),
 		human_pos: human_pos,
 		data: data,
 	};
+	level.do_boxx_pts();
+	level.do_noboxx_pts();
 	
 	return Some(level);
 }

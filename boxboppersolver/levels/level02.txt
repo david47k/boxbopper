@@ -6,7 +6,6 @@
 ##########
 
 
-a harder level
-solvable in 27
-
-RRRRLDRLDRLDRRRLLURRLLURRLLURR
+title: a harder level
+moves required: 27
+solution: RRRRLDRLDRLDRRRLLURRLLURRLLURR
