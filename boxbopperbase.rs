@@ -101,7 +101,7 @@ pub struct Game {
 
 impl Game {			// non-js
 	pub fn get_move_options(&self) -> Vec<Move> {
-		let mut options: Vec<Move> = Vec::new();
+		let mut options: Vec<Move> = Vec::with_capacity(4);
 		for movedir in ALLMOVES.iter() {
 			let hp = self.human_pos;
 			match self.get_object_at_point(&hp.add(&movedir.to_vector())) {
@@ -217,7 +217,7 @@ impl Game {
 
 	pub fn new_from_level(base_level: &Level, levelnum: u32) -> Game {
 		// restarts the game, using what's in base_level
-		let mut sp = Vec::new();
+		let mut sp = Vec::with_capacity(32);
 		sp.push(Sprite::new(0, Obj::Human, get_time_ms(), 0.0, base_level.human_pos, base_level.human_pos));
 		Game {
 			level_number: levelnum,

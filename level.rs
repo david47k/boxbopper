@@ -74,7 +74,7 @@ pub fn load_level(filename: &str) -> Result<Level,String> {
     let buffered = BufReader::new(input);
 	let mut count: usize = 0;
 	let mut w = 0;
-	let mut data = Vec::<Obj>::new();
+	let mut data = Vec::<Obj>::with_capacity(128);
 	let mut human_pos: Vector = Vector(0,0);
 
     for line in buffered.lines() {		
@@ -141,7 +141,7 @@ pub fn load_builtin(number: usize) -> Option<Level> {
 	// process string
 	let mut count: usize = 0;
 	let mut w = 0;
-	let mut data = Vec::<Obj>::new();
+	let mut data = Vec::<Obj>::with_capacity(128);
 	let mut human_pos: Vector = Vector(0,0);
 	let mut level_title: String = String::from("Untitled");
 

@@ -1,4 +1,4 @@
-
+// Includes Vector and Move
 
 use wasm_bindgen::prelude::*;
 use js_sys::Array;
@@ -27,6 +27,9 @@ impl Vector {
 	}
 	pub fn as_array(&self) -> Array {
 		[ self.0, self.1 ].iter().map(|m| JsValue::from(*m)).collect()
+	}
+	pub fn eq(&self, a: &Vector) -> bool {
+		self.0 == a.0 && self.1 == a.1
 	}
 }
 
@@ -69,6 +72,14 @@ impl Move {
 			2 => Some(Move::Down),
 			3 => Some(Move::Left),
 			_ => None,
+		}
+	}
+	pub fn reverse(&self) -> Move {
+		match self {
+			Move::Up	=> Move::Down,
+			Move::Left	=> Move::Right,
+			Move::Right	=> Move::Left,
+			Move::Down	=> Move::Up,
 		}
 	}
 }
