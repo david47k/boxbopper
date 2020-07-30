@@ -33,7 +33,7 @@ struct KeyMove {
 
 #[derive(Clone)]
 struct PathNodeMap {
-	base_level: &Level,
+	base_level: Arc::<Level>,
 	level: SpLevel,
 	nodes: Vec::<PathNode>,
 	tail_nodes: Vec::<usize>,
@@ -44,10 +44,10 @@ struct PathNodeMap {
 const AMOVES: [Move;4] = [ Move::Right, Move::Up, Move::Left, Move::Down ];
 
 impl PathNodeMap {
-	pub fn new_from_level(level: &Level) -> PathNodeMap {				// start the game this way
+	pub fn new_from_level(level: &Arc<Level>) -> PathNodeMap {				// start the game this way
 		let mut map = PathNodeMap {
-			base_level: level,
-			level: SpLevel::new_from_level(level),
+			base_level: level.clone(),
+			level: SpLevel::new_from_level(&(level.clone())),
 			nodes: Vec::<PathNode>::with_capacity(64),
 			tail_nodes: Vec::<usize>::with_capacity(32),
 			key_moves: Vec::<KeyMove>::with_capacity(16),
@@ -133,7 +133,7 @@ impl PathNodeMap {
 	pub fn is_map_complete(&self) -> bool { 					// lets us know if there are no more tail nodes (map is complete)
 		self.tail_nodes.len() == 0	
 	}
-	pub fn apply_key_move(level: &mut Level, km: &KeyMove) {
+	pub fn apply_key_move(level: &mut SpLevel, km: &KeyMove) {
 		// remove old human
 		let idx = level.human_pos.to_index(&level.w);
 		let human_obj = level.get_obj_at_idx(idx);
@@ -196,6 +196,7 @@ impl PathNodeMap {
 		moves_taken.append(&mut self.backtrace_moves(&km.pn));
 		moves_taken.push(km.push_dir);
 		PathNodeMap {
+			base_level: self.base_level.clone(),
 			level: level,
 			nodes: vec!(initial_pn),
 			tail_nodes: tail_nodes,
@@ -212,14 +213,6 @@ impl PathNodeMap {
 	}
 	pub fn is_level_complete(&self) -> bool {				// after we take a key move, we need to check if we've won the game
 		self.level.have_win_condition()	
-	}
-	pub fn display_state(&self) {
-		println!("nodes: {}   tail_nodes: {}   key_moves: {}",self.nodes.len(), self.tail_nodes.len(), self.key_moves.len());
-		println!("key_moves:");
-		for node in self.key_moves.iter() {
-			println!("    at {},{} at {} steps in dir {}", node.pn.pt.0, node.pn.pt.1, node.pn.steps, node.push_dir.to_string());
-		}
-		println!();
 	}
 	pub fn backtrace_moves(&self, pn: &PathNode) -> Vec::<Move> {
 		let mut path = Vec::<Move>::with_capacity(32);
@@ -241,39 +234,10 @@ impl PathNodeMap {
 		path.reverse();
 		path
 	}
-	pub fn method_two(map: &mut PathNodeMap, depth: u32, max_steps: &mut u32) {
-		if depth == 2 {
-			println!("{}...", moves_to_string(&map.moves_taken));
-		}
-		while !map.is_map_complete() {
-			map.step();
-		}
-		// sort by which is shorter
-		map.key_moves.sort_unstable_by(|a,b| if a.pn.steps<b.pn.steps { Ordering::Less }
-			else if a.pn.steps==b.pn.steps { Ordering::Equal }
-			else { Ordering::Greater }
-		);
-		for km in map.key_moves.iter() {
-			let mut nmap = map.new_by_applying_key_move(km);
-			if nmap.is_level_complete() {
-				if nmap.nodes[0].steps < *max_steps {
-					*max_steps = nmap.nodes[0].steps;
-					println!("----- Level complete! -----");
-					// Track moves we took to get here!
-					println!("Solution in {} moves",nmap.nodes[0].steps);
-					println!("Solution: {}", moves_to_string(&nmap.moves_taken));
-				}
-			} else if nmap.nodes[0].steps < *max_steps {
-				PathNodeMap::method_two(&mut nmap,depth+1,max_steps);
-			}
-		}
-	}
-	
 }
 
 
 pub fn display_level(level: &Level) {
-	println!("--------------------------------------------------------------------------------");
 	println!();
 	// print level
 	for y in 0..level.h {
@@ -287,129 +251,119 @@ pub fn display_level(level: &Level) {
 
 fn main() -> Result<(),String> {
 	let mut filename: String = String::from("levels/level01.txt");
-	
-	let mut count = 0;
 	let max_steps = Arc::new(AtomicU32::new(1000_u32));
-	let mut method: u32 = 1;
 	let args: Vec::<String> = std::env::args().collect();
-	for arg in args {
-		count += 1;
-		if count == 2 {
+	
+	for (count,arg) in args.into_iter().enumerate() {
+		if count == 1 {
 			filename = arg;
-		} else if count == 3 {
+		} else if count == 2 {
 			let n_maxsteps: u32 = arg.parse::<u32>().unwrap() + 1;
 			max_steps.store(n_maxsteps, AtomicOrdering::SeqCst);
-		} else if count == 4 {
-			method = arg.parse().unwrap();
 		}
 	}
 	
 	// load level
 	let base_level = load_level(&filename).expect("Unable to load level file");
-	let base_map = PathNodeMap::new_from_level(&base_level);
-	display_level(&base_level);
-	base_map.display_state();
+	let base_rc = Arc::new(base_level);
+	let base_map = PathNodeMap::new_from_level(&base_rc.clone());
+	display_level(&base_rc);
 
-	let mut maps = Vec::<PathNodeMap>::new();
-	maps.push(base_map);
+	let mut maps = vec![base_map];
 	
 	let have_solution = Arc::new(AtomicBool::new(false));
 	let mut count: u32 = 0;
 	let best_solution_str = Arc::new(Mutex::new(String::new()));
 
-	// method 1
-	if method == 1 {
-		while count < max_steps.load(AtomicOrdering::SeqCst) {	// stop it running forever, it's unlikely to actually get that high
-			count += 1;
-			println!("----- depth {} -----", count);
-			println!("completing {:>7} maps", maps.len());
+	while count < max_steps.load(AtomicOrdering::SeqCst) {	// stop it running forever, it's unlikely to actually get that high
+		count += 1;
+		println!("------- depth {:>2} -------", count);
+		println!("completing  {:>7} maps", maps.len());
 
-			let mut nmaps: Vec<PathNodeMap>;
-			if USE_MULTITHREAD {
-				nmaps = maps.par_iter().map(|m| m.clone_and_complete() ).collect();
-			} else {
-				nmaps = maps.iter().map(|m| m.clone_and_complete() ).collect();
-			}
+		let mut nmaps: Vec<PathNodeMap>;
+		if USE_MULTITHREAD {
+			nmaps = maps.par_iter().map(|m| m.clone_and_complete() ).collect();
+		} else {
+			nmaps = maps.iter().map(|m| m.clone_and_complete() ).collect();
+		}
 
-			maps.clear();
-			maps.append(&mut nmaps);
-			println!("applying key moves");
-			let mut nextmaps = Vec::<PathNodeMap>::new();
-			//println!("Number of maps: {}", maps.len());
+		maps.clear();
+		maps.append(&mut nmaps);
+		println!("applying key moves");
+		let mut nextmaps = Vec::<PathNodeMap>::new();
+		//println!("Number of maps: {}", maps.len());
 
-			if USE_MULTITHREAD {
-				// apply key moves
-				println!("flatmap..");
-				nextmaps = maps.iter().flat_map(|map| map.get_key_moves()).collect();
-				
-				println!("solution check...");
-				// check for level complete / having solution
-				nextmaps.par_iter().filter(|m| m.is_level_complete()).for_each(|m| {
-					if m.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
-						have_solution.store(true, AtomicOrdering::SeqCst);
-						max_steps.store(m.nodes[0].steps, AtomicOrdering::SeqCst);
-						println!("----- Level complete! -----");
-						let mut solstr = best_solution_str.lock().unwrap();
-						*solstr = format!("Solution in {} moves: {}",m.nodes[0].steps,moves_to_string(&m.moves_taken));
-						println!("{}",solstr);
-					}
-				});
+		if USE_MULTITHREAD {
+			// apply key moves
+			println!("flatmap...");
+			nextmaps = maps.iter().flat_map(|map| map.get_key_moves()).collect();	//par_iter doesn't seem to make any difference to performance
+			
+			println!("solution check...");
+			// check for level complete / having solution
+			nextmaps.par_iter().filter(|m| m.is_level_complete()).for_each(|m| {
+				if m.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
+					have_solution.store(true, AtomicOrdering::SeqCst);
+					max_steps.store(m.nodes[0].steps, AtomicOrdering::SeqCst);
+					println!("----- Level complete! -----");
+					let mut solstr = best_solution_str.lock().unwrap();
+					*solstr = format!("Solution in {} moves: {}",m.nodes[0].steps,moves_to_string(&m.moves_taken));
+					println!("{}",solstr);
+				}
+			});
 
-				// filter in the ones that haven't reached max steps
-				nextmaps = nextmaps.par_iter().filter(|m| m.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst)).cloned().collect();
-			} else {
-				for map in maps.iter_mut() {
-					for km in map.key_moves.iter() {
-						let nmap = map.new_by_applying_key_move(km);
-						if nmap.is_level_complete() {
-							if !(have_solution.load(AtomicOrdering::SeqCst)) || nmap.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
-								have_solution.store(true, AtomicOrdering::SeqCst);
-								max_steps.store(nmap.nodes[0].steps, AtomicOrdering::SeqCst);
-								println!("----- Level complete! -----");
-								let mut solstr = best_solution_str.lock().unwrap();
-								*solstr = format!("Solution in {} moves: {}",nmap.nodes[0].steps,moves_to_string(&nmap.moves_taken));
-								println!("{}",solstr);
-							}
-						} else if !(have_solution.load(AtomicOrdering::SeqCst)) && nmap.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
-							nextmaps.push(nmap);
+			// filter in the ones that haven't reached max steps
+			println!("pruning long paths...");
+			nextmaps = nextmaps.par_iter().filter(|m| m.nodes[0].steps < max_steps.load(AtomicOrdering::Relaxed)).cloned().collect();
+		} else {
+			for map in maps.iter_mut() {
+				for km in map.key_moves.iter() {
+					let nmap = map.new_by_applying_key_move(km);
+					if nmap.is_level_complete() {
+						if !(have_solution.load(AtomicOrdering::SeqCst)) || nmap.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
+							have_solution.store(true, AtomicOrdering::SeqCst);
+							max_steps.store(nmap.nodes[0].steps, AtomicOrdering::SeqCst);
+							println!("----- Level complete! -----");
+							let mut solstr = best_solution_str.lock().unwrap();
+							*solstr = format!("Solution in {} moves: {}",nmap.nodes[0].steps,moves_to_string(&nmap.moves_taken));
+							println!("{}",solstr);
 						}
+					} else if !(have_solution.load(AtomicOrdering::SeqCst)) && nmap.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
+						nextmaps.push(nmap);
 					}
 				}
 			}
-
-			if count >= 3 {
-				println!("deduping: before {:>7}", nextmaps.len());
-				println!("sorting...");
-				nextmaps.sort_unstable_by(|a,b| {
-					let ord = a.level.partial_cmp(&b.level).unwrap();
-					if ord == Ordering::Equal {
-						if a.nodes[0].steps < b.nodes[0].steps {
-							return Ordering::Less;
-						}
-						if a.nodes[0].steps > b.nodes[0].steps {
-							return Ordering::Greater;
-						}
-					}
-					ord
-				});
-				println!("deduping...");
-				nextmaps.dedup_by(|a,b| a.level.eq_data(&b.level)); // in theory it keeps the first (smallest steps)
-				println!("deduping: after  {:>7}", nextmaps.len());
-			} 
-
-			maps.clear();
-			maps.append(&mut nextmaps);
-			if maps.len() == 0 {
-				println!("No more maps to check");
-				break;
-			}
 		}
-	} else if method == 2 {
-		PathNodeMap::method_two(&mut maps[0], 0, &mut (max_steps.load(AtomicOrdering::SeqCst)));
+
+		if count >= 2 {
+			println!("deduping: before {:>7}", nextmaps.len());
+			println!("sorting...");
+			nextmaps.sort_unstable_by(|a,b| {
+				let ord = a.level.partial_cmp(&b.level).unwrap();
+				if ord == Ordering::Equal {
+					if a.nodes[0].steps < b.nodes[0].steps {
+						return Ordering::Less;
+					}
+					if a.nodes[0].steps > b.nodes[0].steps {
+						return Ordering::Greater;
+					}
+				}
+				ord
+			});
+			println!("deduping...");
+			nextmaps.dedup_by(|a,b| a.level.eq_data(&b.level)); // in theory it keeps the first (smallest steps)
+			println!("deduping: after  {:>7}", nextmaps.len());
+		} 
+
+		maps.clear();
+		maps.append(&mut nextmaps);
+		if maps.len() == 0 {
+			println!("No more maps to check");
+			break;
+		}
 	}
 
 	if have_solution.load(AtomicOrdering::SeqCst) {
-		println!("----- Best solution -----");
+		println!("------- Best solution -------");
 		let solstr = best_solution_str.lock().unwrap();
 		println!("{}",solstr);//load(AtomicOrdering::SeqCst));
 	} else {

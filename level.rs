@@ -6,7 +6,6 @@ use js_sys::{Array,JsString};
 use std::io::{BufReader,BufRead};
 use std::fs::File;
 use std::convert::TryInto;
-use std::cmp::Ordering;
 
 use crate::vector::Vector;
 use super::Obj;
@@ -85,6 +84,9 @@ impl SpLevel {
 			};
 		}
 		return true;
+	}
+	pub fn eq_data(&self, b: &SpLevel) -> bool {
+		self.data == b.data
 	}	
 }
 
