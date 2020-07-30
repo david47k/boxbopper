@@ -6,5 +6,5 @@
 ##  & ##
 ########
 
-moves required: 40 or less
-solution: LLULUURURRRDULDDRLLLUURDLDDDRRULDLURRDRU
+moves required: 31
+solution: RULURLDDLLURDRULULRUURRDLULDULD

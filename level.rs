@@ -6,6 +6,7 @@ use js_sys::{Array,JsString};
 use std::io::{BufReader,BufRead};
 use std::fs::File;
 use std::convert::TryInto;
+use std::cmp::Ordering;
 
 use crate::vector::Vector;
 use super::Obj;
@@ -41,7 +42,7 @@ const X2VARS: [[Vector;4];24] =
 
 
 #[wasm_bindgen]
-#[derive(Clone)]
+#[derive(Clone,PartialEq,PartialOrd)]
 pub struct Level {
 	title: String,
 	pub w: usize,
@@ -50,6 +51,41 @@ pub struct Level {
 	noboxx_pts: Vec::<Vector>,
 	boxx_pts: Vec::<Vector>,
 	data: Vec::<Obj>,
+}
+
+#[derive(Clone,PartialEq,PartialOrd)]
+pub struct SpLevel {		/* special level for solving */
+	pub w: usize,
+	pub human_pos: Vector,
+	data: Vec::<Obj>,
+}
+
+impl SpLevel {
+	pub fn new_from_level(level: &Level) -> Self {
+		Self {
+			w: level.w,
+			human_pos: level.human_pos.clone(),
+			data: level.data.clone(),
+		}
+	}
+	pub fn get_obj_at_pt(&self, pt: &Vector) -> Obj {
+		self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)]
+	}
+	pub fn get_obj_at_idx(&self, idx: usize) -> Obj {
+		self.data[idx]
+	}
+	pub fn set_obj_at_idx(&mut self, idx: usize, obj: Obj) {
+		self.data[idx] = obj;
+	}
+	pub fn have_win_condition(&self) -> bool {
+		for obj in self.data.iter() {
+			match obj {
+				Obj::Boulder | Obj::Hole | Obj::HumanInHole => return false,
+				_ => {},
+			};
+		}
+		return true;
+	}	
 }
 
 #[wasm_bindgen]
@@ -122,7 +158,49 @@ impl Level {
 			}
 		}
 		self.noboxx_pts = noboxx_pts;
+
+		// on the second (and second last) line, if it's just # and spaces/human then the whole line is noboxx too
+
+		self.check_line(1);
+		self.check_line(self.h-2);
+		self.check_col(1);
+		self.check_col(self.w-2);
+		self.noboxx_pts.sort_unstable();
+		self.noboxx_pts.dedup();
+		/*for v in self.noboxx_pts.iter() {
+			print!("{}",v.to_string());
+		} */
 	}
+	fn check_line(&mut self,line_idx: usize) {
+		let mut ok = true;
+		for x_idx in 0..self.w {
+			let obj = self.data[self.w * line_idx + x_idx];
+			match obj {
+				Obj::Wall | Obj::Space | Obj::Human => {},
+				_ => { ok = false; },
+			}
+		}
+		if ok {
+			for x_idx in 1..self.w-1 {
+				self.noboxx_pts.push(Vector(x_idx as i32,line_idx as i32));
+			}
+		}
+	}
+	fn check_col(&mut self,col_idx: usize) {
+		let mut ok = true;
+		for y_idx in 0..self.h {
+			let obj = self.data[self.w * y_idx + col_idx];
+			match obj {
+				Obj::Wall | Obj::Space | Obj::Human => {},
+				_ => { ok = false; },
+			}
+		}
+		if ok {
+			for y_idx in 1..self.h-1 {
+				self.noboxx_pts.push(Vector(col_idx as i32,y_idx as i32));
+			}
+		}
+	}	
 	pub fn do_boxx_pts(&mut self) {
 		let mut pts: Vec::<Vector> = Vec::new();
 		for y in 0..self.h {
@@ -151,6 +229,9 @@ impl Level {
 			};
 			self.set_obj_at_idx(idx,nobj);
 		}		
+	}
+	pub fn eq_data(&self, b: &Level) -> bool {
+		self.data == b.data
 	}
 }
 

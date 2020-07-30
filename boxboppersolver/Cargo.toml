@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 boxbopper = { path = "../", version = "0.1.0" }
+rayon = "1.3.1"
 
 [[bin]]
 name = "boxboppersolver"
