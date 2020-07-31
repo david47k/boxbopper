@@ -9,7 +9,6 @@ o  Check css media brackets on chrome
 
 MIDDLE PRIORITY
 ---------------
-o  Create level solver
 o  Create level creator!
 
 LOW PRIORITY

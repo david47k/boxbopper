@@ -1,9 +1,6 @@
 
-// Box Bopper: Sokoban clone in rust
+// Box Bopper Solver: Sokoban clone solution finder
 
-//use std::io;
-//use std::io::{BufReader,BufRead};
-//use std::fs::File;
 use std::cmp::Ordering;
 use rayon::prelude::*;
 
@@ -14,8 +11,6 @@ use std::sync::atomic::*;
 use boxbopperbase::{Obj,moves_to_string};
 use boxbopperbase::level::{load_level,Level,SpLevel};
 use boxbopperbase::vector::{Vector,Move};
-
-const USE_MULTITHREAD: bool = true;
 
 #[derive(Clone,Copy)]
 struct PathNode {
@@ -249,6 +244,7 @@ pub fn display_level(level: &Level) {
 	println!();
 }
 
+
 fn main() -> Result<(),String> {
 	let mut filename: String = String::from("levels/level01.txt");
 	let max_steps = Arc::new(AtomicU32::new(1000_u32));
@@ -269,75 +265,50 @@ fn main() -> Result<(),String> {
 	let base_map = PathNodeMap::new_from_level(&base_rc.clone());
 	display_level(&base_rc);
 
-	let mut maps = vec![base_map];
+	let mut mapsr = vec![base_map];
 	
 	let have_solution = Arc::new(AtomicBool::new(false));
-	let mut count: u32 = 0;
 	let best_solution_str = Arc::new(Mutex::new(String::new()));
+	let mut count: u32 = 0;
 
 	while count < max_steps.load(AtomicOrdering::SeqCst) {	// stop it running forever, it's unlikely to actually get that high
 		count += 1;
 		println!("------- depth {:>2} -------", count);
-		println!("completing  {:>7} maps", maps.len());
+		println!("completing  {:>7} maps", mapsr.len());
 
-		let mut nmaps: Vec<PathNodeMap>;
-		if USE_MULTITHREAD {
-			nmaps = maps.par_iter().map(|m| m.clone_and_complete() ).collect();
-		} else {
-			nmaps = maps.iter().map(|m| m.clone_and_complete() ).collect();
-		}
+		let nmaps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.clone_and_complete() ).collect();
 
-		maps.clear();
-		maps.append(&mut nmaps);
+		mapsr.clear();
+		let maps = &nmaps;
+		let mut nextmaps: Vec<PathNodeMap>;
+
+		// apply key moves
 		println!("applying key moves");
-		let mut nextmaps = Vec::<PathNodeMap>::new();
-		//println!("Number of maps: {}", maps.len());
-
-		if USE_MULTITHREAD {
-			// apply key moves
-			println!("flatmap...");
-			nextmaps = maps.iter().flat_map(|map| map.get_key_moves()).collect();	//par_iter doesn't seem to make any difference to performance
-			
-			println!("solution check...");
-			// check for level complete / having solution
-			nextmaps.par_iter().filter(|m| m.is_level_complete()).for_each(|m| {
-				if m.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
-					have_solution.store(true, AtomicOrdering::SeqCst);
-					max_steps.store(m.nodes[0].steps, AtomicOrdering::SeqCst);
-					println!("----- Level complete! -----");
-					let mut solstr = best_solution_str.lock().unwrap();
-					*solstr = format!("Solution in {} moves: {}",m.nodes[0].steps,moves_to_string(&m.moves_taken));
-					println!("{}",solstr);
-				}
-			});
-
-			// filter in the ones that haven't reached max steps
-			println!("pruning long paths...");
-			nextmaps = nextmaps.par_iter().filter(|m| m.nodes[0].steps < max_steps.load(AtomicOrdering::Relaxed)).cloned().collect();
-		} else {
-			for map in maps.iter_mut() {
-				for km in map.key_moves.iter() {
-					let nmap = map.new_by_applying_key_move(km);
-					if nmap.is_level_complete() {
-						if !(have_solution.load(AtomicOrdering::SeqCst)) || nmap.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
-							have_solution.store(true, AtomicOrdering::SeqCst);
-							max_steps.store(nmap.nodes[0].steps, AtomicOrdering::SeqCst);
-							println!("----- Level complete! -----");
-							let mut solstr = best_solution_str.lock().unwrap();
-							*solstr = format!("Solution in {} moves: {}",nmap.nodes[0].steps,moves_to_string(&nmap.moves_taken));
-							println!("{}",solstr);
-						}
-					} else if !(have_solution.load(AtomicOrdering::SeqCst)) && nmap.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
-						nextmaps.push(nmap);
-					}
-				}
+		println!("flatmap...");
+		nextmaps = maps.iter().flat_map(|map| map.get_key_moves()).collect();	// par_iter slows this down!
+		
+		// check for level complete / having solution
+		println!("solution check...");
+		nextmaps.par_iter().filter(|m| m.is_level_complete()).for_each(|m| {
+			if m.nodes[0].steps < max_steps.load(AtomicOrdering::SeqCst) {
+				have_solution.store(true, AtomicOrdering::SeqCst);
+				max_steps.store(m.nodes[0].steps, AtomicOrdering::SeqCst);
+				println!("----- Level complete! -----");
+				let mut solstr = best_solution_str.lock().unwrap();
+				*solstr = format!("Solution in {} moves: {}",m.nodes[0].steps,moves_to_string(&m.moves_taken));
+				println!("{}",solstr);
 			}
-		}
+		});
 
+		// filter out the long paths
+		println!("pruning long paths...");
+		nextmaps = nextmaps.par_iter().filter(|m| m.nodes[0].steps < max_steps.load(AtomicOrdering::Relaxed)).cloned().collect();
+
+		// sort and deduplicate
 		if count >= 2 {
 			println!("deduping: before {:>7}", nextmaps.len());
 			println!("sorting...");
-			nextmaps.sort_unstable_by(|a,b| {
+			nextmaps.par_sort_unstable_by(|a,b| {
 				let ord = a.level.partial_cmp(&b.level).unwrap();
 				if ord == Ordering::Equal {
 					if a.nodes[0].steps < b.nodes[0].steps {
@@ -350,13 +321,15 @@ fn main() -> Result<(),String> {
 				ord
 			});
 			println!("deduping...");
-			nextmaps.dedup_by(|a,b| a.level.eq_data(&b.level)); // in theory it keeps the first (smallest steps)
+			nextmaps.dedup_by(|a,b| a.level.eq_data(&b.level)); // it keeps the first match (sorted to be smallest steps)
 			println!("deduping: after  {:>7}", nextmaps.len());
 		} 
 
-		maps.clear();
-		maps.append(&mut nextmaps);
-		if maps.len() == 0 {
+		println!("appending...");		// here we are copying the data across (instead of managing pointers that last beyond the loop)
+		mapsr.append(&mut nextmaps);	// it isn't a major source of runtime
+
+		// check if we've exhausted the search space
+		if mapsr.len() == 0 {
 			println!("No more maps to check");
 			break;
 		}
@@ -365,7 +338,7 @@ fn main() -> Result<(),String> {
 	if have_solution.load(AtomicOrdering::SeqCst) {
 		println!("------- Best solution -------");
 		let solstr = best_solution_str.lock().unwrap();
-		println!("{}",solstr);//load(AtomicOrdering::SeqCst));
+		println!("{}",solstr);
 	} else {
 		println!("----- No solution found -----");
 		println!("Max steps was {}",max_steps.load(AtomicOrdering::SeqCst)-1);
