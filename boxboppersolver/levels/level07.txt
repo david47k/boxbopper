@@ -12,11 +12,6 @@
 moves required: 111
 solution: RUULDLLULLRRUDLLDLLURUURURRRRDDDUUUURDLDDDRDDLULLUUUDDDRRUUUULLULLDDRLURRRRDDDDLLURDRUUUDDLLUULURLLDLDDRRRRDRUU
 
-real    0m56.107s
-user    1m13.906s
-sys     0m7.813s
-
-using par_sort
-real    0m44.206s
-user    1m16.906s
-sys     0m8.281s
+real    0m16.229s
+user    0m27.703s
+sys     0m2.750s

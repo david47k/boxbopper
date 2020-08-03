@@ -11,34 +11,39 @@ use crate::vector::Vector;
 use super::Obj;
 use crate::builtins::BUILTIN_LEVELS;
 
-const X2VARS: [[Vector;4];24] = 
-[
-[Vector(0,0),Vector(0,1),Vector(1,0),Vector(1,1)],
-[Vector(0,0),Vector(0,1),Vector(1,1),Vector(1,0)],
-[Vector(0,0),Vector(1,0),Vector(0,1),Vector(1,1)],
-[Vector(0,0),Vector(1,0),Vector(1,1),Vector(0,1)],
-[Vector(0,0),Vector(1,1),Vector(0,1),Vector(1,0)],
-[Vector(0,0),Vector(1,1),Vector(1,0),Vector(0,1)],
-[Vector(0,1),Vector(0,0),Vector(1,0),Vector(1,1)],
-[Vector(0,1),Vector(0,0),Vector(1,1),Vector(1,0)],
-[Vector(0,1),Vector(1,0),Vector(0,0),Vector(1,1)],
-[Vector(0,1),Vector(1,0),Vector(1,1),Vector(0,0)],
-[Vector(0,1),Vector(1,1),Vector(0,0),Vector(1,0)],
-[Vector(0,1),Vector(1,1),Vector(1,0),Vector(0,0)],
-[Vector(1,0),Vector(0,1),Vector(0,0),Vector(1,1)],
-[Vector(1,0),Vector(0,1),Vector(1,1),Vector(0,0)],
-[Vector(1,0),Vector(0,0),Vector(0,1),Vector(1,1)],
-[Vector(1,0),Vector(0,0),Vector(1,1),Vector(0,1)],
-[Vector(1,0),Vector(1,1),Vector(0,1),Vector(0,0)],
-[Vector(1,0),Vector(1,1),Vector(0,0),Vector(0,1)],
-[Vector(1,1),Vector(0,1),Vector(1,0),Vector(0,0)],
-[Vector(1,1),Vector(0,1),Vector(0,0),Vector(1,0)],
-[Vector(1,1),Vector(1,0),Vector(0,1),Vector(0,0)],
-[Vector(1,1),Vector(1,0),Vector(0,0),Vector(0,1)],
-[Vector(1,1),Vector(1,1),Vector(0,1),Vector(1,0)],
-[Vector(1,1),Vector(0,0),Vector(1,0),Vector(0,1)],
-];
+fn contains_only<T>(a: &[T], b: &T) -> bool where T: Eq {
+	for item in a {	
+		if item != b {
+			return false;
+		}
+	}
+	return true;
+} 
 
+fn contains_only_set<T>(a: &[T], b: &[T]) -> bool where T: Eq {
+	'outer: for item in a {	
+		for item2 in b {
+			if item == item2 {
+				continue 'outer;
+			}
+		}
+		return false;
+	}
+	return true;
+}
+
+
+const X1VARS: [[Vector;3];8] = // only interested in the neighbours (not the opposite)
+[
+[Vector(0,0),Vector(0,1),Vector(1,0)],
+[Vector(0,0),Vector(1,0),Vector(0,1)],
+[Vector(0,1),Vector(0,0),Vector(1,1)],
+[Vector(0,1),Vector(1,1),Vector(0,0)],
+[Vector(1,0),Vector(0,0),Vector(1,1)],
+[Vector(1,0),Vector(1,1),Vector(0,0)],
+[Vector(1,1),Vector(0,1),Vector(1,0)],
+[Vector(1,1),Vector(1,0),Vector(0,1)],
+];
 
 #[wasm_bindgen]
 #[derive(Clone,PartialEq,PartialOrd)]
@@ -115,6 +120,15 @@ impl Level {
 	pub fn get_data(&self) -> Array {
 		self.data.clone().into_iter().map(|obj| JsValue::from(obj as u32)).collect()
 	}
+	fn get_vslice(&self, x: usize, y0: usize, y1: usize) -> Vec::<Obj> {
+		let mut rv = Vec::<Obj>::new();
+
+		for i in y0..y1 {
+			rv.push(self.get_obj_at_pt(&Vector(x as i32,i as i32)));
+		}
+
+		return rv;
+	}
 /*	pub fn get_level_width(&self) -> u32 {
 		self.level.w as u32
 	}
@@ -141,68 +155,159 @@ impl Level {
 impl Level {
 	pub fn do_noboxx_pts(&mut self) {
 		let mut noboxx_pts: Vec::<Vector> = Vec::new();
+		let mut print_data = self.data.clone();
 		// aside from #, there are some points where box's simply can't go
-		// e.g. the 2x2 [##][# ] in any orientation (where space could be human too)
-		let block_match = [Obj::Space,Obj::Wall,Obj::Wall,Obj::Wall];
-		
-		for x in 0..self.w-1 {
-			for y in 0..self.h-1 {
-				for z in &X2VARS {
+		// e.g. the 2x2 [*#][# ] in any orientation (where space could be human too)
+
+		let block_match = [Obj::Space,Obj::Wall,Obj::Wall];
+		let block_match2 = [Obj::Human,Obj::Wall,Obj::Wall];
+		for y in 0..self.h-1 {
+			for x in 0..self.w-1 {
+				for z in &X1VARS {
 					let pt = Vector(x as i32,y as i32);
 					let objs = [ self.get_obj_at_pt(&pt.add(&z[0])), 
 								 self.get_obj_at_pt(&pt.add(&z[1])), 
-								 self.get_obj_at_pt(&pt.add(&z[2])),
-								 self.get_obj_at_pt(&pt.add(&z[3])) ];
-					if objs == block_match {
+								 self.get_obj_at_pt(&pt.add(&z[2])), ];
+					if objs == block_match || objs == block_match2 {
 						noboxx_pts.push(pt.add(&z[0]));
 					} 
 				}
 			}
-		}
+		} 
+
 		self.noboxx_pts = noboxx_pts;
+		for v in &self.noboxx_pts {
+			print_data[self.w*v.1 as usize+v.0 as usize] = Obj::Wall;
+		}
+		for y in 0..self.h {
+			for x in 0..self.w {
+				print!("{}", print_data[y*self.w+x].to_char());
+			}
+			println!();
+		}
 
-		// on the second (and second last) line, if it's just # and spaces/human then the whole line is noboxx too
+		// walls that follow the following pattern also can't have boxxes
+		// *##...#*
+		// #      #
 
-		self.check_line(1);
-		self.check_line(self.h-2);
-		self.check_col(1);
-		self.check_col(self.w-2);
+		let hall_start = [ [ Obj::Wall, Obj::Space, Obj::Space, Obj::Space ].to_vec(),
+						   [ Obj::Wall, Obj::Human, Obj::Space, Obj::Space ].to_vec(),
+						   [ Obj::Wall, Obj::Space, Obj::Human, Obj::Space ].to_vec(),
+						   [ Obj::Wall, Obj::Space, Obj::Space, Obj::Human ].to_vec() ];
+
+		struct HallInfoH {
+			x: usize,
+			y: usize,
+			end_x: usize,
+		};
+
+		let mut start_x: Option<usize> = None;
+		let mut halls = Vec::<HallInfoH>::new();
+
+		// find the hall '    '+
+		for y in 0..self.h {
+			for x in 0..self.w {
+				let idx = y * self.w + x;
+				let obj_here = self.get_obj_at_idx(idx);
+				if start_x.is_some() && (obj_here == Obj::Space || obj_here == Obj::Human) { 	// Continuation of hallway
+					// do nothing
+				} else if start_x.is_some() && obj_here == Obj::Wall {				// We have end of the hall					
+					halls.push( HallInfoH { x:start_x.unwrap(), y, end_x:x } );
+					start_x = None;
+				} else if start_x.is_some() {										// Not a real hallway
+					start_x = None;
+				}
+				if start_x.is_none() && x < self.w-hall_start.len() {
+					if hall_start.contains(&self.data[idx..idx+hall_start.len()].to_vec()) {		// Start of the hallway
+						start_x = Some(x);
+					}
+				}
+			}
+		} 
+		
+		// check if the hall is a valid hall (has a complete wall on one side)
+		for h in halls {
+			print!("hhall x: {} y: {} end_x: {} ",h.x, h.y, h.end_x);
+
+			let range = self.data.get(((h.y-1)*self.w+h.x+1)..((h.y-1)*self.w+h.end_x)).unwrap();		
+			let above_ok = contains_only(range,&Obj::Wall);
+
+			let range = self.data.get(((h.y+1)*self.w+h.x+1)..((h.y+1)*self.w+h.end_x)).unwrap();
+			let below_ok = contains_only(range,&Obj::Wall);
+			
+			println!("ok: {}", above_ok||below_ok);
+			if above_ok || below_ok {
+				for x in h.x+1..h.end_x {
+					self.noboxx_pts.push(Vector(x as i32,h.y as i32));
+				}
+			}
+		}
+
+		// now do it all vertically!
+		struct HallInfoV {
+			x: usize,
+			y: usize,
+			end_y: usize,
+		};
+		let mut start_y: Option<usize> = None;
+		let mut halls = Vec::<HallInfoV>::new();
+
+		// find the hall '    '+
+		for x in 0..self.w {
+			for y in 0..self.h {
+				let idx = y * self.w + x;
+				let obj_here = self.get_obj_at_idx(idx);
+				if start_y.is_some() && (obj_here == Obj::Space || obj_here == Obj::Human) { 	// Continuation of hallway
+					// do nothing
+				} else if start_y.is_some() && obj_here == Obj::Wall {				// We have end of the hall					
+					halls.push( HallInfoV { x:x, y:start_y.unwrap(), end_y:y } );
+					start_y = None;
+				} else if start_y.is_some() {										// Not a real hallway
+					start_y = None;
+				}
+				if start_y.is_none() && y < self.h-hall_start.len() {
+					if hall_start.to_vec().contains(&self.get_vslice(x,y,y+hall_start.len())) {		// Start of the hallway
+						start_y = Some(y);
+					}
+				}
+			}
+		} 
+		
+		// check if the hall is a valid hall (has a complete wall on one side)
+		for h in halls {
+			print!("vhall x: {} y: {} end_y: {} ",h.x, h.y, h.end_y);
+
+			let range = self.get_vslice(h.x-1, h.y+1, h.end_y);
+			let left_ok = contains_only(&range,&Obj::Wall);
+
+			let range = self.get_vslice(h.x+1, h.y+1, h.end_y);
+			let right_ok = contains_only(&range,&Obj::Wall);
+			
+			println!("ok: {}",left_ok||right_ok);
+			if left_ok || right_ok {
+				for y in h.y+1..h.end_y {
+					self.noboxx_pts.push(Vector(h.x as i32,y as i32));
+				}
+			}
+		}
+
 		self.noboxx_pts.sort_unstable();
 		self.noboxx_pts.dedup();
-		/*for v in self.noboxx_pts.iter() {
+		for v in self.noboxx_pts.iter() {
 			print!("{}",v.to_string());
-		} */
+		}
+
+		for v in &self.noboxx_pts {
+			print_data[self.w*v.1 as usize+v.0 as usize] = Obj::Wall;
+		}
+		for y in 0..self.h {
+			for x in 0..self.w {
+				print!("{}", print_data[y*self.w+x].to_char());
+			}
+			println!();
+		}
+
 	}
-	fn check_line(&mut self,line_idx: usize) {
-		let mut ok = true;
-		for x_idx in 0..self.w {
-			let obj = self.data[self.w * line_idx + x_idx];
-			match obj {
-				Obj::Wall | Obj::Space | Obj::Human => {},
-				_ => { ok = false; },
-			}
-		}
-		if ok {
-			for x_idx in 1..self.w-1 {
-				self.noboxx_pts.push(Vector(x_idx as i32,line_idx as i32));
-			}
-		}
-	}
-	fn check_col(&mut self,col_idx: usize) {
-		let mut ok = true;
-		for y_idx in 0..self.h {
-			let obj = self.data[self.w * y_idx + col_idx];
-			match obj {
-				Obj::Wall | Obj::Space | Obj::Human => {},
-				_ => { ok = false; },
-			}
-		}
-		if ok {
-			for y_idx in 1..self.h-1 {
-				self.noboxx_pts.push(Vector(col_idx as i32,y_idx as i32));
-			}
-		}
-	}	
 	pub fn do_boxx_pts(&mut self) {
 		let mut pts: Vec::<Vector> = Vec::new();
 		for y in 0..self.h {

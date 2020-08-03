@@ -1,0 +1,22 @@
+##########
+#&   *  O#
+# ###### #
+# #      #
+# #      #
+# #      #
+# ###### #
+#        #
+##########
+
+title: test level to check horizontal halls
+author: david47k
+description: 
+moves required: 
+
+legend:
+# wall
+* box
+O hole
+@ box in hole
+& person
+% person in hole

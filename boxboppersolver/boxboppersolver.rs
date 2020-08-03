@@ -125,6 +125,18 @@ impl PathNodeMap {
 			self.tail_nodes.push(self.nodes.len()-1);
 		}
 	}
+	pub fn double_boxx_situation(human_pos: Vector, pushdir: Move) -> bool {
+		// checks for a situation where we would be pushing the boxx next to another boxx against a wall and getting ourselves stuck
+		//         a = anything, h = human, pushdir = down, * = boxx, ## = wall, ' ' = space, only need row 1 or 3 not both
+		//  aa*#
+		//  H* #
+		//  aa*#
+		// test 1 (horizontal in pushdir direction): [ Obj::Boulder, Obj::Space, Obj::Wall ]
+		// test 2: above OR below (either or both, +1 in pushdir direction than above): [ Obj::Boulder, Obj::Wall ]
+
+
+		false
+	}
 	pub fn is_map_complete(&self) -> bool { 					// lets us know if there are no more tail nodes (map is complete)
 		self.tail_nodes.len() == 0	
 	}
@@ -283,8 +295,7 @@ fn main() -> Result<(),String> {
 		let mut nextmaps: Vec<PathNodeMap>;
 
 		// apply key moves
-		println!("applying key moves");
-		println!("flatmap...");
+		println!("applying key moves...");
 		nextmaps = maps.iter().flat_map(|map| map.get_key_moves()).collect();	// par_iter slows this down!
 		
 		// check for level complete / having solution
