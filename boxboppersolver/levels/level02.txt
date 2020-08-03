@@ -6,6 +6,6 @@
 ##########
 
 
-title: a harder level
+title: still super easy
 moves required: 27
 solution: RRRRLDRLDRLDRRRLLURRLLURRLLURR

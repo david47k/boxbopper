@@ -11,6 +11,7 @@ use std::sync::atomic::*;
 use boxbopperbase::{Obj,moves_to_string};
 use boxbopperbase::level::{load_level,Level,SpLevel};
 use boxbopperbase::vector::{Vector,Move};
+use boxbopperbase::dgens::{contains_only,contains_only_set};
 
 #[derive(Clone,Copy)]
 struct PathNode {
@@ -101,8 +102,8 @@ impl PathNodeMap {
 						let bnpt = &pt.add(&movedir.to_vector().double());
 						match self.level.get_obj_at_pt(bnpt) {
 							Obj::Space | Obj::Hole => { 
-								// yep, its a keymove, save key move
-								if !self.base_level.in_noboxx_pts(*bnpt) {
+								// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
+								if !self.base_level.in_noboxx_pts(*bnpt) && !self.double_boxx_situation(pt,*movedir) {
 									let km = KeyMove {
 										pn: tnode.clone(),
 										push_dir: *movedir,
@@ -125,17 +126,35 @@ impl PathNodeMap {
 			self.tail_nodes.push(self.nodes.len()-1);
 		}
 	}
-	pub fn double_boxx_situation(human_pos: Vector, pushdir: Move) -> bool {
+	pub fn double_boxx_situation(&self, human_pos: Vector, pushdir: Move) -> bool {
 		// checks for a situation where we would be pushing the boxx next to another boxx against a wall and getting ourselves stuck
 		//         a = anything, h = human, pushdir = down, * = boxx, ## = wall, ' ' = space, only need row 1 or 3 not both
-		//  aa*#
-		//  H* #
-		//  aa*#
+		//  aa*#	match1
+		//  H* #	match0
+		//  aa*#	match1
 		// test 1 (horizontal in pushdir direction): [ Obj::Boulder, Obj::Space, Obj::Wall ]
 		// test 2: above OR below (either or both, +1 in pushdir direction than above): [ Obj::Boulder, Obj::Wall ]
+		// 
+		// this method improves solution time by about 4-5%
 
+		let match0 = vec![Obj::Boulder, Obj::Space, Obj::Wall];
+		let match1 = vec! [ vec![Obj::Boulder, Obj::Wall],
+						    vec![Obj::BoulderInHole, Obj::Wall] ];
 
-		false
+		let vecs0 = vec![human_pos.add(&pushdir.to_vector()),
+						 human_pos.add(&pushdir.to_vector().mul(2)),
+						 human_pos.add(&pushdir.to_vector().mul(3))];
+		let line0: Vec::<Obj> = vecs0.into_iter().map(|v| self.level.get_obj_at_pt(&v)).collect();
+		let vecs1 = vec![human_pos.add(&pushdir.to_vector().mul(2)).add(&pushdir.to_vector().rotl()),
+						 human_pos.add(&pushdir.to_vector().mul(3)).add(&pushdir.to_vector().rotl())];
+		let vecs2 = vec![human_pos.add(&pushdir.to_vector().mul(2)).add(&pushdir.to_vector().rotr()),
+						 human_pos.add(&pushdir.to_vector().mul(3)).add(&pushdir.to_vector().rotr())];
+		let line1: Vec::<Obj> = vecs1.into_iter().map(|v| self.level.get_obj_at_pt(&v)).collect();
+		let line2: Vec::<Obj> = vecs2.into_iter().map(|v| self.level.get_obj_at_pt(&v)).collect();
+
+		line0 == match0 && ( line1 == match1[0] || line2 == match1[0] )
+		// line0 == match0 && ( line1 == match1[0] || line2 == match1[0] || line1 == match1[1] || line2 == match1[1] ) // slows us down by 2.5%
+		// line0 == match0 && ( contains_only(&match1, &line1) || contains_only(&match1, &line2) ) // too slow
 	}
 	pub fn is_map_complete(&self) -> bool { 					// lets us know if there are no more tail nodes (map is complete)
 		self.tail_nodes.len() == 0	

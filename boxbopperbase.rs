@@ -25,6 +25,9 @@ use vector::{Vector,Move,ALLMOVES};
 pub mod level;
 use level::{Level,load_builtin};
 
+pub mod dgens;
+use dgens::{contains_only};
+
 // we need time in msec since unix epoch (for js compatibility)
 #[cfg(not(target_arch = "wasm32"))]
 pub fn get_time_ms() -> f64 {

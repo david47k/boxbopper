@@ -22,6 +22,15 @@ impl Vector {
 	pub fn double(&self) -> Vector {
 		Vector(self.0 * 2, self.1 * 2)
 	}
+	pub fn mul(&self, n: i32) -> Vector {
+		Vector(self.0 * n, self.1 * n)
+	}
+	pub fn rotr(&self) -> Vector {
+		Vector(self.1, -self.0)
+	}
+	pub fn rotl(&self) -> Vector {
+		Vector(-self.1, self.0)
+	}
 	pub fn scale_by(&self, n: i32) -> Vector {
 		Vector(self.0 * n, self.1 * n)
 	}
