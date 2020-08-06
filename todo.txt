@@ -12,6 +12,5 @@ o  Create level creator!
 
 LOW PRIORITY
 ------------
+o  Publish!
 o  Consider adding an undo button
-
-
