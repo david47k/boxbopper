@@ -26,7 +26,7 @@ pub mod level;
 use level::{Level,load_builtin};
 
 pub mod dgens;
-use dgens::{contains_only};
+//use dgens::{contains_only};
 
 // we need time in msec since unix epoch (for js compatibility)
 #[cfg(not(target_arch = "wasm32"))]
@@ -89,6 +89,20 @@ impl Obj {
 	}
 }
 
+
+#[wasm_bindgen]
+pub fn tween(x: f64) -> f64 {
+	// input between 0 and 1 (or 0 and -1 with alternate function)
+	// returns tween between 0 and 1 that is slow at beginning and end, fast in middle
+	// basic tween is y = Ax + (1-A)(0.5(-cos(pi*x)+1)) -- where A is linear component (vs sinusoidal component)
+	let lin_component: f64 = 0.5;
+	if x < -1.0 { return -1.0; }
+	if x > 1.0  { return 1.0;  }
+	if x < 0.0 { // for 0..-1
+		return lin_component * x + (1.0 - lin_component) * (0.5 * (f64::cos(std::f64::consts::PI * x) - 1.0));	
+	} // for 0..+1
+	return lin_component * x + (1.0 - lin_component) * (0.5 * (- f64::cos(std::f64::consts::PI * x) + 1.0));
+}
 
 #[wasm_bindgen]
 pub struct Game {
@@ -163,11 +177,13 @@ impl Game {			// non-js
 		
 		// check destination point
 		let obj = self.level.get_obj_at_idx(idx);
+		let mut moved_boulder = false;
 		let new_obj = match obj {
 			Obj::Space => { Obj::Human },
 			Obj::Hole  => { Obj::HumanInHole },
 			Obj::Boulder | Obj::BoulderInHole => {  
 				// Move boulder in to next square
+				moved_boulder = true;
 				let boulder_pt = &self.human_pos.add(&_move.to_vector().double());
 				let i = boulder_pt.to_index(&self.level.w);
 				let o = self.level.get_obj_at_idx(i);
@@ -197,6 +213,26 @@ impl Game {			// non-js
 		};
 		self.sprites[0].apply_trans(trans);
 
+		// if we moved the boulder, we got to figure out which boulder it is, and update the sprite with a trans
+		if moved_boulder {
+			let initial_boulder_pt = &np;
+			let final_boulder_pt = &self.human_pos.add(&_move.to_vector().double());
+			let mut i = 0;
+			while i < self.sprites.len()-1 {
+				i += 1;
+				if self.sprites[i].obj == Obj::Boulder && self.sprites[i].final_xy == *initial_boulder_pt {
+					// move this one
+					let trans = Trans {
+						initial_xy: initial_boulder_pt.clone(),
+						final_xy: final_boulder_pt.clone(),
+						duration: 100_f64,
+					};
+					self.sprites[i].apply_trans(trans);
+					break;
+				}
+			}
+		}
+
 		// place human
 		self.level.set_obj_at_idx(idx, new_obj);	
 		self.human_pos = np;		
@@ -222,6 +258,7 @@ impl Game {
 		// restarts the game, using what's in base_level
 		let mut sp = Vec::with_capacity(32);
 		sp.push(Sprite::new(0, Obj::Human, get_time_ms(), 0.0, base_level.human_pos, base_level.human_pos));
+		base_level.get_boxx_pts().iter().enumerate().for_each(|(n,b)| sp.push(Sprite::new(n as u32, Obj::Boulder, get_time_ms(), 0.0, *b, *b)));
 		Game {
 			level_number: levelnum,
 			num_moves: 0,
@@ -400,8 +437,9 @@ impl Sprite {
 			return [f64::from(self.initial_xy.0), f64::from(self.initial_xy.1)];
 		} 
 		if t >= (self.initial_time + self.duration) {
-			// update location
-			// self.initial_xy = Vector(self.final_xy.0, self.final_xy.1);
+			// update location - don't do this here, it doesn't work
+			//self.initial_xy = self.final_xy.clone();
+			//console_log("post movement 1");
 
 			return [self.final_xy.0.into(), self.final_xy.1.into()];
 		}
@@ -412,8 +450,12 @@ impl Sprite {
 			self.initial_xy = self.final_xy.clone();
 			console_log("post movement 2");
 		}
-		let nx = delta * f64::from(self.final_xy.0 - self.initial_xy.0) + f64::from(self.initial_xy.0);
-		let ny = delta * f64::from(self.final_xy.1 - self.initial_xy.1) + f64::from(self.initial_xy.1);
+		// linear:
+		// let nx = delta * f64::from(self.final_xy.0 - self.initial_xy.0) + f64::from(self.initial_xy.0);
+		// let ny = delta * f64::from(self.final_xy.1 - self.initial_xy.1) + f64::from(self.initial_xy.1);
+		// tween:
+		let nx = tween(delta) * f64::from(self.final_xy.0 - self.initial_xy.0) + f64::from(self.initial_xy.0);
+		let ny = tween(delta) * f64::from(self.final_xy.1 - self.initial_xy.1) + f64::from(self.initial_xy.1);
 		[nx,ny]
 	}
 	pub fn get_sprite_info(&mut self) -> SpriteInfo {

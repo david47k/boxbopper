@@ -93,6 +93,8 @@ export class View {
 
 		// render level
 		const levelData = game.get_level_data();
+
+		// this part is all static for the level, and unless we wanted to add animation, we could consider pre-rendering all of it
 		getRange(game.get_level_height()).forEach( function(y) {
 			getRange(game.get_level_width()).forEach( function(x) {
 				var obj = levelData[y * game.get_level_width() + x];
@@ -102,7 +104,6 @@ export class View {
 					this.renderImg(x,y,0,1);
 				} else if(obj == Obj.Boulder) {
 					this.renderImg(x,y,0,1);
-					this.renderImg(x,y,0,2);
 				} else if(obj == Obj.Hole) {
 					this.renderImg(x,y,0,1);
 					this.renderImg(x,y,0,3);
@@ -114,7 +115,6 @@ export class View {
 				} else if(obj == Obj.BoulderInHole) {
 					this.renderImg(x,y,0,1);
 					this.renderImg(x,y,0,3);
-					this.renderImg(x,y,0,2);
 				}
 			}, this);
 		}, this);
@@ -124,6 +124,8 @@ export class View {
 		sprites.forEach( function(spriteinfo) {
 			if(spriteinfo.obj==Obj.Human) {
 				document.gameManager.view.renderImg(spriteinfo.x,spriteinfo.y,0,4);
+			} else if(spriteinfo.obj==Obj.Boulder) {
+				document.gameManager.view.renderImg(spriteinfo.x,spriteinfo.y,0,2);
 			}
 		});
 
@@ -131,13 +133,13 @@ export class View {
 		var gm = document.gameManager;
 		if(gm.game.have_win_condition()) {
 			var mt = "";
-			gm.game.get_move_history().forEach( function(c,i) {
+			/* gm.game.get_move_history().forEach( function(c,i) {
 				if(i%5==0) { mt += ' ' }
 				if(c==0) { mt += 'U' }
 				else if(c==1) { mt += 'R' }
 				else if(c==2) { mt += 'D' }
 				else if(c==3) { mt += 'L' }
-			});
+			}); */
 			document.getElementById("moves_taken").innerHTML = mt;
 			document.getElementById("solved").innerHTML = "You solved the puzzle!";
 		} else {

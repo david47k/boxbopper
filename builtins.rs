@@ -38,7 +38,7 @@ r"FOUR FIFTY-SIX
 ########
 ",
 
-r"SIX FORTY?
+r"SIX THIRTY-ONE
 ########
 ##    ##
 # * ** #

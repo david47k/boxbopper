@@ -10,7 +10,7 @@ use std::convert::TryInto;
 use crate::vector::Vector;
 use super::Obj;
 use crate::builtins::BUILTIN_LEVELS;
-use crate::dgens::{contains_only_set,contains_only};
+use crate::dgens::{contains_only};
 
 const X1VARS: [[Vector;3];8] = // only interested in the neighbours (not the opposite)
 [
@@ -191,7 +191,7 @@ impl Level {
 				} else if start_x.is_some() {										// Not a real hallway
 					start_x = None;
 				}
-				if start_x.is_none() && x < self.w-hall_len {
+				if start_x.is_none() && self.w >= 4 && x <= (self.w-hall_len) {
 					if hall_start.contains(&self.get_hslice(x, x+hall_len, y)) {
 						start_x = Some(x);
 					}
@@ -229,7 +229,7 @@ impl Level {
 				} else if start_y.is_some() {										// Not a real hallway
 					start_y = None;
 				}
-				if start_y.is_none() && y < self.h-hall_len {
+				if start_y.is_none() && self.h >= 4 && y <= (self.h-hall_len) {
 					if hall_start.contains(&self.get_vslice(x, y, y+hall_len)) {		// Start of the hallway
 						start_y = Some(y);
 					}
@@ -280,6 +280,9 @@ impl Level {
 	}
 	pub fn eq_data(&self, b: &Level) -> bool {
 		self.data == b.data
+	}
+	pub fn get_boxx_pts(&self) -> &Vec<Vector> {
+		return &self.boxx_pts;
 	}
 }
 
@@ -363,6 +366,7 @@ pub fn load_builtin(number: usize) -> Option<Level> {
 	let mut w = 0;
 	let mut data = Vec::<Obj>::with_capacity(128);
 	let mut human_pos: Vector = Vector(0,0);
+	let mut boxx_pts = Vec::<Vector>::new();
 	let mut level_title: String = String::from("Untitled");
 
     for line in level.lines() {		
@@ -385,6 +389,8 @@ pub fn load_builtin(number: usize) -> Option<Level> {
 				if c == '&' || c == '%' {
 					// found human_pos
 					human_pos = Vector(i.try_into().unwrap(),(count-1).try_into().unwrap());
+				} else if c == '*' || c == '@' {
+					boxx_pts.push(Vector(i.try_into().unwrap(),(count-1).try_into().unwrap()));
 				}
 				data.push( Obj::from_char(&c) );
 			}
@@ -413,7 +419,7 @@ pub fn load_builtin(number: usize) -> Option<Level> {
 		w: w,
 		h: h,
 		noboxx_pts: Vec::new(),
-		boxx_pts: Vec::new(),
+		boxx_pts: boxx_pts,
 		human_pos: human_pos,
 		data: data,
 	};
