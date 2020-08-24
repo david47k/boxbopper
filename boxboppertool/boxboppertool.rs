@@ -160,16 +160,16 @@ pub fn solve_level(base_level: &Level, max_steps_p: u32, verbosity: u32) -> Opti
 		});
 
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
-		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve() ).collect();
+		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve() ).collect(); // collect_into_vec doesn't seem to be any faster
 		mapsr.clear();
 		let mut nextmaps: Vec<PathNodeMap>;
 
 		// apply key moves
 		if verbosity > 1 { println!("applying key moves..."); }
-		nextmaps = maps.iter().flat_map(|map| map.apply_key_pushes()).collect();	// par_iter slows this down! it needs to be sped up!
+		nextmaps = maps.iter().flat_map(|map| map.apply_key_pushes()).collect();	// par_iter slows this down a lot!!
 
 		// filter out the long paths
-		if verbosity > 1 { println!("pruning long paths..."); } // this is also slow
+		if verbosity > 1 { println!("pruning long paths..."); }
 		let ms = max_steps.load(AtomicOrdering::SeqCst);
 		nextmaps.retain(|m| m.nodes[0].steps < ms);
 
@@ -213,8 +213,6 @@ pub fn solve_level(base_level: &Level, max_steps_p: u32, verbosity: u32) -> Opti
 
 }
 
-// 
-
 // level equality first, then maximize depth, then minimize moves
 pub fn pnm_cmp(a: &PathNodeMap, b: &PathNodeMap) -> Ordering {
 	let ord = a.level.partial_cmp(&b.level).unwrap();
@@ -253,22 +251,22 @@ pub fn pnm_cmp_d(a: &PathNodeMap, b: &PathNodeMap) -> Ordering {
 }
 
 fn dedupe_equal_levels(maps: &mut Vec::<PathNodeMap>) {
-	maps.par_sort_unstable_by(|a,b| pnm_cmp_level_min_steps(a,b));
+	maps.par_sort_unstable_by(|a,b| {
+		let ord = a.level.partial_cmp(&b.level).unwrap();
+		if ord == Ordering::Equal {
+			if a.nodes[0].steps < b.nodes[0].steps {
+				return Ordering::Less;
+			}
+			if a.nodes[0].steps > b.nodes[0].steps {
+				return Ordering::Greater;
+			}
+		}
+		ord			
+	});
 	maps.dedup_by(|a,b| a.level.eq_data(&b.level)); // it keeps the first match for each level (sorted to be smallest steps)
 }
 
-fn pnm_cmp_level_min_steps(a: &PathNodeMap, b: &PathNodeMap) -> Ordering {
-	let ord = a.level.partial_cmp(&b.level).unwrap();
-	if ord == Ordering::Equal {
-		if a.nodes[0].steps < b.nodes[0].steps {
-			return Ordering::Less;
-		}
-		if a.nodes[0].steps > b.nodes[0].steps {
-			return Ordering::Greater;
-		}
-	}
-	ord
-}
+
 
 fn select_unique_n_from(count: usize, len: usize, rng: &mut rand_chacha::ChaCha8Rng) -> Vec::<usize> {
 	if len <= count {
