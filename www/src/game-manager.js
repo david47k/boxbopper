@@ -58,9 +58,9 @@ export class GameManager {
 	}
 
 	restart(levelNum) {	
-		this.bestScore = Storage.getBestScore(this.levelNumber);
 		this.game = new Game(this.levelNumber);
 		this.levelTitle = this.game.get_level_title();
+		this.bestScore = Storage.getBestScore(this.levelTitle);
 		if(this.view) {
 			this.view.setUp(this.game.get_level_width(),this.game.get_level_height());
 			document.getElementById('prev_button').disabled = (levelNum==0);
@@ -82,9 +82,9 @@ export class GameManager {
 	render() {
 		var gm = document.gameManager;
 		if(gm.game.have_win_condition()) {
-			if(isNaN(parseInt(Storage.getBestScore(gm.levelNumber))) || gm.game.num_moves < Storage.getBestScore(gm.levelNumber)) {
+			if(isNaN(parseInt(Storage.getBestScore(gm.levelTitle))) || gm.game.num_moves < Storage.getBestScore(gm.levelTitle)) {
 				gm.bestScore = gm.game.num_moves;
-				Storage.setBestScore(gm.levelNumber, gm.bestScore);
+				Storage.setBestScore(gm.levelTitle, gm.bestScore);
 			}
 		}
 		if(gm.game) {

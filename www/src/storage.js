@@ -1,10 +1,10 @@
 export default {
-	getBestScore: function(levelnum) {
-		var x = parseInt(localStorage.getItem('bxbop_bestScore_'+levelnum));
+	getBestScore: function(levelTitle) {
+		var x = parseInt(localStorage.getItem('bxbop_bestScore_'+levelTitle));
 		if(isNaN(x)) return 'unsolved';
 		return x;
 	},
-	setBestScore: function(levelnum,bestScore) {
-		localStorage.setItem('bxbop_bestScore_'+levelnum, bestScore);
+	setBestScore: function(levelTitle, bestScore) {
+		localStorage.setItem('bxbop_bestScore_'+levelTitle, bestScore);
 	},
 }

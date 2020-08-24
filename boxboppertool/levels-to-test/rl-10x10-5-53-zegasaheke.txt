@@ -1,0 +1,21 @@
+##########
+## #&#   #
+## O* *# #
+#  #     #
+#  #  #  #
+##   * # #
+# @#*   ##
+#O OO # ##
+# #    # #
+##########
+
+title: zegasaheke
+difficulty: 7
+moves required: 53
+solution: DRDDLDDRDLLLRRUUUURRRRUULLDURRDDLLLULDDDDRDLRURULULDD
+seed: 66
+width: 10
+height: 10
+wall_density: 23
+num_boxxes: 5
+

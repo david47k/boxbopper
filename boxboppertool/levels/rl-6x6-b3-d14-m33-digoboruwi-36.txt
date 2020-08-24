@@ -1,0 +1,17 @@
+######
+#OO  #
+#%* ##
+#* * #
+#    #
+######
+
+title: digoboruwi-36
+difficulty: 4
+moves required: 33
+solution: RDDRRULDLLUURURDLLDDRUDRRULLUDDLU
+seed: 206
+width: 6
+height: 6
+wall_density: 20
+num_boxxes: 3
+

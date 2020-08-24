@@ -8,13 +8,13 @@
       * { box-sizing: border-box; outline: 0; margin: 0; }
       body { background: #0d0d47; color: #aaa; font-family: sans-serif; display: flex; flex-direction: column; }
       canvas {
-        border: 2px solid black;
+        border: 1px solid black;
       }
-      #pre  { flex: 0 0 1em; }
-      #post { flex: 0 1 1em; }
+      #pre  { flex: 0 0 5px; }
+      #post { flex: 0 1 5px; }
       #vmid { flex: 1 0 95vh; display: flex; }
-      @media (height < 40em) { #vmid { flex: 1 0 90vh; } }
-      @media (height < 35em) { #vmid { flex: 1 0 85vh; } }
+      @media (height < 40em) { #vmid { flex: 1 0 90vh; } }      /* these give us roughly the right height for our canvas */
+      @media (height < 35em) { #vmid { flex: 1 0 85vh; } }      /* we override it but these are staying just in case */
       @media (height < 16em) { #vmid { flex: 1 0 13em; } }
 
       #hleft     { flex: 0 0 12em; padding: 0 1em 0 1em; }

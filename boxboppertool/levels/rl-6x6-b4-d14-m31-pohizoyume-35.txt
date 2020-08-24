@@ -1,0 +1,17 @@
+######
+#  #O#
+#O**&#
+#  @*#
+#   O#
+######
+
+title: pohizoyume-35
+difficulty: 3
+moves required: 31
+solution: DLDLLURLUURDRLLDDRRURULLRDDLLUR
+seed: 714
+width: 6
+height: 6
+wall_density: 20
+num_boxxes: 4
+

@@ -7,7 +7,7 @@ use std::io::BufRead;
 
 use boxbopperbase::{Game};
 use boxbopperbase::vector::{Move};
-//use boxbopperbase::level::{Level,load_builtin};
+use boxbopperbase::level::{Level};
 use boxbopperbase::builtins::BUILTIN_LEVELS;
 
 pub fn get_user_input() -> String {
@@ -21,21 +21,28 @@ pub fn get_user_input() -> String {
 
 
 fn main() -> Result<(),String> {
-	let mut _filename: String = String::from("levels/level01.txt");
+	let mut filename: String = String::from("");
 	
 	let mut count = 0;
 	for env in std::env::args() {
 		if count > 0 {
-			_filename = env;
+			filename = env;
 		}
 		count += 1;
 	}
 	
-	// load level
-	//let base_level = load_level(&filename)?;
-	let mut current_level: u32 = 0;
+	let custom_level;
+	let mut state;
 	
-	let mut state = Game::new(0);
+	// load level
+	if filename.len() > 0 {
+		custom_level = Level::from_file(&filename).expect("Unable to open custom level file");
+		state = Game::new_from_level(&custom_level,0);
+	} else {
+		state = Game::new(0);
+	}
+	
+	let mut current_level: u32 = 0;	
 	
 	loop {
 		state.process_moves();

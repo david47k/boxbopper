@@ -1,0 +1,10 @@
+##########
+#&   *  O#
+#    *  O#
+#    *  O#
+#    *  O#
+##########
+
+title: still super easy
+moves required: 27
+solution: RRRRLDRLDRLDRRRLLURRLLURRLLURR

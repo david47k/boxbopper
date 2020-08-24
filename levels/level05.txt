@@ -1,0 +1,10 @@
+########
+##    ##
+# * ** #
+#OOOOOO#
+# ** * #
+##  & ##
+########
+
+moves required: 31
+solution: RULURLDDLLURDRULULRUURRDLULDULD

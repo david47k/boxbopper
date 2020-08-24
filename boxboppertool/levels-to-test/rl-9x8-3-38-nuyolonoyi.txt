@@ -1,0 +1,18 @@
+#########
+#     # #
+# @&*#  #
+#O   #  #
+# #   @ #
+#   #  ##
+#   #   #
+#########
+
+title: nuyolonoyi
+moves required: 38
+solution: URDLDDRRDRULLUDRRRUULDRDLLLULUURDDLLLDDRRURRLULL
+seed: 43
+width: 9
+height: 8
+wall_density: 20
+num_boxxes: 3
+

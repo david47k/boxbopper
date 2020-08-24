@@ -1,0 +1,11 @@
+######
+# &*O#
+# #@@#
+# *  #
+##  O#
+######
+
+title: test4
+description: solvable in 14 moves
+solution: RDDUULLDDRDRU
+

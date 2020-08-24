@@ -14,3 +14,39 @@ LOW PRIORITY
 ------------
 o  Publish!
 o  Consider adding an undo button
+
+LEVEL CREATOR:
+==============
+o  Ensure human can get to every boxx (e.g. 7,9) ?
+o  Convert into boxboppertool create / solve --level... n --max...
+o  Save generation parameters
+
+
+
+
+		let scaleUp = function(simg) {
+			let w = simg.width * 2;
+			let h = simg.height * 2;
+			let data = Uint8ClampedArray(w*h*4);
+			for(y=0;y<simg.height;y++) {
+				for(x=0;x<simg.width;x++) {
+					data[y*w*4*2 + x*4*2 + 0] = simg.data[y*simg.width + x + 0];
+					data[y*w*4*2 + x*4*2 + 1] = simg.data[y*simg.width + x + 1];
+					data[y*w*4*2 + x*4*2 + 2] = simg.data[y*simg.width + x + 2];
+					data[y*w*4*2 + x*4*2 + 3] = simg.data[y*simg.width + x + 3];
+					data[y*w*4*2 + x*4*2 + 4] = simg.data[y*simg.width + x + 0];
+					data[y*w*4*2 + x*4*2 + 5] = simg.data[y*simg.width + x + 1];
+					data[y*w*4*2 + x*4*2 + 6] = simg.data[y*simg.width + x + 2];
+					data[y*w*4*2 + x*4*2 + 7] = simg.data[y*simg.width + x + 3];
+					data[(y*2+1)*w*4 + x*4*2 + 0] = simg.data[y*simg.width + x + 0];
+					data[(y*2+1)*w*4 + x*4*2 + 1] = simg.data[y*simg.width + x + 1];
+					data[(y*2+1)*w*4 + x*4*2 + 2] = simg.data[y*simg.width + x + 2];
+					data[(y*2+1)*w*4 + x*4*2 + 3] = simg.data[y*simg.width + x + 3];
+					data[(y*2+1)*w*4 + x*4*2 + 4] = simg.data[y*simg.width + x + 0];
+					data[(y*2+1)*w*4 + x*4*2 + 5] = simg.data[y*simg.width + x + 1];
+					data[(y*2+1)*w*4 + x*4*2 + 6] = simg.data[y*simg.width + x + 2];
+					data[(y*2+1)*w*4 + x*4*2 + 7] = simg.data[y*simg.width + x + 3];
+				}
+			}
+			return new ImageData(data,w,h);
+		};

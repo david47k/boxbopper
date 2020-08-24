@@ -13,39 +13,24 @@ use js_sys::{Array,JsString};
 
 #[cfg(target_arch = "wasm32")]
 use web_sys::console;
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::{SystemTime,UNIX_EPOCH};
 
 pub mod builtins;
-use builtins::BUILTIN_LEVELS;
+use builtins::{BUILTIN_LEVELS};
 
 pub mod vector;
 use vector::{Vector,Move,ALLMOVES};
 
 pub mod level;
-use level::{Level,load_builtin};
+use level::{Level};
 
 pub mod dgens;
 //use dgens::{contains_only};
 
-// we need time in msec since unix epoch (for js compatibility)
-#[cfg(not(target_arch = "wasm32"))]
-pub fn get_time_ms() -> f64 {
-    let since_the_epoch = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-		.expect("Time went backwards");
-	let ms: u64 = since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1_000_000;
-	let lopart: u32 = (ms & 0xFFFFFFFF) as u32; 
-	let hipart: u32 = (ms >> 32) as u32;
-	let t: f64 = f64::from(lopart) + (f64::from(hipart) * 4.294967296e9);
-	t
-}
+pub mod sprite;
+use sprite::{Sprite,Trans};
 
-#[cfg(target_arch = "wasm32")]
-pub fn get_time_ms() -> f64 {
-	let t = (js_sys::Date::now() as u64 / 10) * 10;
-	return t as f64;
-}
+pub mod time;
+use time::{get_time_ms};
 
 #[cfg(not(target_arch = "wasm32"))]
 pub fn console_log(s: &str) {
@@ -89,20 +74,6 @@ impl Obj {
 	}
 }
 
-
-#[wasm_bindgen]
-pub fn tween(x: f64) -> f64 {
-	// input between 0 and 1 (or 0 and -1 with alternate function)
-	// returns tween between 0 and 1 that is slow at beginning and end, fast in middle
-	// basic tween is y = Ax + (1-A)(0.5(-cos(pi*x)+1)) -- where A is linear component (vs sinusoidal component)
-	let lin_component: f64 = 0.5;
-	if x < -1.0 { return -1.0; }
-	if x > 1.0  { return 1.0;  }
-	if x < 0.0 { // for 0..-1
-		return lin_component * x + (1.0 - lin_component) * (0.5 * (f64::cos(std::f64::consts::PI * x) - 1.0));	
-	} // for 0..+1
-	return lin_component * x + (1.0 - lin_component) * (0.5 * (- f64::cos(std::f64::consts::PI * x) + 1.0));
-}
 
 #[wasm_bindgen]
 pub struct Game {
@@ -250,7 +221,7 @@ impl Game {
 		if levelnum as usize >= BUILTIN_LEVELS.len() {
 			levelnum = (BUILTIN_LEVELS.len()-1) as u32;
 		}
-		let base_level = load_builtin(levelnum as usize).unwrap(); 
+		let base_level = Level::from_builtin(levelnum as usize).unwrap(); 
 		return Game::new_from_level(&base_level,levelnum);
 	}
 
@@ -361,8 +332,6 @@ impl Game {
 }
 
 
-
-
 pub fn moves_to_string(moves: &Vec::<Move>) -> String {
 	let mut s: String = "".to_string();
 	for m in moves.iter() {
@@ -370,119 +339,3 @@ pub fn moves_to_string(moves: &Vec::<Move>) -> String {
 	}
 	return s;
 }
-
-
-
-
-#[wasm_bindgen]
-#[derive(Clone,Copy)]
-pub struct SpriteInfo {		// location information passed back to JS so it can render the sprite in the correct location
-	pub id: u32,
-	pub obj: Obj,
-	pub x: f64,
-	pub y: f64,
-}
-
-#[wasm_bindgen]
-#[derive(Clone,Copy)]
-pub struct Trans {
-	pub initial_xy: Vector,
-	pub final_xy: Vector,
-	pub duration: f64,
-}
-
-#[wasm_bindgen]
-#[derive(Clone)]
-pub struct Sprite {
-	pub id: u32,	// unique id for objects of this Obj type. i.e. playerNumber or boulderNumber.
-	pub obj: Obj,	// what type of object affects how we render it
-	pub initial_xy: Vector,		// movement transition to apply
-	pub initial_time: f64,
-	pub final_xy: Vector,
-	pub duration: f64,
-	priv_is_moving: u32,
-}
-
-impl Sprite {
-	pub fn new(id: u32, obj: Obj, initial_time: f64, duration: f64, initial_xy: Vector, final_xy: Vector) -> Sprite {
-		Sprite {
-			id,
-			obj,
-			initial_time,
-			duration,
-			initial_xy,
-			final_xy,
-			priv_is_moving: 0,
-		}
-	}
-	pub fn apply_trans(&mut self, trans: Trans) {		
-		if !self.is_moving() { 
-			self.initial_time = get_time_ms();
-			self.duration = trans.duration;
-			self.initial_xy = trans.initial_xy.clone();
-			self.final_xy = trans.final_xy.clone();
-		} else {
-			// ignore the requested movement !
-			console_log("move requested while already moving!");
-		}
-	}
-	pub fn is_moving(&self) -> bool {
-		get_time_ms() < (self.initial_time + self.duration)
-	}
-
-	pub fn get_xy(&mut self) -> [f64;2] {
-		// linear
-		let t = get_time_ms();
-		if t <= self.initial_time {
-			return [f64::from(self.initial_xy.0), f64::from(self.initial_xy.1)];
-		} 
-		if t >= (self.initial_time + self.duration) {
-			// update location - don't do this here, it doesn't work
-			//self.initial_xy = self.final_xy.clone();
-			//console_log("post movement 1");
-
-			return [self.final_xy.0.into(), self.final_xy.1.into()];
-		}
-		// according to time & duration, we are currently moving
-		let mut delta: f64 = (t - self.initial_time) / self.duration;
-		if delta > 1_f64 {
-			delta = 1_f64;
-			self.initial_xy = self.final_xy.clone();
-			console_log("post movement 2");
-		}
-		// linear:
-		// let nx = delta * f64::from(self.final_xy.0 - self.initial_xy.0) + f64::from(self.initial_xy.0);
-		// let ny = delta * f64::from(self.final_xy.1 - self.initial_xy.1) + f64::from(self.initial_xy.1);
-		// tween:
-		let nx = tween(delta) * f64::from(self.final_xy.0 - self.initial_xy.0) + f64::from(self.initial_xy.0);
-		let ny = tween(delta) * f64::from(self.final_xy.1 - self.initial_xy.1) + f64::from(self.initial_xy.1);
-		[nx,ny]
-	}
-	pub fn get_sprite_info(&mut self) -> SpriteInfo {
-		let pt = self.get_xy();
-		SpriteInfo {
-			id: self.id,
-			obj: self.obj,
-			x: pt[0],
-			y: pt[1],
-		}
-	}
-}
-
-
-fn _undo_move(base_level: Level, our_state: &mut Game)  {
-	// resets to a certain spot using move history
-	our_state.num_moves = 0;
-	our_state.move_history = Vec::<Move>::new();
-	our_state.level = base_level;
-}
-
-
-fn _apply_moves(state: &mut Game, moves: &Vec::<Move>) -> Result<(),String> {
-	let _s = state;
-	let _m = moves;
-	return Err("Not implemented".to_string());
-}
-
-
-

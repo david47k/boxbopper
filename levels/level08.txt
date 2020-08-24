@@ -1,0 +1,15 @@
+###########
+#### OOO###
+####OOOO###
+#  ###* ###
+# * *  ** #
+#& * *    #
+#   ###   #
+###########
+
+moves required: 105
+solution: UURDRRDRRUUURULDDDDLLURDRUUDDRUUULLRDDLLLLLDDRULURRRRDRUURULDDLLLLDDRULURRRDRUUURDDDDRRULDLUUUDDRRULLDLUU
+
+real    3m0.605s
+user    5m29.453s
+sys     0m30.188s

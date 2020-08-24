@@ -1,0 +1,17 @@
+######
+#    #
+# O* #
+#*O*@#
+#%  ##
+######
+
+title: bepevuveka-31
+difficulty: 2
+moves required: 28
+solution: RUUURRDLULLDDRDRULLUURDURRDL
+seed: 915
+width: 6
+height: 6
+wall_density: 20
+num_boxxes: 4
+

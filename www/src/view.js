@@ -31,7 +31,8 @@ export class View {
 			this.container.removeChild(child);
 		}
 
-		const { width, height } = this.container.getBoundingClientRect();
+		let { width, height } = this.container.getBoundingClientRect();
+		height = document.documentElement.clientHeight - 15; // override the above height estimate: 10px padding 2px border 3px unknown
 		this.unitOnScreen = Math.floor(Math.min( width / gameWidth,	height / gameHeight ));
 		this.unitOnScreen = ( Math.floor(this.unitOnScreen / 4) * 4 );	// canvas drawImage is crappy, reduce aliasing artifacts
 		if(this.unitOnScreen > 256) this.unitOnScreen = 256; // reducing aliasing artifacts - can also split src into individual sprites
@@ -46,15 +47,15 @@ export class View {
 		}); 
 */
 
-		// Because ImageBitmap options aren't yet widely supported, and OffscreenCanvas isn't widely supported,
+		// Because ImageBitmap options & imageSmoothingQuality aren't yet widely supported, and OffscreenCanvas isn't widely supported,
 		// we are using pre-sized images. we can scale down and it looks OK, but we can't scale up.
 		// blocksizes 64, 128, 192, 256
 		// we return because this method will get called again once the image is loaded
-		if(this.unitOnScreen <= 64 && this.srcBlockSize != 64) {
+/*		if(this.unitOnScreen <= 64 && this.srcBlockSize != 64) {
 			this.srcBlockSize = 64;
 			this.srcImage.src = 'bitmap_64.png';
 			return;
-		} else if(this.unitOnScreen > 64 && this.unitOnScreen <= 128 && this.srcBlockSize != 128) {
+		} else */ if(this.unitOnScreen > 0 && this.unitOnScreen <= 128 && this.srcBlockSize != 128) {
 			this.srcBlockSize = 128;
 			this.srcImage.src = 'bitmap_128.png';
 			return;
@@ -69,7 +70,6 @@ export class View {
 		}
 
 		this.scaleToScreen = distance => Math.round(distance * this.unitOnScreen);
-		//this.projectPosition = position => position.scale_by(this.unitOnScreen);
 
 	
 		const canvas = document.createElement('canvas');

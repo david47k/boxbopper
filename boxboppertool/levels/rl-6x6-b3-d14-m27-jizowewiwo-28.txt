@@ -1,0 +1,17 @@
+######
+# &# #
+# ** #
+#OO* #
+#   O#
+######
+
+title: jizowewiwo-28
+difficulty: 4
+moves required: 27
+solution: DLDDRRRUULLDLDRRLUUULDRRRDL
+seed: 241
+width: 6
+height: 6
+wall_density: 20
+num_boxxes: 3
+
