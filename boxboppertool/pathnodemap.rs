@@ -28,7 +28,7 @@ pub struct PathNodeMap {
 	pub nodes: Vec::<PathNode>,
 	tail_nodes: Vec::<usize>,
 	key_moves: Vec::<KeyMove>,
-	pub moves_taken: Vec::<Move>,
+	pub path: Vec::<Move>,
 	pub depth: u32,
 	pub contender_flag: bool,
 }
@@ -41,7 +41,7 @@ impl PathNodeMap {
 			nodes: Vec::<PathNode>::with_capacity(64),
 			tail_nodes: Vec::<usize>::with_capacity(32),
 			key_moves: Vec::<KeyMove>::with_capacity(16),
-			moves_taken: Vec::<Move>::with_capacity(64),
+			path: Vec::<Move>::with_capacity(64),
 			contender_flag: false,
 			depth: 0,
 		};
@@ -68,14 +68,14 @@ impl PathNodeMap {
 		}		
 		map
 	}
-	pub fn step_solve(&mut self) { 												// steps tail nodes forwards one		
+	pub fn step_solve(&mut self) { 										// steps tail nodes forwards one		
 		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
 		
-		for tnidx in self.tail_nodes.iter() {									// for each tail node
+		for tnidx in self.tail_nodes.iter() {							// for each tail node
 			let tnode = &self.nodes[*tnidx];
 			for movedir in ALLMOVES.iter() {							// for each possible move
 				let pt = tnode.pt;									
-				let npt = pt.add(&movedir.to_vector());						// what is in this direction? let's find out	
+				let npt = pt.add(&movedir.to_vector());					// what is in this direction? let's find out	
 				match self.level.get_obj_at_pt(&npt) {
 					Obj::Space | Obj::Hole => {
 						// first check this point isn't already in our list!!!						
@@ -97,8 +97,8 @@ impl PathNodeMap {
 						};
 						new_tail_nodes.push(pn);
 					}
-					Obj::Boulder | Obj::BoulderInHole => { 
-						// What's past the boulder? We can push into Space and Hole (and HumanInHole cos we'll be out of the way), nothing else.
+					Obj::Boxx | Obj::BoxxInHole => { 
+						// What's past the boxx? We can push into Space and Hole (and HumanInHole cos we'll be out of the way), nothing else.
 						let bnpt = &pt.add(&movedir.to_vector().double());
 						match self.level.get_obj_at_pt(bnpt) {
 							Obj::Space | Obj::Hole | Obj::Human | Obj::HumanInHole => { 
@@ -126,14 +126,14 @@ impl PathNodeMap {
 			self.tail_nodes.push(self.nodes.len()-1);
 		}
 	}
-	pub fn step_unsolve(&mut self) { 												// steps tail nodes forwards one		
+	pub fn step_unsolve(&mut self) { 									// steps tail nodes forwards one		
 		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
 		
-		for tnidx in self.tail_nodes.iter() {									// for each tail node
+		for tnidx in self.tail_nodes.iter() {							// for each tail node
 			let tnode = &self.nodes[*tnidx];
 			for movedir in ALLMOVES.iter() {							// for each possible move
 				let pt = tnode.pt;									
-				let npt = pt.add(&movedir.to_vector());						// what is in this direction? let's find out	
+				let npt = pt.add(&movedir.to_vector());					// what is in this direction? let's find out	
 				match self.level.get_obj_at_pt(&npt) {
 					Obj::Space | Obj::Hole => {
 						// first check this point isn't already in our list!!!						
@@ -155,13 +155,12 @@ impl PathNodeMap {
 						};
 						new_tail_nodes.push(pn);
 					}
-					Obj::Boulder | Obj::BoulderInHole => { 
+					Obj::Boxx | Obj::BoxxInHole => { 
 						// What's in our reverse direction? We can pull into Space and Hole (and HumanInHole cos we won't be there), nothing else.
 						let bnpt = &pt.add(&movedir.to_vector().mul(-1));
 						match self.level.get_obj_at_pt(bnpt) {
 							Obj::Space | Obj::Hole | Obj::Human | Obj::HumanInHole => { 
-								// yep, its a keypull, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
-								//if !self.base_level.in_noboxx_pts(*bnpt) && !self.double_boxx_situation(pt,*movedir) {
+								// yep, its a keypull, save key move.. 
 								let km = KeyMove {
 									pn: tnode.clone(),
 									move_dir: movedir.clone().reverse(),
@@ -189,14 +188,14 @@ impl PathNodeMap {
 		//  aa*#	match1
 		//  H* #	match0
 		//  aa*#	match1
-		// test 1 (horizontal in pushdir direction): [ Obj::Boulder, Obj::Space, Obj::Wall ]
-		// test 2: above OR below (either or both, +1 in pushdir direction than above): [ Obj::Boulder, Obj::Wall ]
+		// test 1 (horizontal in pushdir direction): [ Obj::Boxx, Obj::Space, Obj::Wall ]
+		// test 2: above OR below (either or both, +1 in pushdir direction than above): [ Obj::Boxx, Obj::Wall ]
 		// 
 		// this method improves solution time by about 4-5%
 
-		let match0 = vec![Obj::Boulder, Obj::Space, Obj::Wall];
-		let match1 = vec! [ vec![Obj::Boulder, Obj::Wall],
-						    vec![Obj::BoulderInHole, Obj::Wall] ];
+		let match0 = vec![Obj::Boxx, Obj::Space, Obj::Wall];
+		let match1 = vec! [ vec![Obj::Boxx, Obj::Wall],
+						    vec![Obj::BoxxInHole, Obj::Wall] ];
 
 		let vecs0 = vec![human_pos.add(&pushdir.to_vector()),
 						 human_pos.add(&pushdir.to_vector().mul(2)),
@@ -238,21 +237,21 @@ impl PathNodeMap {
 		let new_obj = match obj {
 			Obj::Space => { panic!("found space, expecting boxx"); },
 			Obj::Hole  => { panic!("found hole, expecting boxx"); },
-			Obj::Boulder | Obj::BoulderInHole => {  
-				// Move boulder in to next square
-				let boulder_pt = &np.add(&km.move_dir.to_vector());
-				let i = boulder_pt.to_index(&level.w);
+			Obj::Boxx | Obj::BoxxInHole => {  
+				// Move boxx in to next square
+				let boxx_pt = &np.add(&km.move_dir.to_vector());
+				let i = boxx_pt.to_index(&level.w);
 				let o = level.get_obj_at_idx(i);
 				if o == Obj::Hole {
-					level.set_obj_at_idx(i, Obj::BoulderInHole);
+					level.set_obj_at_idx(i, Obj::BoxxInHole);
 				} else if o == Obj::Space {
-					level.set_obj_at_idx(i, Obj::Boulder);
+					level.set_obj_at_idx(i, Obj::Boxx);
 				} else {
 					panic!("trying to push boxx into unexpected obj");
 				}
 			
-				// We pushed the boulder
-				if obj == Obj::BoulderInHole {
+				// We pushed the boxx
+				if obj == Obj::BoxxInHole {
 					Obj::HumanInHole
 				} else {
 					Obj::Human
@@ -281,23 +280,23 @@ impl PathNodeMap {
 		};
 		level.set_obj_at_pt(&human_pos, new_obj);
 		
-		// remove old boulder
+		// remove old boxx
 		let pull_from_pt = km.pn.pt.add(&km.move_dir.reverse().to_vector());
 		let pull_obj = level.get_obj_at_pt(&pull_from_pt);
 		//println!("pull: pt: {}, obj: {}",pull_pt.to_string(),pull_obj.to_char().to_string());
 		let new_obj = match pull_obj {
-			Obj::Boulder       => { Obj::Space },
-			Obj::BoulderInHole => { Obj::Hole },
+			Obj::Boxx       => { Obj::Space },
+			Obj::BoxxInHole => { Obj::Hole },
 			_ => { panic!("Key pull doesn't seem to be moving a boxx!"); }
 		};
 		level.set_obj_at_pt(&pull_from_pt, new_obj);
 
-		// place new boulder
+		// place new boxx
 		let pull_to_pt = &km.pn.pt;
 		let pull_to_obj = level.get_obj_at_pt(pull_to_pt);
 		let new_obj = match pull_to_obj {
-			Obj::Space		=> { Obj::Boulder },
-			Obj::Hole		=> { Obj::BoulderInHole },
+			Obj::Space		=> { Obj::Boxx },
+			Obj::Hole		=> { Obj::BoxxInHole },
 			_ => { panic!("Key pull seems to be moving boxx into something weird!"); }
 		};
 		level.set_obj_at_pt(pull_to_pt, new_obj);
@@ -326,16 +325,16 @@ impl PathNodeMap {
 		};
 		let mut tail_nodes = Vec::<usize>::with_capacity(32);
 		tail_nodes.push(0);
-		let mut moves_taken = self.moves_taken.clone();
-		moves_taken.append(&mut self.backtrace_moves(&km.pn));
-		moves_taken.push(km.move_dir);
+		let mut path = self.path.clone();
+		path.append(&mut self.backtrace_moves(&km.pn));
+		path.push(km.move_dir);
 		PathNodeMap {
 			base_level: self.base_level.clone(),
 			level: level,
 			nodes: vec![initial_pn],
 			tail_nodes: tail_nodes,
 			key_moves: Vec::<KeyMove>::with_capacity(8),
-			moves_taken: moves_taken,
+			path: path,
 			contender_flag: false,
 			depth: 0,
 		}
@@ -352,9 +351,9 @@ impl PathNodeMap {
 		let mut tail_nodes = Vec::<usize>::with_capacity(32);
 		tail_nodes.push(0);
 		
-		let mut moves_taken = self.moves_taken.clone();
-		moves_taken.append(&mut self.backtrace_moves(&km.pn));
-		moves_taken.push(km.move_dir);
+		let mut path = self.path.clone();
+		path.append(&mut self.backtrace_moves(&km.pn));
+		path.push(km.move_dir);
 
 		PathNodeMap {
 			base_level: self.base_level.clone(),
@@ -362,7 +361,7 @@ impl PathNodeMap {
 			nodes: vec![initial_pn],
 			tail_nodes: tail_nodes,
 			key_moves: Vec::<KeyMove>::with_capacity(8),
-			moves_taken: moves_taken,
+			path: path,
 			contender_flag: false,
 			depth: 0,
 		}

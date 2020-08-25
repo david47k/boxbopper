@@ -1,9 +1,7 @@
-
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban clone in rust - console version
 
 use std::io;
 use std::io::BufRead;
-//use std::fs::File;
 
 use boxbopperbase::{Game};
 use boxbopperbase::vector::{Move};

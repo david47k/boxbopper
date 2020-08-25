@@ -45,18 +45,18 @@ pub fn console_log(s: &str) {
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq)]
-pub enum Obj { Wall=0, Space=1, Boulder=2, Hole=3, Human=4, HumanInHole=5, BoulderInHole=6 }
+pub enum Obj { Wall=0, Space=1, Boxx=2, Hole=3, Human=4, HumanInHole=5, BoxxInHole=6 }
 
 impl Obj {
 	pub fn to_char(&self) -> char {
 		match self {
 			Obj::Wall => '#',
 			Obj::Space => ' ',
-			Obj::Boulder => '*',
+			Obj::Boxx => '*',
 			Obj::Hole => 'O',
 			Obj::Human => '&',
 			Obj::HumanInHole => '%',
-			Obj::BoulderInHole => '@',
+			Obj::BoxxInHole => '@',
 		}
 	}
 
@@ -64,11 +64,11 @@ impl Obj {
 		return match c {
 			'#' => Obj::Wall,
 			' ' => Obj::Space,
-			'*' => Obj::Boulder,
+			'*' => Obj::Boxx,
 			'O' => Obj::Hole,
 			'&' => Obj::Human,
 			'%' => Obj::HumanInHole,
-			'@' => Obj::BoulderInHole,
+			'@' => Obj::BoxxInHole,
 			_ => panic!("Char does not represent a valid object"),
 		};
 	}
@@ -96,8 +96,8 @@ impl Game {			// non-js
 				Obj::Space | Obj::Hole => {
 					options.push(*movedir);
 				}
-				Obj::Boulder | Obj::BoulderInHole => { 
-					// What's past the boulder? We can push into Space and Hole, nothing else.
+				Obj::Boxx | Obj::BoxxInHole => { 
+					// What's past the boxx? We can push into Space and Hole, nothing else.
 					//match get_object_in_dir(self, &hp, &d.double()) {
 					match self.get_object_at_point(&hp.add(&movedir.to_vector().double())) {
 						Obj::Space | Obj::Hole => { options.push(*movedir); },
@@ -148,24 +148,24 @@ impl Game {			// non-js
 		
 		// check destination point
 		let obj = self.level.get_obj_at_idx(idx);
-		let mut moved_boulder = false;
+		let mut moved_boxx = false;
 		let new_obj = match obj {
 			Obj::Space => { Obj::Human },
 			Obj::Hole  => { Obj::HumanInHole },
-			Obj::Boulder | Obj::BoulderInHole => {  
-				// Move boulder in to next square
-				moved_boulder = true;
-				let boulder_pt = &self.human_pos.add(&_move.to_vector().double());
-				let i = boulder_pt.to_index(&self.level.w);
+			Obj::Boxx | Obj::BoxxInHole => {  
+				// Move boxx in to next square
+				moved_boxx = true;
+				let boxx_pt = &self.human_pos.add(&_move.to_vector().double());
+				let i = boxx_pt.to_index(&self.level.w);
 				let o = self.level.get_obj_at_idx(i);
 				if o == Obj::Hole {
-					self.level.set_obj_at_idx(i, Obj::BoulderInHole);
+					self.level.set_obj_at_idx(i, Obj::BoxxInHole);
 				} else {
-					self.level.set_obj_at_idx(i, Obj::Boulder);
+					self.level.set_obj_at_idx(i, Obj::Boxx);
 				}
 			
-				// We pushed the boulder
-				if obj == Obj::BoulderInHole {
+				// We pushed the boxx
+				if obj == Obj::BoxxInHole {
 					Obj::HumanInHole
 				} else {
 					Obj::Human
@@ -184,18 +184,18 @@ impl Game {			// non-js
 		};
 		self.sprites[0].apply_trans(trans);
 
-		// if we moved the boulder, we got to figure out which boulder it is, and update the sprite with a trans
-		if moved_boulder {
-			let initial_boulder_pt = &np;
-			let final_boulder_pt = &self.human_pos.add(&_move.to_vector().double());
+		// if we moved the boxx, we got to figure out which boxx it is, and update the sprite with a trans
+		if moved_boxx {
+			let initial_boxx_pt = &np;
+			let final_boxx_pt = &self.human_pos.add(&_move.to_vector().double());
 			let mut i = 0;
 			while i < self.sprites.len()-1 {
 				i += 1;
-				if self.sprites[i].obj == Obj::Boulder && self.sprites[i].final_xy == *initial_boulder_pt {
+				if self.sprites[i].obj == Obj::Boxx && self.sprites[i].final_xy == *initial_boxx_pt {
 					// move this one
 					let trans = Trans {
-						initial_xy: initial_boulder_pt.clone(),
-						final_xy: final_boulder_pt.clone(),
+						initial_xy: initial_boxx_pt.clone(),
+						final_xy: final_boxx_pt.clone(),
 						duration: 100_f64,
 					};
 					self.sprites[i].apply_trans(trans);
@@ -229,7 +229,7 @@ impl Game {
 		// restarts the game, using what's in base_level
 		let mut sp = Vec::with_capacity(32);
 		sp.push(Sprite::new(0, Obj::Human, get_time_ms(), 0.0, base_level.human_pos, base_level.human_pos));
-		base_level.get_boxx_pts().iter().enumerate().for_each(|(n,b)| sp.push(Sprite::new(n as u32, Obj::Boulder, get_time_ms(), 0.0, *b, *b)));
+		base_level.get_boxx_pts().iter().enumerate().for_each(|(n,b)| sp.push(Sprite::new(n as u32, Obj::Boxx, get_time_ms(), 0.0, *b, *b)));
 		Game {
 			level_number: levelnum,
 			num_moves: 0,

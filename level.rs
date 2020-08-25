@@ -66,7 +66,7 @@ impl SpLevel {
 	pub fn have_win_condition(&self) -> bool {
 		for obj in self.data.iter() {
 			match obj {
-				Obj::Boulder | Obj::Hole | Obj::HumanInHole => return false,
+				Obj::Boxx | Obj::Hole | Obj::HumanInHole => return false,
 				_ => {},
 			};
 		}
@@ -155,7 +155,7 @@ impl Level {
 	pub fn have_win_condition(&self) -> bool {
 		for obj in self.data.iter() {
 			match obj {
-				Obj::Boulder | Obj::Hole | Obj::HumanInHole => return false,
+				Obj::Boxx | Obj::Hole | Obj::HumanInHole => return false,
 				_ => {},
 			};
 		}
@@ -399,7 +399,7 @@ impl Level {
 			for x in 0..self.w {
 				let pt = Vector(x.try_into().unwrap(),y.try_into().unwrap());
 				let obj = self.get_obj_at_pt(&pt);
-				if obj == Obj::Boulder || obj == Obj::BoulderInHole {
+				if obj == Obj::Boxx || obj == Obj::BoxxInHole {
 					pts.push(pt);
 				}
 			}
@@ -412,7 +412,7 @@ impl Level {
 			for x in 0..self.w {
 				let pt = Vector(x.try_into().unwrap(),y.try_into().unwrap());
 				let obj = self.get_obj_at_pt(&pt);
-				if obj == Obj::Boulder || obj == Obj::BoulderInHole {
+				if obj == Obj::Boxx || obj == Obj::BoxxInHole {
 					count += 1;
 				}
 			}
@@ -428,8 +428,8 @@ impl Level {
 			let nobj = match obj {
 				Obj::Human => Obj::Space,
 				Obj::HumanInHole => Obj::Hole,
-				Obj::Boulder => Obj::Space,
-				Obj::BoulderInHole => Obj::Hole,
+				Obj::Boxx => Obj::Space,
+				Obj::BoxxInHole => Obj::Hole,
 				_ => obj,
 			};
 			self.set_obj_at_idx(idx,nobj);

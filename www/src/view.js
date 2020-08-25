@@ -102,7 +102,7 @@ export class View {
 					this.renderImg(x,y,0,0);
 				} else if(obj == Obj.Space) {
 					this.renderImg(x,y,0,1);
-				} else if(obj == Obj.Boulder) {
+				} else if(obj == Obj.Boxx) {
 					this.renderImg(x,y,0,1);
 				} else if(obj == Obj.Hole) {
 					this.renderImg(x,y,0,1);
@@ -112,7 +112,7 @@ export class View {
 				} else if(obj == Obj.HumanInHole) {
 					this.renderImg(x,y,0,1);
 					this.renderImg(x,y,0,3);
-				} else if(obj == Obj.BoulderInHole) {
+				} else if(obj == Obj.BoxxInHole) {
 					this.renderImg(x,y,0,1);
 					this.renderImg(x,y,0,3);
 				}
@@ -124,7 +124,7 @@ export class View {
 		sprites.forEach( function(spriteinfo) {
 			if(spriteinfo.obj==Obj.Human) {
 				document.gameManager.view.renderImg(spriteinfo.x,spriteinfo.y,0,4);
-			} else if(spriteinfo.obj==Obj.Boulder) {
+			} else if(spriteinfo.obj==Obj.Boxx) {
 				document.gameManager.view.renderImg(spriteinfo.x,spriteinfo.y,0,2);
 			}
 		});
