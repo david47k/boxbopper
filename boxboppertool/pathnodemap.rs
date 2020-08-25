@@ -268,7 +268,6 @@ impl PathNodeMap {
 	}
 	pub fn apply_key_pull(level: &SpLevel, km: &KeyMove) -> SpLevel {
 		let mut level = level.clone();
-		//println!("keymove: pn.pt: {}, move_dir: {}",km.pn.pt.to_string(),km.move_dir.to_string());
 		
 		// remove old human
 		let human_obj = level.get_obj_at_pt(&level.human_pos);
@@ -283,7 +282,6 @@ impl PathNodeMap {
 		// remove old boxx
 		let pull_from_pt = km.pn.pt.add(&km.move_dir.reverse().to_vector());
 		let pull_obj = level.get_obj_at_pt(&pull_from_pt);
-		//println!("pull: pt: {}, obj: {}",pull_pt.to_string(),pull_obj.to_char().to_string());
 		let new_obj = match pull_obj {
 			Obj::Boxx       => { Obj::Space },
 			Obj::BoxxInHole => { Obj::Hole },

@@ -1,0 +1,17 @@
+#######
+##  O #
+#  O  #
+##@** #
+#  &@ #
+#######
+
+title: linatefano-33
+depth: 9
+moves: 33
+path: UULURDDDLURURRDDLULLDRUUULDRDRRUL
+seed: 338
+width: 7
+height: 6
+wall_density: 30
+num_boxxes: 4
+

@@ -143,6 +143,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, verbosity: u32)
 	
 	let have_solution = Arc::new(AtomicBool::new(false));
 	let best_solution_str = Arc::new(Mutex::new(String::new()));
+	let best_sol_depth = Arc::new(AtomicU32::new(0));
 	let mut depth: u32 = 0;
 
 	while depth < max_moves.load(AtomicOrdering::SeqCst) {	// stop it running forever, it's unlikely to actually get that high
@@ -154,6 +155,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, verbosity: u32)
 			if m.nodes[0].steps < max_moves.load(AtomicOrdering::SeqCst) {
 				have_solution.store(true, AtomicOrdering::SeqCst);
 				max_moves.store(m.nodes[0].steps, AtomicOrdering::SeqCst);
+				best_sol_depth.store(depth, AtomicOrdering::SeqCst);
 				let mut solstr = best_solution_str.lock().unwrap();
 				*solstr = format!("{}", moves_to_string(&m.path));
 				if verbosity > 0 { 
@@ -201,7 +203,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, verbosity: u32)
 		}
 		return Some(Solution {
 			moves: max_moves.load(AtomicOrdering::SeqCst),
-			depth: depth,
+			depth: best_sol_depth.load(AtomicOrdering::SeqCst),
 			path: solstr.to_string(),
 		});
 	} else {

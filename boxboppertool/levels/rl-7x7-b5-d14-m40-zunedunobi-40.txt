@@ -1,0 +1,18 @@
+#######
+#O  O##
+#*##@##
+# &*  #
+# @   #
+##O * #
+#######
+
+title: zunedunobi-40
+depth: 14
+moves: 40
+path: RDRRDLLUULLUDDRRDRRUULUDLDLLURRDDRRULLRU
+seed: 113
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

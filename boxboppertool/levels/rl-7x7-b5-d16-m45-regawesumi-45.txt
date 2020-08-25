@@ -1,0 +1,18 @@
+#######
+# @O%O#
+# *#*##
+#  *  #
+# *O ##
+#     #
+#######
+
+title: regawesumi-45
+depth: 16
+moves: 45
+path: DDLDDLLUUUURRRLLLDDRULURDDLDRDRRUULRUDDDLLUUU
+seed: 230
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

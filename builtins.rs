@@ -215,9 +215,9 @@ r"##########
 ##########
 
 title: too hard yet?
-timereal:    0m15.304s / 17.6
-timeuser:    0m26.516s / 26.4
-timesys:     0m2.547s  /  2.0
+timereal:    0m15.304s / 16.5
+timeuser:    0m26.516s / 27.2
+timesys:     0m2.547s  /  1.9
 num: 13
 moves: 97
 path: URULUURUULDLLULLDRRRRURDLDDDRDDLULLUUUDDDRRUUUULLULLDRLDRURRRDDDDLLURDRUUUDDLLUULURDLLLDDRRRRDRUU

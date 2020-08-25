@@ -1,0 +1,18 @@
+#######
+## #@O#
+#     #
+# *@O #
+#  #* #
+# *O&##
+#######
+
+title: hulosunewa-38
+depth: 11
+moves: 38
+path: URUULLLDURRRDDLULURDRULLLLDRRLLDDRULUR
+seed: 292
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

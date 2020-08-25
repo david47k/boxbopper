@@ -1,0 +1,18 @@
+#######
+## * O#
+#O *@O#
+## *  #
+#&@  ##
+# #  ##
+#######
+
+title: mohidenote-40
+depth: 15
+moves: 40
+path: RUUURRDLLDDRULUURRDRDLUULLDRRDLDDRUULULD
+seed: 21
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

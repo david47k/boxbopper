@@ -1,0 +1,18 @@
+#######
+#     #
+# @ * #
+#@@#*O#
+#& # O#
+#     #
+#######
+
+title: rarigekugi-87
+depth: 16
+moves: 87
+path: RDRRURUUULLDRULLLDRDUURRDDRDDLLLLUURURURRDDUULLDRLLDLDDRRRUUDDLLLUURUULDURRRRDLLRDDDLLU
+seed: 375
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+
