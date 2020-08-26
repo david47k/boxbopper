@@ -1,0 +1,16 @@
+##########
+#@#O  @& #
+# ###*** #
+# OO  *O #
+##########
+
+title: nuwoberoza-41
+depth: 12
+moves: 41
+path: RDDLLLLLRRRRRUULLLLRDURRRDDLLUDRRUULDLDLL
+seed: 315
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

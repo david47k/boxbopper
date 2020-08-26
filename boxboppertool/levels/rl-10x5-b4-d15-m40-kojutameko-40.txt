@@ -1,0 +1,16 @@
+##########
+##  #  O #
+#&*  @   #
+#  O*  @ #
+##########
+
+title: kojutameko-40
+depth: 15
+moves: 40
+path: DRRURRRLLLDLLURRRRURRRDDLULLDRLLLURLLLDR
+seed: 270
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 4
+

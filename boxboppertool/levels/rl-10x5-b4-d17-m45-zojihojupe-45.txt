@@ -1,0 +1,16 @@
+##########
+# O O  #O#
+#  **  *&#
+#  #   @ #
+##########
+
+title: zojihojupe-45
+depth: 17
+moves: 45
+path: LLDLLULURDDRRURRDLULLLULLLDDRURRRRRDRULLULDDR
+seed: 431
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 4
+

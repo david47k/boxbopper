@@ -369,6 +369,7 @@ impl PathNodeMap {
 		for km in &self.key_moves {	
 			nmaps.push(self.new_by_applying_key_push(&km));
 		}
+		nmaps.shrink_to_fit();
 		nmaps
 	}
 	pub fn apply_key_pulls(&self) -> Vec<PathNodeMap> {

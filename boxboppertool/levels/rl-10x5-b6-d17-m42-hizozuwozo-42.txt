@@ -1,0 +1,16 @@
+##########
+#O*OO#   #
+# **# * *#
+#O&*  O O#
+##########
+
+title: hizozuwozo-42
+depth: 17
+moves: 42
+path: LUURRLLDDRRULDLURRDRRURURRDLDLLRRUULDLDLLL
+seed: 338
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

@@ -1,0 +1,18 @@
+########
+#O  O ##
+## # *##
+#O #   #
+#*# *  #
+#&*O   #
+########
+
+title: pumidelabo-44
+depth: 18
+moves: 44
+path: UDRRURURRDLULUURDDRDDLLUUURULLLRRRDDRDLDLUUU
+seed: 3670
+width: 8
+height: 7
+wall_density: 35
+num_boxxes: 4
+

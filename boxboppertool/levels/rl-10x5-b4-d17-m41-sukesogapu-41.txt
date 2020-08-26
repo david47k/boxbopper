@@ -1,0 +1,16 @@
+##########
+#O   O   #
+#O** ** ##
+#O&#     #
+##########
+
+title: sukesogapu-41
+depth: 17
+moves: 41
+path: ULURRRDLLULDRRRDRRRUULLLLLRRDDRUDRRULLLLL
+seed: 63
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 4
+

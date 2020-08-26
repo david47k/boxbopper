@@ -1,0 +1,18 @@
+########
+#OOO#  #
+#  *O ##
+##  #* #
+#  *&* #
+#      #
+########
+
+title: yazipakuyo-57
+depth: 20
+moves: 57
+path: DLLUUUURDLDDDRRULDLUUURULDDDRRDRRULLLUURRDRDLLDLUUDDLUUUR
+seed: 3604
+width: 8
+height: 7
+wall_density: 35
+num_boxxes: 4
+

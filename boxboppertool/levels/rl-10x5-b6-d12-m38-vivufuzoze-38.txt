@@ -1,0 +1,16 @@
+##########
+#     # @#
+#O*O**@# #
+#   O *&O#
+##########
+
+title: vivufuzoze-38
+depth: 12
+moves: 38
+path: LLLLUULLDDRLUURRDLURRRDLDRRRLLUULLLDDR
+seed: 124
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

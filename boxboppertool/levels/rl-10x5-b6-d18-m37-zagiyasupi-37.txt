@@ -1,0 +1,16 @@
+##########
+#O O  * ##
+#O**** @&#
+#  O#  O##
+##########
+
+title: zagiyasupi-37
+depth: 18
+moves: 37
+path: LULLLLDLRURRRRDDLLURURDLLLULLDRRRRULL
+seed: 206
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

@@ -1,0 +1,18 @@
+########
+#O #  ##
+# *** O#
+#  *&# #
+#O #O  #
+##   ###
+########
+
+title: lelaneyidi-55
+depth: 14
+moves: 55
+path: DDLLUULUURDLDDRDRRURRUULULDLLRRRRDDLLDLLUULURRRRLDLLULD
+seed: 3073
+width: 8
+height: 7
+wall_density: 35
+num_boxxes: 4
+

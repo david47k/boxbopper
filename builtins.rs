@@ -196,9 +196,7 @@ r"##########
 ##########
 
 title: getting tricky
-timereal:    1m46.167s / 2m17
-timeuser:    3m20.344s / 3m29
-timesys:     0m16.750s / 0m20
+time: 212.21user 15.96system 2:01.77elapsed 187%CPU (0avgtext+0avgdata 3705864maxresident)k
 num: 12
 moves: 101
 path: LLUULUURLDDRULUUURRDLULDDDUURRRRRDDLLLLLLRRDLLRRDDRRUURULLLLUURRDLULDDRDLRDDRRRUULULLULDUURRRRRDDLLLL
@@ -215,9 +213,7 @@ r"##########
 ##########
 
 title: too hard yet?
-timereal:    0m15.304s / 16.5
-timeuser:    0m26.516s / 27.2
-timesys:     0m2.547s  /  1.9
+time:  26.1 / 1.7 / 15.4 / 180% / 664M
 num: 13
 moves: 97
 path: URULUURUULDLLULLDRRRRURDLDDDRDDLULLUUUDDDRRUUUULLULLDRLDRURRRDDDDLLURDRUUUDDLLUULURDLLLDDRRRRDRUU

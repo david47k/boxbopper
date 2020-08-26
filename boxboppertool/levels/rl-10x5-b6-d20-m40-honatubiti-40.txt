@@ -1,0 +1,16 @@
+##########
+# OO O#@ #
+#O* ** * #
+##     @&#
+##########
+
+title: honatubiti-40
+depth: 20
+moves: 40
+path: LLLLUDRRULULLDLDRRULURDRRDRRULLLLDRRLLLU
+seed: 717
+width: 10
+height: 5
+wall_density: 25
+num_boxxes: 6
+

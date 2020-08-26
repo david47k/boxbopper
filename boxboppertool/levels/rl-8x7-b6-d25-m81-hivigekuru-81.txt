@@ -1,0 +1,19 @@
+########
+## # O #
+# * *O #
+#O *&*@#
+# #@#  #
+#O     #
+########
+
+title: hivigekuru-81
+depth: 25
+moves: 81
+path: LURURRDDLDDLLLLUUURRLLDDDRRUULULDDURRDDRRUULRRUULLDLDLLURDRRUURRDDLDDRULUUDLLLURR
+seed: 5543
+width: 8
+height: 7
+wall_density: 35
+box_density: 20
+num_boxxes: 6
+

@@ -1,0 +1,19 @@
+########
+##     #
+#  O*O##
+##**OO #
+#%* *  #
+# #O * #
+########
+
+title: jazurogeyi-53
+depth: 19
+moves: 53
+path: RURRLUURRDLRDRDDLLUULLDRURRUULLLDDUURDRDRRDDLUDLULUDL
+seed: 5371
+width: 8
+height: 7
+wall_density: 35
+box_density: 20
+num_boxxes: 6
+

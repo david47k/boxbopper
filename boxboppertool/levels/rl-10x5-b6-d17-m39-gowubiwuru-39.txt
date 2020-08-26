@@ -1,0 +1,16 @@
+##########
+## *O    #
+#&*O** * #
+# @OO  O##
+##########
+
+title: gowubiwuru-39
+depth: 17
+moves: 39
+path: RURRDULLDRDRRRUULDURRRDLLDLLRRUULDRDLUL
+seed: 2
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

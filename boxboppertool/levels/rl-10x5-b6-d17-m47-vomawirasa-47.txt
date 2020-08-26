@@ -1,0 +1,16 @@
+##########
+# O@   * #
+## *O* O #
+#&*O O * #
+##########
+
+title: vomawirasa-47
+depth: 17
+moves: 47
+path: RRRUULRRRDRRULLLLDRRLLDLLURRURRDDLLUURRRRDDLLUL
+seed: 424
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

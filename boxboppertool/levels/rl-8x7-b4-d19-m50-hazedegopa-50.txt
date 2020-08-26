@@ -1,0 +1,18 @@
+########
+#O     #
+#&@ **##
+## # * #
+# O O  #
+#     ##
+########
+
+title: hazedegopa-50
+depth: 19
+moves: 50
+path: RURRDDUULLDDDRDRRURULDLLDLUUURURRDDRDLLLRRUULDULUL
+seed: 3786
+width: 8
+height: 7
+wall_density: 35
+num_boxxes: 4
+

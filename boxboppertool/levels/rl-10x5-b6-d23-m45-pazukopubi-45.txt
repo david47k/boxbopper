@@ -1,0 +1,16 @@
+##########
+#OO   O*O#
+#O ****# #
+#     O*&#
+##########
+
+title: pazukopubi-45
+depth: 23
+moves: 45
+path: UULLLLLLRRRRRRDDLLUDLLURURRLLDDRULLLLDRRRUULL
+seed: 137
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

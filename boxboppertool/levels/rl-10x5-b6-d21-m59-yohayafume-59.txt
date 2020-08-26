@@ -1,0 +1,16 @@
+##########
+# *O   O #
+# *#*  **#
+# %* OO O#
+##########
+
+title: yohayafume-59
+depth: 21
+moves: 59
+path: RRRLLLLUURRRDRDLURRURRDLDLRUULDLLURRLLLLLDDRULURRRDRRULLDDL
+seed: 363
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

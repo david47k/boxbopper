@@ -1,0 +1,16 @@
+##########
+#O  @ O ##
+# *** * ##
+#&@  OO  #
+##########
+
+title: pavanujero-49
+depth: 17
+moves: 49
+path: RRRRUULLLDURRRDDLLURURRRDDLLUDRRUULDLLURDLLLURDDR
+seed: 25
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+
