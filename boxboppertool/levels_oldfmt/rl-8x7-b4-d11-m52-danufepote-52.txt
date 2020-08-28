@@ -1,0 +1,18 @@
+########
+#      #
+#**# # #
+# O *O #
+#O#* ###
+#O#&#  #
+########
+
+title: danufepote-52
+depth: 11
+moves: 52
+path: URURRUULLLLLDDDUUURRRRRDDLLLLRRRRUULLDULLLDDRRRUULLD
+seed: 3788
+width: 8
+height: 7
+wall_density: 35
+num_boxxes: 4
+

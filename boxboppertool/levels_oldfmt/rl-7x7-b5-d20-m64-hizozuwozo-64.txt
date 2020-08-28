@@ -1,0 +1,18 @@
+#######
+## %# #
+# *@@ #
+##    #
+#    *#
+# O* O#
+#######
+
+title: hizozuwozo-64
+depth: 20
+moves: 64
+path: DULDRDRRULDLURDDDRUDLLULLDRRURUULLDRDDLLURDRURRDLLULUURRRDDLUDLU
+seed: 338
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

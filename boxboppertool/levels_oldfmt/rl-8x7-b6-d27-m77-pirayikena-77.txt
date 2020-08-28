@@ -1,0 +1,19 @@
+########
+#&@  O #
+#O *  ##
+##O#** #
+#      #
+## @O* #
+########
+
+title: pirayikena-77
+depth: 27
+moves: 77
+path: DRRURRDDRDLUUULLDRURDLLLLURRDRRDRDDLULUDRRULULLLDDRRURULLULDRRRULLRRDDRDDLUUU
+seed: 5916
+width: 8
+height: 7
+wall_density: 35
+box_density: 20
+num_boxxes: 6
+

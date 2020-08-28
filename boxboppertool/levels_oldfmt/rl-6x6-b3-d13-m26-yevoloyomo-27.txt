@@ -1,0 +1,17 @@
+######
+# & O#
+#O** #
+#  @##
+#    #
+######
+
+title: yevoloyomo-27
+difficulty: 4
+moves required: 26
+solution: DURRDLULLDDDRRUULURDDDLLUR
+seed: 611
+width: 6
+height: 6
+wall_density: 20
+num_boxxes: 3
+

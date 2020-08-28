@@ -1,0 +1,18 @@
+#######
+#   O #
+#  *  #
+##O#  #
+##@** #
+# % @ #
+#######
+
+title: tegitokobe-47
+depth: 15
+moves: 47
+path: UUURURRDDDDLLRRUULDURUULDLLLURRDRRDDLLRURULLULD
+seed: 373
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

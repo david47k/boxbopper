@@ -22,6 +22,26 @@ pub struct KeyMove {
 }
 
 #[derive(Clone)]
+pub struct BaseData {
+	pub w: u16,
+	pub h: u16,
+	pub noboxx_pts: Vec::<Vector>,
+}
+
+pub fn convert_pts(old: &Vec::<Vector>, w: u16, h: u16) -> Vec<Vector> {
+	let mut n = Vec::<Vector>::new();
+	for v in old {
+		let nv = v.add(&Vector(-1,-1));
+		if nv.0 >= 0 && nv.0 < (w) as i32 && nv.1 >= 0 && nv.1 < (h) as i32 {
+			n.push(nv);
+			print!("pt ({},{}) ",nv.0,nv.1)
+		}
+	}
+	n
+}
+
+
+#[derive(Clone)]
 pub struct PathNodeMap {
 	base_level: Arc::<Level>,
 	pub level: SpLevel,
@@ -36,8 +56,8 @@ pub struct PathNodeMap {
 impl PathNodeMap {
 	pub fn new_from_level(level: &Arc<Level>) -> PathNodeMap {				// start the game this way
 		let mut map = PathNodeMap {
-			base_level: level.clone(),
-			level: SpLevel::new_from_level(&(level.clone())),
+			base_level: level.clone(), 
+			level: SpLevel::from_level(&(level.clone())),
 			nodes: Vec::<PathNode>::with_capacity(64),
 			tail_nodes: Vec::<usize>::with_capacity(32),
 			key_moves: Vec::<KeyMove>::with_capacity(16),
@@ -56,14 +76,14 @@ impl PathNodeMap {
 	}
 	pub fn complete_map_solve(&self) -> PathNodeMap {
 		let mut map = self.clone();
-		while !map.is_map_complete() {
+		while self.tail_nodes.len() != 0 {			// check if map is complete
 			map.step_solve();
 		}
 		map
 	}
 	pub fn complete_map_unsolve(&self) -> PathNodeMap {
 		let mut map = self.clone();
-		while !map.is_map_complete() {
+		while self.tail_nodes.len() != 0 {			// check if map is complete
 			map.step_unsolve();
 		}		
 		map
@@ -76,7 +96,7 @@ impl PathNodeMap {
 			for movedir in ALLMOVES.iter() {							// for each possible move
 				let pt = tnode.pt;									
 				let npt = pt.add(&movedir.to_vector());					// what is in this direction? let's find out	
-				match self.level.get_obj_at_pt(&npt) {
+				match self.level.get_obj_at_pt_checked(&npt) {
 					Obj::Space | Obj::Hole => {
 						// first check this point isn't already in our list!!!						
 						let mut ok = true;
@@ -100,10 +120,10 @@ impl PathNodeMap {
 					Obj::Boxx | Obj::BoxxInHole => { 
 						// What's past the boxx? We can push into Space and Hole (and HumanInHole cos we'll be out of the way), nothing else.
 						let bnpt = &pt.add(&movedir.to_vector().double());
-						match self.level.get_obj_at_pt(bnpt) {
-							Obj::Space | Obj::Hole | Obj::Human | Obj::HumanInHole => { 
+						match self.level.get_obj_at_pt_checked(bnpt) {
+							Obj::Space | Obj::Hole => { 
 								// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
-								if !self.base_level.in_noboxx_pts(*bnpt) && !self.double_boxx_situation(pt,*movedir) {
+								if !self.base_level.in_noboxx_pts(bnpt) && !self.double_boxx_situation(pt,*movedir) {
 									let km = KeyMove {
 										pn: tnode.clone(),
 										move_dir: *movedir,
@@ -134,7 +154,7 @@ impl PathNodeMap {
 			for movedir in ALLMOVES.iter() {							// for each possible move
 				let pt = tnode.pt;									
 				let npt = pt.add(&movedir.to_vector());					// what is in this direction? let's find out	
-				match self.level.get_obj_at_pt(&npt) {
+				match self.level.get_obj_at_pt_checked(&npt) {
 					Obj::Space | Obj::Hole => {
 						// first check this point isn't already in our list!!!						
 						let mut ok = true;
@@ -158,8 +178,8 @@ impl PathNodeMap {
 					Obj::Boxx | Obj::BoxxInHole => { 
 						// What's in our reverse direction? We can pull into Space and Hole (and HumanInHole cos we won't be there), nothing else.
 						let bnpt = &pt.add(&movedir.to_vector().mul(-1));
-						match self.level.get_obj_at_pt(bnpt) {
-							Obj::Space | Obj::Hole | Obj::Human | Obj::HumanInHole => { 
+						match self.level.get_obj_at_pt_checked(bnpt) {
+							Obj::Space | Obj::Hole => { 
 								// yep, its a keypull, save key move.. 
 								let km = KeyMove {
 									pn: tnode.clone(),
@@ -184,9 +204,9 @@ impl PathNodeMap {
 	}
 	pub fn double_boxx_situation(&self, human_pos: Vector, pushdir: Move) -> bool {
 		// checks for a situation where we would be pushing the boxx next to another boxx against a wall and getting ourselves stuck
-		//         a = anything, h = human, pushdir = down, * = boxx, ## = wall, ' ' = space, only need row 1 or 3 not both
+		//         a = anything, h = human, pushdir = right, * = boxx, # = wall, ' ' = space, only need row 1 or 3 not both
 		//  aa*#	match1
-		//  H* #	match0
+		//  h* #	match0
 		//  aa*#	match1
 		// test 1 (horizontal in pushdir direction): [ Obj::Boxx, Obj::Space, Obj::Wall ]
 		// test 2: above OR below (either or both, +1 in pushdir direction than above): [ Obj::Boxx, Obj::Wall ]
@@ -200,85 +220,57 @@ impl PathNodeMap {
 		let vecs0 = vec![human_pos.add(&pushdir.to_vector()),
 						 human_pos.add(&pushdir.to_vector().mul(2)),
 						 human_pos.add(&pushdir.to_vector().mul(3))];
-		let line0: Vec::<Obj> = vecs0.into_iter().map(|v| self.level.get_obj_at_pt(&v)).collect();
+		let line0: Vec::<Obj> = vecs0.into_iter().map(|v| self.level.get_obj_at_pt_checked(&v)).collect();
 		let vecs1 = vec![human_pos.add(&pushdir.to_vector().mul(2)).add(&pushdir.to_vector().rotl()),
 						 human_pos.add(&pushdir.to_vector().mul(3)).add(&pushdir.to_vector().rotl())];
 		let vecs2 = vec![human_pos.add(&pushdir.to_vector().mul(2)).add(&pushdir.to_vector().rotr()),
 						 human_pos.add(&pushdir.to_vector().mul(3)).add(&pushdir.to_vector().rotr())];
-		let line1: Vec::<Obj> = vecs1.into_iter().map(|v| self.level.get_obj_at_pt(&v)).collect();
-		let line2: Vec::<Obj> = vecs2.into_iter().map(|v| self.level.get_obj_at_pt(&v)).collect();
+		let line1: Vec::<Obj> = vecs1.into_iter().map(|v| self.level.get_obj_at_pt_checked(&v)).collect();
+		let line2: Vec::<Obj> = vecs2.into_iter().map(|v| self.level.get_obj_at_pt_checked(&v)).collect();
 
 		line0 == match0 && ( line1 == match1[0] || line2 == match1[0] )
 		// line0 == match0 && ( line1 == match1[0] || line2 == match1[0] || line1 == match1[1] || line2 == match1[1] ) // slows us down by 2.5%
 		// line0 == match0 && ( contains_only(&match1, &line1) || contains_only(&match1, &line2) ) // too slow
 	}
-	pub fn is_map_complete(&self) -> bool { 					// lets us know if there are no more tail nodes (map is complete)
-		self.tail_nodes.len() == 0	
-	}
 	pub fn apply_key_push(level: &SpLevel, km: &KeyMove) -> SpLevel {
 		let mut level = level.clone();
-		
-		// remove old human
-		let idx = level.human_pos.to_index(&level.w);
-		let human_obj = level.get_obj_at_idx(idx);
-		let new_obj = match human_obj {
-			Obj::Human => { Obj::Space },
-			Obj::HumanInHole => { Obj::Hole },
-			_ => { panic!("Human not in tracked location!"); }
-		};
-		level.set_obj_at_idx(idx, new_obj);
-		
+			
 		// new human point
 		let np = km.pn.pt.add(&km.move_dir.to_vector());
-		let idx = np.to_index(&level.w);	
 		
 		// check destination point
-		let obj = level.get_obj_at_idx(idx);
+		let obj = level.get_obj_at_pt(&np);
 		let new_obj = match obj {
-			Obj::Space => { panic!("found space, expecting boxx"); },
-			Obj::Hole  => { panic!("found hole, expecting boxx"); },
 			Obj::Boxx | Obj::BoxxInHole => {  
 				// Move boxx in to next square
 				let boxx_pt = &np.add(&km.move_dir.to_vector());
-				let i = boxx_pt.to_index(&level.w);
-				let o = level.get_obj_at_idx(i);
-				if o == Obj::Hole {
-					level.set_obj_at_idx(i, Obj::BoxxInHole);
-				} else if o == Obj::Space {
-					level.set_obj_at_idx(i, Obj::Boxx);
-				} else {
-					panic!("trying to push boxx into unexpected obj");
+				let o = level.get_obj_at_pt(&boxx_pt);
+				match o {
+					Obj::Hole  => { level.set_obj_at_pt(&boxx_pt, Obj::BoxxInHole); },
+					Obj::Space => {	level.set_obj_at_pt(&boxx_pt, Obj::Boxx); },
+					_          => { panic!("trying to push boxx into unexpected obj"); }
 				}
 			
 				// We pushed the boxx
 				if obj == Obj::BoxxInHole {
-					Obj::HumanInHole
+					Obj::Hole
 				} else {
-					Obj::Human
+					Obj::Space
 				}
 			},
+			Obj::Space => { panic!("found space, expecting boxx"); },
+			Obj::Hole  => { panic!("found hole, expecting boxx"); },
 			_ => { panic!("Human not allowed there!"); }
 		};
 
-		// place human
-		level.set_obj_at_idx(idx, new_obj);	
-		level.human_pos = np;
+		level.set_obj_at_pt(&np, new_obj);
+		level.human_pos = np;				// place human
 
 		level
 	}
 	pub fn apply_key_pull(level: &SpLevel, km: &KeyMove) -> SpLevel {
 		let mut level = level.clone();
-		
-		// remove old human
-		let human_obj = level.get_obj_at_pt(&level.human_pos);
-		let human_pos = level.human_pos;
-		let new_obj = match human_obj {
-			Obj::Human       => { Obj::Space },
-			Obj::HumanInHole => { Obj::Hole },
-			_ => { panic!("Human not in tracked location!"); }
-		};
-		level.set_obj_at_pt(&human_pos, new_obj);
-		
+				
 		// remove old boxx
 		let pull_from_pt = km.pn.pt.add(&km.move_dir.reverse().to_vector());
 		let pull_obj = level.get_obj_at_pt(&pull_from_pt);
@@ -301,13 +293,6 @@ impl PathNodeMap {
 	
 		// new human point
 		let np = km.pn.pt.add(&km.move_dir.to_vector());
-		let obj = level.get_obj_at_pt(&np);
-		let new_obj = match obj {
-			Obj::Space => { Obj::Human },
-			Obj::Hole  => { Obj::HumanInHole },
-			_ => { panic!("Expected space or hole to move human into"); }
-		};
-		level.set_obj_at_pt(&np, new_obj);
 		level.human_pos = np;
 
 		level
@@ -369,7 +354,6 @@ impl PathNodeMap {
 		for km in &self.key_moves {	
 			nmaps.push(self.new_by_applying_key_push(&km));
 		}
-		nmaps.shrink_to_fit();
 		nmaps
 	}
 	pub fn apply_key_pulls(&self) -> Vec<PathNodeMap> {

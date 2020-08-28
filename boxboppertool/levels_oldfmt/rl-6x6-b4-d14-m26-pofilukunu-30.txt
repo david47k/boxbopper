@@ -1,0 +1,17 @@
+######
+#% OO#
+#* @*#
+# *  #
+#    #
+######
+
+title: pofilukunu-30
+difficulty: 3
+moves required: 26
+solution: RRRDLDDLLURDRRUUDDLUUDLLUR
+seed: 439
+width: 6
+height: 6
+wall_density: 20
+num_boxxes: 4
+

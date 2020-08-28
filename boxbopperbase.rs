@@ -133,7 +133,7 @@ impl Game {			// non-js
 		self.num_moves += 1;
 
 		// remove old human
-		let idx = self.human_pos.to_index(&self.level.w);
+		let idx = self.human_pos.to_index(self.level.w);
 		let human_obj = self.level.get_obj_at_idx(idx);
 		let new_obj = match human_obj {
 			Obj::Human => { Obj::Space },
@@ -144,7 +144,7 @@ impl Game {			// non-js
 		
 		// new human point
 		let np = self.human_pos.add(&_move.to_vector());
-		let idx = np.to_index(&self.level.w);	
+		let idx = np.to_index(self.level.w );	
 		
 		// check destination point
 		let obj = self.level.get_obj_at_idx(idx);
@@ -156,7 +156,7 @@ impl Game {			// non-js
 				// Move boxx in to next square
 				moved_boxx = true;
 				let boxx_pt = &self.human_pos.add(&_move.to_vector().double());
-				let i = boxx_pt.to_index(&self.level.w);
+				let i = boxx_pt.to_index(self.level.w);
 				let o = self.level.get_obj_at_idx(i);
 				if o == Obj::Hole {
 					self.level.set_obj_at_idx(i, Obj::BoxxInHole);
@@ -271,19 +271,13 @@ impl Game {
 		println!("--------------------------------------------------------------------------------");
 		println!("{} moves: {}", self.num_moves, moves_to_string(&self.move_history));
 		println!();
-		// print level
-		for y in 0..self.level.h {
-			for x in 0..self.level.w {
-				print!("{}",&self.level.get_obj_at_idx(y * self.level.w + x).to_char());
-			}
-			println!();
-		}
+		println!("{}", self.level.to_string());
 		println!();
 	}
 	
 	pub fn get_object_at_point(&self, point: &Vector) -> Obj {
 		// bounds check point
-		if point.to_usize().0 >= self.level.w || point.to_usize().1 >= self.level.h {
+		if point.to_usize().0 >= self.level.w as usize || point.to_usize().1 >= self.level.h as usize {
 			return Obj::Wall;
 		}
 		

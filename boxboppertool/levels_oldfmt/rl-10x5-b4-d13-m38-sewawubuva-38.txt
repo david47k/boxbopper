@@ -1,0 +1,16 @@
+##########
+#O     O #
+#* # *#* #
+#O #&* O #
+##########
+
+title: sewawubuva-38
+depth: 13
+moves: 38
+path: UULLLDURRRRRRRDDLURULLLLDDRRLULURRLLLL
+seed: 44
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 4
+

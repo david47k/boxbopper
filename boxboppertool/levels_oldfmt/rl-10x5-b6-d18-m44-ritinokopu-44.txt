@@ -1,0 +1,16 @@
+##########
+##   @& O#
+#  @** **#
+#O O  # O#
+##########
+
+title: ritinokopu-44
+depth: 18
+moves: 44
+path: LLDURRDLURRRDLULLDDLLLUURDURRDLURRRDLULLDDRU
+seed: 733
+width: 10
+height: 5
+wall_density: 25
+num_boxxes: 6
+

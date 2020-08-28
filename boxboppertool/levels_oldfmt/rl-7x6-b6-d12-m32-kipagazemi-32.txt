@@ -1,0 +1,17 @@
+#######
+#  *OO#
+#*O*@##
+#   * #
+#O  *%#
+#######
+
+title: kipagazemi-32
+depth: 12
+moves: 32
+path: ULLDLLURUURRLLLDDRDRRULULURDDDLU
+seed: 160
+width: 7
+height: 6
+wall_density: 20
+num_boxxes: 6
+

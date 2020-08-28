@@ -1,0 +1,18 @@
+#######
+#   # #
+# * *&#
+# *O ##
+# ##  #
+#  OO #
+#######
+
+title: loreziriko-43
+depth: 12
+moves: 43
+path: LDDDLLLUURRLLUURRDRDDRDLUUULULLDRDRLUURDRDD
+seed: 2215
+width: 7
+height: 7
+wall_density: 35
+num_boxxes: 3
+

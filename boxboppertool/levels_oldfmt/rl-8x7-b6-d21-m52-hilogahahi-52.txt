@@ -1,0 +1,19 @@
+########
+#OO#   #
+# O@*O##
+# **  O#
+#** ####
+#&    ##
+########
+
+title: hilogahahi-52
+depth: 21
+moves: 52
+path: URLUURDRRRUULDLDLURRRDLULLDLDDRUULURRRDLULLDDRUDDRUU
+seed: 5049
+width: 8
+height: 7
+wall_density: 35
+box_density: 20
+num_boxxes: 6
+

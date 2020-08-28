@@ -1,0 +1,16 @@
+##########
+#O #OO   #
+# * * ** #
+#  O # & #
+##########
+
+title: tehekalavo-43
+depth: 14
+moves: 43
+path: LULLDLLLUURDRDRULLLDRURRRRDRRULULRDLLLLLDLU
+seed: 344
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 4
+

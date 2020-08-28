@@ -1,0 +1,18 @@
+#######
+#  ####
+#O * ##
+#O* *&#
+# @ * #
+#O@# O#
+#######
+
+title: pagiyasupi-43
+depth: 16
+moves: 43
+path: LULLULDDDUURRRDRDDLULULRDRRULULLDRURDLDRURD
+seed: 206
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 6
+

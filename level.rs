@@ -10,7 +10,6 @@ use std::string::String;
 use crate::vector::Vector;
 use super::Obj;
 use crate::builtins::BUILTIN_LEVELS;
-use crate::dgens::{contains_only};
 
 const X1VARS: [[Vector;3];8] = // only interested in the neighbours (not the opposite)
 [
@@ -24,27 +23,30 @@ const X1VARS: [[Vector;3];8] = // only interested in the neighbours (not the opp
 [Vector(1,1),Vector(1,0),Vector(0,1)],
 ];
 
+
 #[wasm_bindgen]
 #[derive(Clone,PartialEq)] //,PartialOrd
 pub struct Level {
 	keyvals: HashMap::<String,String>,
-	pub w: usize,
-	pub h: usize,
+	pub w: u16,
+	pub h: u16,
 	pub human_pos: Vector,
 	noboxx_pts: Vec::<Vector>,
 	boxx_pts: Vec::<Vector>,
 	data: Vec::<Obj>,
 }
 
+
 #[derive(Clone,PartialEq,PartialOrd)]
 pub struct SpLevel {		/* special level for solving */
-	pub w: usize,
+	pub w: u16,
 	pub human_pos: Vector,
 	pub data: Vec::<Obj>,
 }
 
+
 impl SpLevel {
-	pub fn new_from_level(level: &Level) -> Self {
+	pub fn from_level(level: &Level) -> Self {		
 		Self {
 			w: level.w,
 			human_pos: level.human_pos.clone(),
@@ -54,15 +56,25 @@ impl SpLevel {
 	pub fn get_obj_at_pt(&self, pt: &Vector) -> Obj {
 		self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)]
 	}
-	pub fn get_obj_at_idx(&self, idx: usize) -> Obj {
-		self.data[idx]
-	}
 	pub fn set_obj_at_pt(&mut self, pt: &Vector, obj: Obj) {
 		self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)] = obj;
 	}	
-	pub fn set_obj_at_idx(&mut self, idx: usize, obj: Obj) {
-		self.data[idx] = obj;
+	pub fn get_obj_at_pt_checked(&self, pt: &Vector) -> Obj {
+		let h: u16 = (self.data.len() / self.w as usize) as u16;
+		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= h as i32 {
+			Obj::Wall
+		} else {
+			self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)]
+		}
 	}
+	pub fn set_obj_at_pt_checked(&mut self, pt: &Vector, obj: Obj) {
+		let h: u16 = (self.data.len() / self.w as usize) as u16;
+		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= h as i32 {
+			panic!("set_obj_at_pt_checked(): out of bounds pt");
+		} else {
+			self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)] = obj;
+		}
+	}	
 	pub fn have_win_condition(&self) -> bool {
 		for obj in self.data.iter() {
 			match obj {
@@ -73,16 +85,21 @@ impl SpLevel {
 		return true;
 	}
 	pub fn eq_data(&self, b: &SpLevel) -> bool {
-		self.data == b.data
+		self.data == b.data && self.human_pos == b.human_pos
 	}	
 	pub fn to_string(&self) -> String {
 		let mut s = String::new();
-		for y in 0..(self.data.len()/self.w) {
-			for x in 0..self.w {
-				s += &self.get_obj_at_idx(y * self.w + x).to_char().to_string();
+		for _ in 0..self.w+2 { s+="#"; }
+		s += "\n";
+		for y in 0..(self.data.len()/self.w as usize) {
+			s += "#";
+			for x in 0..self.w as usize {
+				s += &self.get_obj_at_pt(&Vector(x as i32,y as i32)).to_char().to_string();
 			}
-			s += "\n";
+			s += "#\n";
 		}
+		for _ in 0..self.w+2 { s+="#"; }
+		s += "\n";
 		s
 	}	
 }
@@ -108,8 +125,8 @@ impl Level {
 		}
 		
 		let level = BUILTIN_LEVELS[number];
-
-		Level::from_str(level)
+		let level = Level::from_str(level);
+		level
 	}
 	pub fn get_obj_at_pt(&self, pt: &Vector) -> Obj {
 		self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)]
@@ -123,20 +140,44 @@ impl Level {
 	pub fn set_obj_at_idx(&mut self, idx: usize, obj: Obj) {
 		self.data[idx] = obj;
 	}
+	pub fn get_obj_at_pt_checked(&self, pt: &Vector) -> Obj {
+		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= self.h as i32 {
+			Obj::Wall
+		} else {
+			self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)]
+		}
+	}
+	pub fn set_obj_at_pt_checked(&mut self, pt: &Vector, obj: Obj) {
+		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= self.h as i32 {
+			panic!("set_obj_at_pt_checked(): out of bounds pt");
+		} else {
+			self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)] = obj;
+		}
+	}	
 	pub fn get_data(&self) -> Array {
 		self.data.clone().into_iter().map(|obj| JsValue::from(obj as u32)).collect()
 	}
-	fn get_vslice(&self, x: usize, y0: usize, y1: usize) -> Vec::<Obj> {
+	fn get_vslice(&self, x: isize, y0: isize, y1: isize) -> Vec::<Obj> {
 		let mut rv = Vec::<Obj>::new();
 		for i in y0..y1 {
-			rv.push(self.get_obj_at_pt(&Vector(x as i32,i as i32)));
+			let v = Vector(x as i32,i as i32);
+			if self.vector_in_bounds(&v) {
+				rv.push(self.get_obj_at_pt(&Vector(x as i32,i as i32)));
+			} else {
+				rv.push(Obj::Wall);
+			}
 		}
 		return rv;
 	}
-	fn get_hslice(&self, x0: usize, x1: usize, y: usize) -> Vec::<Obj> {
+	fn get_hslice(&self, x0: isize, x1: isize, y: isize) -> Vec::<Obj> {
 		let mut rv = Vec::<Obj>::new();
 		for i in x0..x1 {
-			rv.push(self.get_obj_at_pt(&Vector(i as i32,y as i32)));
+			let v = Vector(i as i32,y as i32);
+			if self.vector_in_bounds(&v) {
+				rv.push(self.get_obj_at_pt(&Vector(i as i32,y as i32)));
+			} else {
+				rv.push(Obj::Wall);
+			}
 		}
 		return rv;
 	}
@@ -168,10 +209,10 @@ impl Level {
 impl Level {
 	pub fn from_str(level_str: &str) -> Option<Level> {
 		let mut count: usize = 0;
-		let mut h: usize = 0;
-		let mut w = 0;
+		let mut h: u16 = 0;
+		let mut w: u16 = 0;
 		let mut data = Vec::<Obj>::with_capacity(128);
-		let mut human_pos: Vector = Vector(0,0);
+		let mut human_pos: Vector = Vector(-1,-1);
 		let mut keyvals = HashMap::new();
 		let mut kvmode = false;
 	
@@ -183,10 +224,10 @@ impl Level {
 			let txt = line;
 			if count == 0 {
 				// read in length
-				w = txt.len();			
+				w = txt.len() as u16;			
 			}
 			// check length equal to w
-			if !kvmode && txt.len() == w {	
+			if !kvmode && txt.len() == w as usize {	
 				// split line into characters
 				for (i,c) in txt.char_indices() {		// chars() is iterator
 					if c == '&' || c == '%' {
@@ -216,16 +257,27 @@ impl Level {
 			count += 1;
 		}
 	
+		// remove the borders
+		let mut tdata = Vec::<Obj>::new();
+		for y in 1..(h-1) as usize {
+			for x in 1..(w-1) as usize {
+				tdata.push(data[y*w as usize+x]);
+			}
+		}
+		let data = tdata;		
+		w -= 2;
+		h -= 2;
+		let human_pos = human_pos.add(&Vector(-1,-1));
 		println!("Dimensions: {} x {}", w, h);
 		
-		if human_pos.0 == 0 || human_pos.1 == 0 {
+		if human_pos.0 == -1 || human_pos.1 == -1 {
 			panic!("Human not found in level");
 		}
 		
 		println!("Human at: {}, {}", human_pos.0, human_pos.1);
 		
-		if w < 3 || h < 3 {
-			panic!("Width and Height must be >= 3");
+		if w < 1 || h < 1 {
+			panic!("Width and Height must be >= 2");
 		}
 		
 		let mut level = Level {
@@ -248,14 +300,16 @@ impl Level {
 			_ => panic!("Failed to open level file: {}", filename),
 		};
 			
-		Level::from_str(&input)
+		let level = Level::from_str(&input);
+		level
+
 	}
 	
-	pub fn from_parts(title: String, w: usize, h: usize, human_pos: Vector, data: Vec::<Obj>) -> Level {
+	pub fn from_parts(title: String, w: u16, h: u16, human_pos: Vector, data: Vec::<Obj>) -> Level {
 		let level = Level {
 			keyvals: HashMap::from( [("title".to_string(),title)].iter().cloned().collect() ),
-			w: w,
-			h: h,
+			w: w as u16,
+			h: h as u16,
 			human_pos: human_pos,
 			noboxx_pts: Vec::new(),
 			boxx_pts: Vec::new(),
@@ -276,21 +330,44 @@ impl Level {
 	pub fn set_keyval(&mut self, key: &str, val: &str) {
 		self.keyvals.insert(key.to_string(),val.to_string());
 	}
+	pub fn clear_human(&mut self) {
+		// clear the human from the level to make certain things easier
+		let pt = self.human_pos;
+		let obj = self.get_obj_at_pt(&self.human_pos);
+		let obj2 = match obj {
+			Obj::Human => Obj::Space,
+			Obj::HumanInHole => Obj::Hole,
+			_ => panic!("Human not where it should be"),
+		};
+		self.set_obj_at_pt(&pt, obj2);
+	}
+	pub fn place_human(&mut self) {
+		// place the human in the level data
+		let pt = self.human_pos;
+		let obj = self.get_obj_at_pt(&self.human_pos);
+		let obj2 = match obj {
+			Obj::Space => Obj::Human,
+			Obj::Hole => Obj::HumanInHole,
+			_ => panic!("Human cannot be there!"),
+		};
+		self.set_obj_at_pt(&pt, obj2);
+	}
 	pub fn do_noboxx_pts(&mut self) {
 		let mut noboxx_pts: Vec::<Vector> = Vec::new();
 		// aside from #, there are some points where box's simply can't go
 		// e.g. the 2x2 [*#][# ] in any orientation (where space could be human too)
 
+		self.clear_human();
+
 		let block_match = [Obj::Space,Obj::Wall,Obj::Wall];
-		let block_match2 = [Obj::Human,Obj::Wall,Obj::Wall];
-		for y in 0..self.h-1 {
-			for x in 0..self.w-1 {
+		for y in -1..=self.h as isize {
+			for x in -1..=self.w as isize {
 				for z in &X1VARS {
 					let pt = Vector(x as i32,y as i32);
-					let objs = [ self.get_obj_at_pt(&pt.add(&z[0])), 
-								 self.get_obj_at_pt(&pt.add(&z[1])), 
-								 self.get_obj_at_pt(&pt.add(&z[2])), ];
-					if objs == block_match || objs == block_match2 {
+					let objs = [ self.get_obj_at_pt_checked(&pt.add(&z[0])), 
+								 self.get_obj_at_pt_checked(&pt.add(&z[1])), 
+								 self.get_obj_at_pt_checked(&pt.add(&z[2])), ];
+					if objs == block_match {
 						noboxx_pts.push(pt.add(&z[0]));
 					} 
 				}
@@ -303,45 +380,45 @@ impl Level {
 		//  ##...# 
 		// #      #
 
-		let hall_start = vec![ vec![ Obj::Wall, Obj::Space, Obj::Space, Obj::Space ],
-						       vec![ Obj::Wall, Obj::Human, Obj::Space, Obj::Space ],
-						       vec![ Obj::Wall, Obj::Space, Obj::Human, Obj::Space ],
-						       vec![ Obj::Wall, Obj::Space, Obj::Space, Obj::Human ] ];
-		let hall_len = 4;
+		let hall_start = vec![ Obj::Wall, Obj::Space, Obj::Space, Obj::Space ];
+		let hall_len: isize = 4;
 
 		struct HallInfoH {
-			x: usize,
-			y: usize,
-			end_x: usize,
+			x: isize,
+			y: isize,
+			end_x: isize,
 		};
 
-		let mut start_x: Option<usize> = None;
+		let mut start_x: Option<isize> = None;
 		let mut halls = Vec::<HallInfoH>::new();
 
-		// find the hall '    '+
-		for y in 0..self.h {
-			for x in 0..self.w {
-				let obj_here = self.get_obj_at_idx(y * self.w + x);
-				if start_x.is_some() && (obj_here == Obj::Space || obj_here == Obj::Human) { 	// Continuation of hallway
+		// find the hall '#   '+
+		for y in -1..=self.h as isize {
+			for x in -1..=self.w as isize {
+				let obj_here = self.get_obj_at_pt_checked(&Vector(x as i32,y as i32));
+				print!("{}",obj_here.to_char());
+				if start_x.is_some() && obj_here == Obj::Space { 					// Continuation of hallway
 					// do nothing
 				} else if start_x.is_some() && obj_here == Obj::Wall {				// We have end of the hall					
-					halls.push( HallInfoH { x:start_x.unwrap(), y, end_x:x } );
+					halls.push( HallInfoH { x:start_x.unwrap(), y: y, end_x:x } );
 					start_x = None;
 				} else if start_x.is_some() {										// Not a real hallway
 					start_x = None;
 				}
-				if start_x.is_none() && self.w >= 4 && x <= (self.w-hall_len) {
-					if hall_start.contains(&self.get_hslice(x, x+hall_len, y)) {
+				if start_x.is_none() {
+					if hall_start.starts_with(&self.get_hslice(x, x + hall_len, y)) {
 						start_x = Some(x);
 					}
 				}
 			}
+			println!();
 		} 
 		
+		println!("len of halls: {}", halls.len());
 		// check if the hall is a valid hall (has a complete wall on one side)
 		for h in halls {
-			let range1 = self.data.get(((h.y-1)*self.w+h.x+1)..((h.y-1)*self.w+h.end_x)).unwrap();		
-			let range2 = self.data.get(((h.y+1)*self.w+h.x+1)..((h.y+1)*self.w+h.end_x)).unwrap();
+			let range1 = self.get_hslice(h.x+1,h.end_x,h.y-1);
+			let range2 = self.get_hslice(h.x+1,h.end_x,h.y+1);
 			if range1.iter().all(|o| o==&Obj::Wall) || range2.iter().all(|o| o==&Obj::Wall) {
 				(h.x+1..h.end_x).into_iter().for_each( |x| self.noboxx_pts.push(Vector(x as i32, h.y as i32)));
 			}
@@ -349,18 +426,18 @@ impl Level {
 
 		// now do it all vertically!
 		struct HallInfoV {
-			x: usize,
-			y: usize,
-			end_y: usize,
+			x: isize,
+			y: isize,
+			end_y: isize,
 		};
-		let mut start_y: Option<usize> = None;
+		let mut start_y: Option<isize> = None;
 		let mut halls = Vec::<HallInfoV>::new();
 
 		// find the hall '    '+
-		for x in 0..self.w {
-			for y in 0..self.h {
-				let obj_here = self.get_obj_at_idx(y * self.w + x);
-				if start_y.is_some() && (obj_here == Obj::Space || obj_here == Obj::Human) { 	// Continuation of hallway
+		for x in -1..=self.w as isize {
+			for y in -1..=self.h as isize {
+				let obj_here = self.get_obj_at_pt_checked(&Vector(x as i32,y as i32));
+				if start_y.is_some() && (obj_here == Obj::Space) { 	// Continuation of hallway
 					// do nothing
 				} else if start_y.is_some() && obj_here == Obj::Wall {				// We have end of the hall					
 					halls.push( HallInfoV { x:x, y:start_y.unwrap(), end_y:y } );
@@ -368,19 +445,20 @@ impl Level {
 				} else if start_y.is_some() {										// Not a real hallway
 					start_y = None;
 				}
-				if start_y.is_none() && self.h >= 4 && y <= (self.h-hall_len) {
-					if hall_start.contains(&self.get_vslice(x, y, y+hall_len)) {		// Start of the hallway
+				if start_y.is_none() {
+					if hall_start.starts_with(&self.get_vslice(x, y, y + hall_len)) {		// Start of the hallway
 						start_y = Some(y);
 					}
 				}
 			}
 		} 
-		
+		println!("len of halls: {}", halls.len());
+
 		// check if the hall is a valid hall (has a complete wall on one side)
 		for h in halls {
 			let range1 = self.get_vslice(h.x-1, h.y+1, h.end_y);
 			let range2 = self.get_vslice(h.x+1, h.y+1, h.end_y);
-			if contains_only(&range1, &Obj::Wall) || contains_only(&range2, &Obj::Wall) {
+			if range1.iter().all(|o| o==&Obj::Wall) || range2.iter().all(|o| o==&Obj::Wall) {
 				(h.y+1..h.end_y).into_iter().for_each( |y| self.noboxx_pts.push(Vector(h.x as i32, y as i32)));
 			}
 		}
@@ -392,6 +470,7 @@ impl Level {
 			print!("{} ",p.to_string());
 		}
 		println!(""); 
+		self.place_human();
 	}
 	pub fn do_boxx_pts(&mut self) {
 		let mut pts: Vec::<Vector> = Vec::new();
@@ -419,11 +498,11 @@ impl Level {
 		}
 		count
 	}
-	pub fn in_noboxx_pts(&self, v: Vector) -> bool {
+	pub fn in_noboxx_pts(&self, v: &Vector) -> bool {
 		self.noboxx_pts.contains(&v)
 	}
 	pub fn strip_sprites(&mut self) {
-		for idx in 0..(self.w * self.h) {
+		for idx in 0..(self.w * self.h) as usize {
 			let obj = self.get_obj_at_idx(idx);
 			let nobj = match obj {
 				Obj::Human => Obj::Space,
@@ -436,7 +515,10 @@ impl Level {
 		}		
 	}
 	pub fn eq_data(&self, b: &Level) -> bool {
-		self.data == b.data
+		self.data == b.data && self.human_pos == b.human_pos
+	}
+	pub fn get_noboxx_pts(&self) -> &Vec<Vector> {
+		&self.noboxx_pts
 	}
 	pub fn get_boxx_pts(&self) -> &Vec<Vector> {
 		return &self.boxx_pts;
@@ -454,12 +536,17 @@ impl Level {
 	}
 	pub fn to_string(&self) -> String {
 		let mut s = String::new();
-		for y in 0..self.h {
-			for x in 0..self.w {
-				s += &self.get_obj_at_idx(y * self.w + x).to_char().to_string();
+		for _ in 0..self.w+2 { s+="#"; }
+		s += "\n";
+		for y in 0..self.h as usize {
+			s += "#";
+			for x in 0..self.w as usize {
+				s += &self.get_obj_at_idx(y * self.w as usize + x).to_char().to_string();
 			}
-			s += "\n";
+			s += "#\n";
 		}
+		for _ in 0..self.w+2 { s+="#"; }
+		s += "\n";
 		s
 	}
 }

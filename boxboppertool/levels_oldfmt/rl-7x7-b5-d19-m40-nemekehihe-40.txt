@@ -1,0 +1,18 @@
+#######
+#   *%#
+# *** #
+# # * #
+#OO   #
+##OO  #
+#######
+
+title: nemekehihe-40
+depth: 19
+moves: 40
+path: LLDDDRRULDDLULLUUURRRDDRDLLRUULDDUULULDD
+seed: 163
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

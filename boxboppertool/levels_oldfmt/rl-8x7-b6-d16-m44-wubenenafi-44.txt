@@ -1,0 +1,19 @@
+########
+#  O## #
+# #@   #
+## O** #
+#&* *OO#
+# #O * #
+########
+
+title: wubenenafi-44
+depth: 16
+moves: 44
+path: RURURRDULLDRURRDDDLLUURULDDDRULULLDRRUURRDLL
+seed: 5039
+width: 8
+height: 7
+wall_density: 35
+box_density: 20
+num_boxxes: 6
+

@@ -1,0 +1,16 @@
+##########
+#  @#O *O#
+##  @* *&#
+#O   O* ##
+##########
+
+title: julejeyodi-39
+depth: 14
+moves: 39
+path: LDLLULRDRRULURDDLLLURDRRUULDRDLULLDLLUR
+seed: 341
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

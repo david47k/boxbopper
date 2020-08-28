@@ -1,0 +1,19 @@
+########
+# # O  #
+# #  #O#
+# *@O# #
+#  ****#
+# O O &#
+########
+
+title: fesivuyafi-47
+depth: 17
+moves: 47
+path: LLULRUULDRDDRRULDLLLLUURDLDRRRULDLLUURDRRRRUDDL
+seed: 5507
+width: 8
+height: 7
+wall_density: 35
+box_density: 20
+num_boxxes: 6
+

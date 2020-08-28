@@ -1,0 +1,18 @@
+#######
+#O#####
+#  #@%#
+#   **#
+#*  * #
+# O# O#
+#######
+
+title: taforubeji-39
+depth: 16
+moves: 39
+path: DLLDLDLUUURDRRRDLULLLDDRULURRRDLULDRRRU
+seed: 3727
+width: 7
+height: 7
+wall_density: 35
+num_boxxes: 5
+

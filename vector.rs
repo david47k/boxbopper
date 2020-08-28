@@ -44,8 +44,8 @@ impl Vector {
 
 // non-js
 impl Vector {
-    pub fn to_index(&self, width: &usize) -> usize {
-		width * (self.1 as usize) + (self.0 as usize)
+    pub fn to_index(&self, width: u16) -> usize {
+		width as usize * (self.1 as usize) + (self.0 as usize)
     }
     pub fn to_usize(&self) -> (usize,usize) {
 		(self.0 as usize, self.1 as usize)

@@ -1,0 +1,18 @@
+#######
+#   OO#
+##*   #
+# * *O#
+# #** #
+#%*O O#
+#######
+
+title: fanugudiku-64
+depth: 25
+moves: 64
+path: RRUURLDDRURUULDRDLDLLLUURRRUULLDURRDDDDLLLUURRDRDLLRUULUURDDDRUU
+seed: 413
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 6
+

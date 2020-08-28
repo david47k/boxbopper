@@ -1,0 +1,19 @@
+########
+# O#O O#
+#   O# #
+#  @* *#
+# *&*  #
+# @##  #
+########
+
+title: gavapirufo-64
+depth: 23
+moves: 64
+path: URULDLURRURRDDLDDRUULLLDRURRDDLURUUDLDLUULLLDRLDRRRURRDDLURULDLU
+seed: 5077
+width: 8
+height: 7
+wall_density: 35
+box_density: 20
+num_boxxes: 6
+

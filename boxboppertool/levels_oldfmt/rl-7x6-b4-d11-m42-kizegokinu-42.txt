@@ -1,0 +1,17 @@
+#######
+#  # O#
+#* @* #
+# O*& #
+#O   ##
+#######
+
+title: kizegokinu-42
+depth: 11
+moves: 42
+path: DLLUUULDDRDRRULRRUULDRDLDLLULUURDRRDDLURRU
+seed: 441
+width: 7
+height: 6
+wall_density: 30
+num_boxxes: 4
+

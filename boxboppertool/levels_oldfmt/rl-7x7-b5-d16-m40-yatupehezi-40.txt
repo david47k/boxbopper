@@ -1,0 +1,18 @@
+#######
+# O @&#
+#   ###
+# *  ##
+# *@O #
+#O *  #
+#######
+
+title: yatupehezi-40
+depth: 16
+moves: 40
+path: LLDLLDDDRRUUDDLLURURRDRDLLLURULLUURRDDLU
+seed: 185
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

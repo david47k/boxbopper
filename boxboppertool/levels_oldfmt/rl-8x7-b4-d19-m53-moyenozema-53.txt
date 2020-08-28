@@ -1,0 +1,18 @@
+########
+#    @ #
+#     &#
+# #OO#*#
+# *  *O#
+## #   #
+########
+
+title: moyenozema-53
+depth: 19
+moves: 53
+path: ULLDDDDRRULDLUULULLDDRRRDRRULDLULUURURRDDULLULDLLURRR
+seed: 3312
+width: 8
+height: 7
+wall_density: 35
+num_boxxes: 4
+

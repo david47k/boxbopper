@@ -1,0 +1,18 @@
+#######
+##   O#
+##  *&#
+## @ ##
+#   * #
+###O ##
+#######
+
+title: mirejimoro-38
+depth: 8
+moves: 38
+path: ULLDLDDRDRULLUURDDUUURRDLULDLDDRRUULUR
+seed: 2553
+width: 7
+height: 7
+wall_density: 35
+num_boxxes: 3
+

@@ -1,0 +1,18 @@
+#######
+#O *  #
+#  @ &#
+# # **#
+# #*@O#
+#O O  #
+#######
+
+title: fojezotaro-65
+depth: 19
+moves: 65
+path: ULLLDRLLDDDRRUUDDRRUULDLDLLUUURURRDDRDDLLLRRRUULUULLDRDDUUURRDDUL
+seed: 86
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 6
+

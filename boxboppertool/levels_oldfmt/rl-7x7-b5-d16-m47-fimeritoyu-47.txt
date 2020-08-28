@@ -1,0 +1,18 @@
+#######
+## O* #
+#   OO#
+#@    #
+# ** ##
+#&*O  #
+#######
+
+title: fimeritoyu-47
+depth: 16
+moves: 47
+path: RUURRDDLULLDRUURUULDRRRULDLLLDRDDLURRULURRLDDRU
+seed: 429
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

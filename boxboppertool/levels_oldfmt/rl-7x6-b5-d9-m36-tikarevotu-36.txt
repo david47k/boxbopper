@@ -1,0 +1,17 @@
+#######
+#&O   #
+#@* @ #
+#O **##
+#  O  #
+#######
+
+title: tikarevotu-36
+depth: 9
+moves: 36
+path: DURRDLURRRDLULLDDDRRUURULLRDDDLLUURD
+seed: 137
+width: 7
+height: 6
+wall_density: 20
+num_boxxes: 5
+

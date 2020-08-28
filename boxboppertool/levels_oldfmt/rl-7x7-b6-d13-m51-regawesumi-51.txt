@@ -1,0 +1,18 @@
+#######
+# @OOO#
+# *# ##
+# * * #
+# @@&##
+#     #
+#######
+
+title: regawesumi-51
+depth: 13
+moves: 51
+path: DLLLUUUURRRLLLDDRULURDDLDDRUUUDDDRRUUUDLRDDLLULUURD
+seed: 230
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 6
+

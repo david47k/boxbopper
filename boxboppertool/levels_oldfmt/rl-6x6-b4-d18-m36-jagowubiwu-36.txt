@@ -1,0 +1,17 @@
+######
+#    #
+#OO* #
+# ** #
+# O@&#
+######
+
+title: jagowubiwu-36
+depth: 18
+moves: 36
+path: UUULLDLDDRULUURRRDDLLDLURRRDLURUULDD
+seed: 2
+width: 6
+height: 6
+wall_density: 20
+num_boxxes: 4
+

@@ -57,33 +57,28 @@ fn random_string(rng: &mut rand_chacha::ChaCha8Rng) -> String {
 }
 
 
-fn random_level_creator(width: usize, height: usize, wall_density: u32, box_density: u32, rng: &mut rand_chacha::ChaCha8Rng) -> (Level,String) {
+fn random_level_creator(width: u16, height: u16, wall_density: u32, box_density: u32, rng: &mut rand_chacha::ChaCha8Rng) -> (Level,String) {
 	let mut data = Vec::<Obj>::with_capacity(width as usize * height as usize);
 	let mut params = String::new();
 
 	params += &format!("width: {}\nheight: {}\n", width, height);
 
-	// draw four walls and fill with spaces
-	for y in 0..height {
-		for x in 0..width {
-			let o = if y==0 || x==0 || y==(height-1) || x==(width-1) {
-				 Obj::Wall
-			} else { Obj::Space };
-			data.push(o);
-		}
+	// fill with spaces
+	for _n in 0..(width * height) {
+		data.push(Obj::Space);
 	}
 
 	// randomly place us
-	let x = rng.gen_range(1,width-1);
-	let y = rng.gen_range(1,height-1);
+	let x = rng.gen_range(0,width);
+	let y = rng.gen_range(0,height);
 	data[(y*width + x) as usize] = Obj::Human;
 	let human_pos = Vector(x as i32,y as i32);
 	
 	// randomly place walls - not on anything else
-	for y in 1..height-1 {
-		for x in 1..width-1 {
-			if data[y*width+x] == Obj::Space && rng.gen_range(0,100) <= wall_density {
-				data[y*width+x] = Obj::Wall;
+	for y in 0..height as usize {
+		for x in 0..width as usize {
+			if data[y*width as usize+x] == Obj::Space && rng.gen_range(0,100) <= wall_density {
+				data[y*width as usize+x] = Obj::Wall;
 			}
 		}
 	}
@@ -95,7 +90,7 @@ fn random_level_creator(width: usize, height: usize, wall_density: u32, box_dens
 	let mut hole_pts = Vec::<Vector>::new();
 
 	// calculate how many boxxes
-	let max_squares = (width-2)*(height-2);
+	let max_squares = width as usize * height as usize;
 	let mut num_boxxes = max_squares * box_density as usize / 100;
 	if num_boxxes < 3 { num_boxxes = 3; };
 	
@@ -103,8 +98,8 @@ fn random_level_creator(width: usize, height: usize, wall_density: u32, box_dens
 	let mut i = 0;
 	let mut insane = 0;
 	while i < num_boxxes && insane < max_squares * 10 { // don't let it run forever
-		let x = rng.gen_range(1,width-1);
-		let y = rng.gen_range(1,height-1);
+		let x = rng.gen_range(0,width);
+		let y = rng.gen_range(0,height);
 		let v = Vector(x as i32, y as i32);
 		if level.get_obj_at_pt(&v) == Obj::Space {
 			if is_pullable(&level, &v) {
@@ -139,8 +134,10 @@ pub struct Solution {
 
 pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Option<Solution> {
 	let max_moves = Arc::new(AtomicU32::new(max_moves_requested));
-	let base_rc = Arc::new(base_level.clone());
-	let base_map = PathNodeMap::new_from_level(&base_rc.clone());
+	let mut base_level = base_level.clone();
+	base_level.clear_human();
+	let base_level = Arc::new(base_level);
+	let base_map = PathNodeMap::new_from_level(&Arc::clone(&base_level));
 
 	let mut mapsr = Rc::new(vec![base_map]);
 	
@@ -206,7 +203,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_
 		depth += 1;
 	}
 
-	if have_solution.load(AtomicOrdering::SeqCst) && base_rc.get_box_count()>0 {
+	if have_solution.load(AtomicOrdering::SeqCst) && base_level.get_box_count()>0 {
 		let solstr = best_solution_str.lock().unwrap();		
 		if verbosity > 0 { 
 			println!("-- Best solution --");
@@ -238,13 +235,7 @@ pub fn pnm_cmp(a: &PathNodeMap, b: &PathNodeMap) -> Ordering {
 		}
 		if a.depth < b.depth {
 			return Ordering::Greater;
-		} /*
-		if a.path.len() < b.path.len() {			// not sure this is neccessary
-			return Ordering::Less;
-		}
-		if a.path.len() > b.path.len() {
-			return Ordering::Greater;
-		} */
+		} 
 		if a.nodes[0].steps < b.nodes[0].steps {
 			return Ordering::Less;
 		}
@@ -312,8 +303,10 @@ fn select_unique_n_from(count: usize, len: usize, rng: &mut rand_chacha::ChaCha8
 pub fn unsolve_level(base_level: &Level, max_steps_p: u32, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Vec::<Level> {
 	let max_steps = max_steps_p;
 	let max_depth = max_steps / 2;
-	let base_rc = Arc::new(base_level.clone());
-	let base_map = PathNodeMap::new_from_level(&base_rc.clone());
+	let mut base_level = base_level.clone();
+	base_level.clear_human();
+	let base_level = Arc::new(base_level);
+	let base_map = PathNodeMap::new_from_level(&Arc::clone(&base_level));
 
 	// A map is complete when the last box is pushed into place. So when unsolving, we need to start with the human
 	// in the appropriate spot(s) they'd be after pushing the last box.
@@ -468,6 +461,7 @@ pub fn unsolve_level(base_level: &Level, max_steps_p: u32, rng: &mut rand_chacha
 		level.set_keyval("moves", &moves.to_string());
 		level.set_keyval("depth", &c.depth.to_string());
 		level.set_keyval("path", &moves_to_string(&path));
+		level.place_human();
 		levels.push(level);
 	}
 	
@@ -545,7 +539,7 @@ fn main() -> std::io::Result<()> {
 		println!("");
 	} else if mode == Mode::Make {
 		// create level
-		let (random_level, level_params) = random_level_creator(width, height, wall_density, box_density, &mut rng);
+		let (random_level, level_params) = random_level_creator(width as u16, height as u16, wall_density, box_density, &mut rng);
 
 		// unsolve the level
 		if verbosity > 0 { 

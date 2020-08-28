@@ -1,0 +1,16 @@
+##########
+#OO*  #O #
+# *@* #* #
+#O     *%#
+##########
+
+title: hozirapewu-38
+depth: 17
+moves: 38
+path: LLLUULLLRRRDDLLLUDRRRUULLDLDRRRULRDRRU
+seed: 975
+width: 10
+height: 5
+wall_density: 25
+num_boxxes: 6
+

@@ -1,0 +1,16 @@
+##########
+# @O   O##
+# *##  * #
+#&* O    #
+##########
+
+title: nipizoneni-39
+depth: 17
+moves: 39
+path: UURRRRRDDRRULLULLLLLDDRUDRRRURRDLLURULL
+seed: 417
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 4
+

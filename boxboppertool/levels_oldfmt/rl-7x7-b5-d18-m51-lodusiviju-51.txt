@@ -1,0 +1,18 @@
+#######
+# # &O#
+#O @* #
+##** O#
+#  *  #
+# O # #
+#######
+
+title: lodusiviju-51
+depth: 18
+moves: 51
+path: RDDLULURDDDLDLLURRURUULDLDRDDLLURDRULUURRRDDLLURLLD
+seed: 3427
+width: 7
+height: 7
+wall_density: 35
+num_boxxes: 5
+

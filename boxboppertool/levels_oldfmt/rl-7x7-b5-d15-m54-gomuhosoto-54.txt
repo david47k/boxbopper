@@ -1,0 +1,18 @@
+#######
+##    #
+#O *  #
+# @*  #
+#@&#*##
+# OO  #
+#######
+
+title: gomuhosoto-54
+depth: 15
+moves: 54
+path: DLURDRRUURUULLLDDDLDRUUULDURURRRDDLLRRUULDLLDDUURRRDLL
+seed: 3147
+width: 7
+height: 7
+wall_density: 35
+num_boxxes: 5
+

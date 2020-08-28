@@ -1,0 +1,18 @@
+#######
+#O *&O#
+###**##
+#   O #
+# * O #
+##  @ #
+#######
+
+title: jaramofeso-43
+depth: 18
+moves: 43
+path: LDURDDRDDLUUULURDDDLULLDRRURUULLRDDLDDRULUR
+seed: 268
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 5
+

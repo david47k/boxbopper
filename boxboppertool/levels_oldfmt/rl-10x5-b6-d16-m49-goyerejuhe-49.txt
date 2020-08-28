@@ -1,0 +1,16 @@
+##########
+#&*OO #OO#
+# ***##**#
+#    O  O#
+##########
+
+title: goyerejuhe-49
+depth: 16
+moves: 49
+path: DDRRRRRRUDRUDLLLLLLLUURDLDRRRRRRLLLULDLLUURDLDRRR
+seed: 337
+width: 10
+height: 5
+wall_density: 20
+num_boxxes: 6
+

@@ -1,0 +1,17 @@
+#######
+#  *O##
+#  @&O#
+# * * #
+# #  O#
+#######
+
+title: hilimereka-38
+depth: 13
+moves: 38
+path: ULDLLURRDRRDDLLURURDULLULLDDRLURRRDDLU
+seed: 353
+width: 7
+height: 6
+wall_density: 30
+num_boxxes: 4
+

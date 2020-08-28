@@ -1,0 +1,18 @@
+#######
+#    O#
+# @ *%#
+#** @##
+#O * ##
+#  #O##
+#######
+
+title: jademuvubi-49
+depth: 17
+moves: 49
+path: ULLLLDDRULURRRLDLDDDLUURURRDDLRUULLDLDDRUURUULLDD
+seed: 222
+width: 7
+height: 7
+wall_density: 25
+num_boxxes: 6
+
