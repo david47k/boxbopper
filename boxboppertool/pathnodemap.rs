@@ -76,14 +76,14 @@ impl PathNodeMap {
 	}
 	pub fn complete_map_solve(&self) -> PathNodeMap {
 		let mut map = self.clone();
-		while self.tail_nodes.len() != 0 {			// check if map is complete
+		while map.tail_nodes.len() != 0 {			// check if map is complete
 			map.step_solve();
 		}
 		map
 	}
 	pub fn complete_map_unsolve(&self) -> PathNodeMap {
 		let mut map = self.clone();
-		while self.tail_nodes.len() != 0 {			// check if map is complete
+		while map.tail_nodes.len() != 0 {			// check if map is complete
 			map.step_unsolve();
 		}		
 		map
