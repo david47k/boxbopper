@@ -272,7 +272,7 @@ fn dedupe_equal_levels(maps: &mut Vec::<PathNodeMap>) {
 		}
 		ord			
 	});
-	maps.dedup_by(|a,b| a.level.eq_data(&b.level)); // it keeps the first match for each level (sorted to be smallest steps)
+	maps.dedup_by(|a,b| a.level.eq(&b.level)); // it keeps the first match for each level (sorted to be smallest steps)
 }
 
 
