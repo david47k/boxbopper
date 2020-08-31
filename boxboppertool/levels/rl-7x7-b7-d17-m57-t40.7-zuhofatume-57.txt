@@ -1,0 +1,22 @@
+#########
+#  ### ##
+##      #
+## * * ##
+## ##  ##
+#&*OO@ ##
+## *@O# #
+#  *  OO#
+#########
+
+title: zuhofatume-57
+depth: 17
+moves: 57
+path: RDDRRRRLLUDLLUUUURURRRDDLDDLDLLURDRRUUURUULDDDUUULLDRURDD
+time: 40.7
+seed: 11869
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

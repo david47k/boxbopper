@@ -1,0 +1,22 @@
+#########
+#  O  *&#
+#  * # ##
+#O ** # #
+##  O   #
+##O##**O#
+#  *O # #
+#O   #  #
+#########
+
+title: puwedipufo-69
+depth: 24
+moves: 69
+path: LLLDLLULDRDDRUDLDDDRRURURULULLRUULDLLURDDDDDUUUURRDLULDDURRRDDDLDLLUR
+time: 92.7
+seed: 11937
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

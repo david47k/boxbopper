@@ -1,0 +1,22 @@
+#########
+#  ##O# #
+###O#  O#
+###@# # #
+#&*    @#
+## **** #
+##  #O#O#
+# ####  #
+#########
+
+title: wumokibipa-61
+depth: 28
+moves: 61
+path: RRUDLDDRUURRDLULLDDRULURRDRUUURRDDDLLURDRUUDDLLLULLDDRULURRRR
+time: 0.1
+seed: 11469
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

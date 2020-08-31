@@ -1,0 +1,22 @@
+#########
+# @#   ##
+# O #O O#
+# *##  ##
+#  O  *##
+# ## ** #
+#  #* *%#
+#O #   ##
+#########
+
+title: laviyuzinu-71
+depth: 30
+moves: 71
+path: LDLLUUDDRRULUULLLULDDDUURRRRDDDLUURUURUULDDDDLDDRRURULUULURDDLLDDRRLUUU
+time: 4.0
+seed: 11536
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

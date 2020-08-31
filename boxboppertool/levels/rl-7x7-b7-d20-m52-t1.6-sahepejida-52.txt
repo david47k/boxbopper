@@ -1,0 +1,22 @@
+#########
+#   @  @#
+## # ####
+#&# #OO #
+#@#     #
+#O*   * #
+# *O*# ##
+#     # #
+#########
+
+title: sahepejida-52
+depth: 20
+moves: 52
+path: DDRRURRDLLDDRUULURDRURRDLLULLDDDLLUUDRDRRUULLRURRDRU
+time: 1.6
+seed: 11677
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

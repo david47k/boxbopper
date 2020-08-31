@@ -1,0 +1,22 @@
+#########
+#    #  #
+#  #* # #
+#  @&@  #
+## #@####
+## @O # #
+# *     #
+#O @ #  #
+#########
+
+title: sihatilisi-56
+depth: 19
+moves: 56
+path: DDRDLDLLUURDRRULDLLUUULUURRRDDDUUULLLDDRRLLUURDLDRUURRDD
+time: 6.1
+seed: 11771
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

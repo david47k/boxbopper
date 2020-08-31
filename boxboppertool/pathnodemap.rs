@@ -8,9 +8,9 @@ use boxbopperbase::vector::{Vector,Move,ALLMOVES,ShrunkPath};
 #[derive(Clone,Copy)]
 pub struct PathNode {
 	pt: Vector,
-	pub steps: u32,
+	pub steps: u16,
+	prev_node_idx: u16,
 	move_taken: Option<Move>, // what move we took to get here, used to determine movelist when solution found
-	prev_node_idx: u32,
 }
 
 #[derive(Clone,Copy)]
@@ -24,40 +24,21 @@ pub struct KeyMove {
 pub struct PathNodeMap {
 	pub level: SpLevel,
 	pub nodes: Vec::<PathNode>,
-	tail_nodes: Vec::<u32>,
 	pub key_moves: Vec::<KeyMove>,
-	pub path: Vec::<Move>,
-	pub depth: u32,
-	pub flag: bool,
-}
-
-#[derive(Clone)]
-pub struct ShrunkMap {
-	pub spath: ShrunkPath,
-	pub cmp_data: u128,
+	pub path: ShrunkPath,
 	pub depth: u16,
 	pub flag: bool,
 }
 
-impl ShrunkMap {
-	pub fn from_pnm(pnm: &PathNodeMap) -> ShrunkMap {
-		ShrunkMap {
-			spath: ShrunkPath::from_path(&pnm.path),
-			cmp_data: pnm.level.cmp_data,
-			depth: pnm.depth as u16,
-			flag: pnm.flag,
-		}
-	}
-}
 
 impl PathNodeMap {
 	pub fn new_from_level(level: &Level) -> PathNodeMap {				// start the game this way
 		let mut map = PathNodeMap {
 			level: SpLevel::from_level(&(level.clone())),
-			nodes: Vec::<PathNode>::with_capacity(64),
-			tail_nodes: Vec::<u32>::with_capacity(32),
+			nodes: Vec::<PathNode>::with_capacity(64),			
 			key_moves: Vec::<KeyMove>::with_capacity(16),
-			path: Vec::<Move>::with_capacity(64),
+			//path: Vec::<Move>::with_capacity(64),
+			path: ShrunkPath::new(),
 			flag: false,
 			depth: 0,
 		};
@@ -67,136 +48,133 @@ impl PathNodeMap {
 			move_taken: None,
 			prev_node_idx: 0,
 		});
-		map.tail_nodes.push(0);
 		map
 	}
 	pub fn complete_map_solve(&self, base_level: &Level) -> PathNodeMap {
 		let mut map = self.clone();
-		while map.tail_nodes.len() != 0 {			// check if map is complete
-			map.step_solve(base_level);
+		let mut tail_nodes = Vec::<u16>::with_capacity(32);
+		tail_nodes.push(0);
+		while tail_nodes.len() != 0 {			// check if map is complete
+			let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
+		
+			for tnidx in tail_nodes.iter() {							// for each tail node
+				let tnode = &map.nodes[(*tnidx) as usize];
+				for movedir in ALLMOVES.iter() {							// for each possible move
+					let pt = tnode.pt;									
+					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
+					match map.level.get_obj_at_pt_checked(&npt) {
+						Obj::Space | Obj::Hole => {
+							// first check this point isn't already in our list!!!						
+							let mut ok = true;
+							for n in map.nodes.iter() {
+								if n.pt == npt { ok = false; break; }
+							}
+							for n in new_tail_nodes.iter() {
+								if n.pt == npt { ok = false; break; }
+							}
+							if !ok { continue; }
+	
+							// yep, we can move here, make a new tail node
+							let pn = PathNode {
+								pt: npt.clone(),
+								steps: tnode.steps + 1,
+								move_taken: Some(*movedir),
+								prev_node_idx: *tnidx,
+							};
+							new_tail_nodes.push(pn);
+						}
+						Obj::Boxx | Obj::BoxxInHole => { 
+							// What's past the boxx? We can push into Space and Hole.
+							let bnpt = &pt.add_dir2(&movedir);
+							match map.level.get_obj_at_pt_checked(bnpt) {
+								Obj::Space | Obj::Hole => { 
+									// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
+									if !base_level.in_noboxx_pts(bnpt) && !map.double_boxx_situation(pt,*movedir) {
+										let km = KeyMove {
+											pn: tnode.clone(),
+											move_dir: *movedir,
+										};
+										map.key_moves.push(km);
+									}
+								},
+								_ => {} // can't push the boxx				
+							}
+						}
+						_ => {} // not a move we can take
+					};
+				}	
+			}
+	
+			// append new tail nodes to nodes and tail nodes
+			tail_nodes.clear();
+			for n in new_tail_nodes {
+				map.nodes.push(n);
+				tail_nodes.push((map.nodes.len()-1) as u16);
+			}
 		}
 		map
 	}
 	pub fn complete_map_unsolve(&self, base_level: &Level) -> PathNodeMap {
 		let mut map = self.clone();
-		while map.tail_nodes.len() != 0 {			// check if map is complete
-			map.step_unsolve(base_level);
-		}		
-		map
-	}
-	pub fn step_solve(&mut self, base_level: &Level) { 										// steps tail nodes forwards one		
-		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
+		let mut tail_nodes = Vec::<u16>::with_capacity(32);
+		tail_nodes.push(0);
+		while tail_nodes.len() != 0 {			// check if map is complete
+			let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
 		
-		for tnidx in self.tail_nodes.iter() {							// for each tail node
-			let tnode = &self.nodes[(*tnidx) as usize];
-			for movedir in ALLMOVES.iter() {							// for each possible move
-				let pt = tnode.pt;									
-				let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
-				match self.level.get_obj_at_pt_checked(&npt) {
-					Obj::Space | Obj::Hole => {
-						// first check this point isn't already in our list!!!						
-						let mut ok = true;
-						for n in self.nodes.iter() {
-							if n.pt.eq(&npt) { ok = false; break; }
-						}
-						for n in new_tail_nodes.iter() {
-							if n.pt.eq(&npt) { ok = false; break; }
-						}
-						if !ok { continue; }
+			for tnidx in tail_nodes.iter() {							// for each tail node
+				let tnode = &map.nodes[*tnidx as usize];
+				for movedir in ALLMOVES.iter() {							// for each possible move
+					let pt = tnode.pt;									
+					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
+					match map.level.get_obj_at_pt_checked(&npt) {
+						Obj::Space | Obj::Hole => {
+							// first check this point isn't already in our list!!!						
+							let mut ok = true;
+							for n in map.nodes.iter() {
+								if n.pt == npt { ok = false; break; }
+							}
+							for n in new_tail_nodes.iter() {
+								if n.pt == npt { ok = false; break; }
+							}
+							if !ok { continue; }
 
-						// yep, we can move here, make a new tail node
-						let pn = PathNode {
-							pt: npt.clone(),
-							steps: tnode.steps + 1,
-							move_taken: Some(*movedir),
-							prev_node_idx: *tnidx,
-						};
-						new_tail_nodes.push(pn);
-					}
-					Obj::Boxx | Obj::BoxxInHole => { 
-						// What's past the boxx? We can push into Space and Hole.
-						let bnpt = &pt.add_dir2(&movedir);
-						match self.level.get_obj_at_pt_checked(bnpt) {
-							Obj::Space | Obj::Hole => { 
-								// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
-								if !base_level.in_noboxx_pts(bnpt) && !self.double_boxx_situation(pt,*movedir) {
+							// yep, we can move here, make a new tail node
+							let pn = PathNode {
+								pt: npt.clone(),
+								steps: tnode.steps + 1,
+								move_taken: Some(*movedir),
+								prev_node_idx: *tnidx,
+							};
+							new_tail_nodes.push(pn);
+						}
+						Obj::Boxx | Obj::BoxxInHole => { 
+							// What's in our reverse direction? We can pull into Space and Hole.
+							let bnpt = &pt.add_dir(&movedir.reverse());
+							match map.level.get_obj_at_pt_checked(bnpt) {
+								Obj::Space | Obj::Hole => { 
+									// yep, its a keypull, save key move.. 
 									let km = KeyMove {
 										pn: tnode.clone(),
-										move_dir: *movedir,
+										move_dir: movedir.clone().reverse(),
 									};
-									self.key_moves.push(km);
-								}
-							},
-							_ => {} // can't push the boxx				
+									map.key_moves.push(km);
+								},
+								_ => {} // can't pull the boxx				
+							}
 						}
-					}
-					_ => {} // not a move we can take
-				};
-			}	
-		}
+						_ => {} // not a move we can take
+					};
+				}	
+			}
 
-		// append new tail nodes to nodes and tail nodes
-		self.tail_nodes.clear();
-		for n in new_tail_nodes {
-			self.nodes.push(n);
-			self.tail_nodes.push((self.nodes.len()-1) as u32);
-		}
-	}
-	pub fn step_unsolve(&mut self, _base_level: &Level) { 									// steps tail nodes forwards one		
-		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
-		
-		for tnidx in self.tail_nodes.iter() {							// for each tail node
-			let tnode = &self.nodes[*tnidx as usize];
-			for movedir in ALLMOVES.iter() {							// for each possible move
-				let pt = tnode.pt;									
-				let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
-				match self.level.get_obj_at_pt_checked(&npt) {
-					Obj::Space | Obj::Hole => {
-						// first check this point isn't already in our list!!!						
-						let mut ok = true;
-						for n in self.nodes.iter() {
-							if n.pt.eq(&npt) { ok = false; break; }
-						}
-						for n in new_tail_nodes.iter() {
-							if n.pt.eq(&npt) { ok = false; break; }
-						}
-						if !ok { continue; }
-
-						// yep, we can move here, make a new tail node
-						let pn = PathNode {
-							pt: npt.clone(),
-							steps: tnode.steps + 1,
-							move_taken: Some(*movedir),
-							prev_node_idx: *tnidx,
-						};
-						new_tail_nodes.push(pn);
-					}
-					Obj::Boxx | Obj::BoxxInHole => { 
-						// What's in our reverse direction? We can pull into Space and Hole.
-						let bnpt = &pt.add_dir(&movedir.reverse());
-						match self.level.get_obj_at_pt_checked(bnpt) {
-							Obj::Space | Obj::Hole => { 
-								// yep, its a keypull, save key move.. 
-								let km = KeyMove {
-									pn: tnode.clone(),
-									move_dir: movedir.clone().reverse(),
-								};
-								self.key_moves.push(km);
-							},
-							_ => {} // can't pull the boxx				
-						}
-					}
-					_ => {} // not a move we can take
-				};
-			}	
-		}
-
-		// append new tail nodes to nodes and tail nodes
-		self.tail_nodes.clear();
-		for n in new_tail_nodes {
-			self.nodes.push(n);
-			self.tail_nodes.push((self.nodes.len()-1) as u32);
-		}
+			// append new tail nodes to nodes and tail nodes
+			tail_nodes.clear();
+			for n in new_tail_nodes {
+				map.nodes.push(n);
+				tail_nodes.push((map.nodes.len()-1) as u16);
+			}
+		}		
+		map
 	}
 	pub fn double_boxx_situation(&self, human_pos: Vector, pushdir: Move) -> bool {
 		// checks for a situation where we would be pushing the boxx next to another boxx against a wall and getting ourselves stuck
@@ -293,7 +271,7 @@ impl PathNodeMap {
 	}
 	pub fn new_by_applying_key_push(&self, km: &KeyMove) -> PathNodeMap { 	// after we complete a map, we need to take a key move and start again
 		let mut level = PathNodeMap::apply_key_push(&self.level, km);
-		level.make_cmp_data();
+		level.make_cmp_data_fast_128();
 		
 		let initial_pn = PathNode {
 			pt: level.human_pos.clone(),
@@ -301,24 +279,25 @@ impl PathNodeMap {
 			move_taken: None,
 			prev_node_idx: 0,
 		};
-		let mut tail_nodes = Vec::<u32>::with_capacity(32);
-		tail_nodes.push(0);
 		let mut path = self.path.clone();
-		path.append(&mut self.backtrace_moves(&km.pn));
-		path.push(km.move_dir);
+		let bm = self.backtrace_moves(&km.pn);
+		for m in bm {
+			path.push(&m);
+		}
+		//path.append(&mut self.backtrace_moves(&km.pn));
+		path.push(&km.move_dir);
 		PathNodeMap {
 			level: level,
 			nodes: vec![initial_pn],
-			tail_nodes: tail_nodes,
 			key_moves: Vec::<KeyMove>::with_capacity(8),
 			path: path,
 			flag: false,
 			depth: 0,
 		}
 	}
-	pub fn new_by_applying_key_pull(&self, km: &KeyMove, depth: u32) -> PathNodeMap { 	// after we complete a map, we need to take a key move and start again
+	pub fn new_by_applying_key_pull(&self, km: &KeyMove, depth: u16) -> PathNodeMap { 	// after we complete a map, we need to take a key move and start again
 		let mut level = PathNodeMap::apply_key_pull(&self.level, km); // this only modifies the level
-		level.make_cmp_data();
+		level.make_cmp_data_fast_128();
 		
 		let initial_pn = PathNode {
 			pt: level.human_pos.clone(),
@@ -330,14 +309,17 @@ impl PathNodeMap {
 		tail_nodes.push(0);
 		
 		let mut path = self.path.clone();
-		path.append(&mut self.backtrace_moves(&km.pn));
-		path.push(km.move_dir);
+		//path.append(&mut self.backtrace_moves(&km.pn));
+		let bm = self.backtrace_moves(&km.pn);
+		for m in bm {
+			path.push(&m);
+		}
+		path.push(&km.move_dir);
 
 		PathNodeMap {
 			//base_level: self.base_level.clone(),
 			level: level,
 			nodes: vec![initial_pn],
-			tail_nodes: tail_nodes,
 			key_moves: Vec::<KeyMove>::with_capacity(8),
 			path: path,
 			flag: false,
@@ -351,7 +333,7 @@ impl PathNodeMap {
 		}
 		nmaps
 	}
-	pub fn apply_key_pulls(&self, depth: u32) -> Vec<PathNodeMap> {
+	pub fn apply_key_pulls(&self, depth: u16) -> Vec<PathNodeMap> {
 		let mut nmaps = Vec::<PathNodeMap>::with_capacity(8);
 		for km in &self.key_moves {	
 			nmaps.push(self.new_by_applying_key_pull(&km, depth));

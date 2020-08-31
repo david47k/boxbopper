@@ -1,0 +1,22 @@
+#########
+####  @@#
+##  ## ##
+#O#&O#@ #
+# #** # #
+#*O     #
+#  *  ###
+# # O#  #
+#########
+
+title: pezopogomu-42
+depth: 11
+moves: 42
+path: RDRDDLDLURRUULDDLLLUUDRRDRRUULULDRRDDLUUDL
+time: 0.0
+seed: 11378
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

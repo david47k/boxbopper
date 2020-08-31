@@ -1,0 +1,22 @@
+#########
+# #   OO#
+## # * @#
+## *  ###
+#%* O   #
+###*# * #
+# #  #  #
+# O  @###
+#########
+
+title: fijekujufo-95
+depth: 33
+moves: 95
+path: RURRDLLRRRRRDDLURULLLUUURRDLDLDRUUULDRDDDRRULDLUUULURDDDLULLDRDDRDLUUURRUUURLLDDRDDRRULDLUUULUR
+time: 0.6
+seed: 11980
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

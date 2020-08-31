@@ -1,0 +1,22 @@
+#########
+#  # &# #
+###@**# #
+## O*O O#
+##O#* # #
+##  *O ##
+#   * O #
+# # #  ##
+#########
+
+title: tafokuwuyu-81
+depth: 29
+moves: 81
+path: DDDDLLDLURRRUULDRDRDDLUUULURRLDDDLULLDRRRUUULDURUULDDRDDDLLURDRUUULUURDLDDRDDLLUR
+time: 3.1
+seed: 11967
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

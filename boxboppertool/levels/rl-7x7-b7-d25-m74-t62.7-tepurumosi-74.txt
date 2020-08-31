@@ -1,0 +1,22 @@
+#########
+#  ##   #
+# %# @  #
+# **   ##
+# O*O**##
+#  #OO  #
+### ##  #
+## #O* ##
+#########
+
+title: tepurumosi-74
+depth: 25
+moves: 74
+path: LDDRURRDLRDRRULLUURDDRDLUUUURRDLULDDDULLLLDDRULURRRDLRRRULULDURURRDLDDDDDL
+time: 62.7
+seed: 11400
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

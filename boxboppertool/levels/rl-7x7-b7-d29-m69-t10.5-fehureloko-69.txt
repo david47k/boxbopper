@@ -1,0 +1,22 @@
+#########
+#&* O  O#
+#*#* * ##
+# OO# # #
+# * *O# #
+#O * O###
+## ## # #
+#  # ####
+#########
+
+title: fehureloko-69
+depth: 29
+moves: 69
+path: RRRRRDLULLLLDDRRDRDRULLULLDRDRRULRRUURULLLDDUURRDLRDDLDLLURRLLLUUURRD
+time: 10.5
+seed: 11557
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

@@ -1,0 +1,22 @@
+#########
+#   #  ##
+#O*O  * #
+#   # O##
+#@# * O #
+## O#** #
+###@   ##
+###&#####
+#########
+
+title: wehiyotumo-88
+depth: 32
+moves: 88
+path: URRUURRDLDLLLUUULLUURDURDRRURDDDLDUURDRDLDLLRUURUULLLDDRRUDLLUUULLDDRLUURRDLRRRURDLDDLLU
+time: 18.6
+seed: 11171
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

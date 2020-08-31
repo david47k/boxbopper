@@ -1,0 +1,22 @@
+#########
+#O#&  # #
+# **##  #
+# *    ##
+# O** # #
+##*O*  ##
+## OO # #
+# #OO   #
+#########
+
+title: dubayabemi-63
+depth: 23
+moves: 63
+path: DLDLURDRDDDRRULRUULLULLDDRLUURRDRDDDLLURDRRUULDUULDDUUULLDRURDD
+time: 27.9
+seed: 11311
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

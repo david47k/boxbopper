@@ -1,0 +1,22 @@
+#########
+##  #   #
+#####  ##
+# O  *O #
+# * * *##
+# & #   #
+#  @O @##
+####O* O#
+#########
+
+title: sisogofipo-60
+depth: 25
+moves: 60
+path: LURDDRRDRUURUULDDUULLDLDDRRDRRULUUUUURDLDLLDDURURDDDRDLUUURD
+time: 48.4
+seed: 11190
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

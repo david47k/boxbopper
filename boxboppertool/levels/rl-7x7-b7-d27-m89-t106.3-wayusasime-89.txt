@@ -1,0 +1,22 @@
+#########
+####OO ##
+#  *& ###
+# *#  O##
+#   ##  #
+# #  *@O#
+# O **  #
+##    @ #
+#########
+
+title: wayusasime-89
+depth: 27
+moves: 89
+path: RDRDDLLRRRDDLLLULLLUUUURRRLLLDDRULURRLDDRDRRRUULUDLURDRDDLLDDRRUUUDDDLULURLLULLDDRDRRRULL
+time: 106.3
+seed: 11301
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

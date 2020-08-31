@@ -1,0 +1,22 @@
+#########
+##    OO#
+#####*  #
+#O##    #
+#&*     #
+#  @*@  #
+# #  *#O#
+# ##O * #
+#########
+
+title: juzehiguju-70
+depth: 31
+moves: 70
+path: RRRDRURRDDDLLUULUURRUULDRDDLLLLDRDRLULLURRRRRRDDDLLUURLLUURDRUUDDRDUUU
+time: 124.2
+seed: 11230
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

@@ -1,0 +1,22 @@
+#########
+#    ####
+#@ *O  O#
+# #  #@O#
+###* O**#
+# # *  O#
+## #&## #
+# ### # #
+#########
+
+title: fenadananu-49
+depth: 16
+moves: 49
+path: URRRUUDDLLURDRUDLLLLURUUULLDRURDDDLURUULLDRDDDRRR
+time: 1.8
+seed: 11596
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

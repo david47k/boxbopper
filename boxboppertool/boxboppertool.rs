@@ -11,17 +11,19 @@ use std::rc::Rc;
 
 use boxbopperbase::{Obj,moves_to_string};
 use boxbopperbase::level::{Level};
-use boxbopperbase::vector::{Vector,ALLMOVES,Move};
+use boxbopperbase::vector::{Vector,ALLMOVES,Move,ShrunkPath};
+use boxbopperbase::time::{get_time_ms};
 
 pub mod pathnodemap;
 use crate::pathnodemap::{PathNodeMap,KeyMove};
+
+
 
 extern crate rand;
 extern crate rand_chacha;
 
 use rand::{Rng, SeedableRng};
 
-const MAX_MAPS: usize = 1_200_000; // typically ~12gig of ram, for 16gig desktop
 
 fn is_pullable(level: &Level, pos: &Vector) -> bool {
 	// check all four directions, and see if we can pull in that direction
@@ -126,14 +128,15 @@ fn random_level_creator(width: u16, height: u16, wall_density: u32, box_density:
 
 #[derive(Clone)]
 pub struct Solution {
-	pub moves: u32,
-	pub depth: u32,
+	pub moves: u16,
+	pub depth: u16,
+	pub msecs: f64,
 	pub path: String
 }
 
 
-pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Option<Solution> {
-	let max_moves = Arc::new(AtomicU32::new(max_moves_requested+1));
+pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Option<Solution> {
+	let max_moves = Arc::new(AtomicU16::new(max_moves_requested+1));
 	let mut base_level = base_level.clone();
 	base_level.clear_human();
 	let base_level = &base_level;
@@ -144,8 +147,10 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_
 	
 	let have_solution = Arc::new(AtomicBool::new(false));
 	let best_solution_str = Arc::new(Mutex::new(String::new()));
-	let best_sol_depth = Arc::new(AtomicU32::new(0));
-	let mut depth: u32 = 0;
+	let best_sol_depth = Arc::new(AtomicU16::new(0));
+	let mut depth: u16 = 0;
+
+	let msecs0 = get_time_ms();
 
 	while depth < max_moves.load(AtomicOrdering::SeqCst) {
 		if verbosity > 0 { println!("-- Depth {:>2} --", depth); }
@@ -158,7 +163,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_
 				max_moves.store(m.nodes[0].steps, AtomicOrdering::SeqCst);
 				best_sol_depth.store(depth, AtomicOrdering::SeqCst);
 				let mut solstr = best_solution_str.lock().unwrap();
-				*solstr = format!("{}", moves_to_string(&m.path));
+				*solstr = format!("{}", &m.path.to_string());
 				if verbosity > 0 { 
 					println!("-- Solution found in {} moves --", m.nodes[0].steps);
 				}
@@ -208,9 +213,9 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_
 			break;
 		}
 
-		if maps.len() > MAX_MAPS {
-			println!("--- Hit maximum maps ({}) ---",MAX_MAPS);
-			while maps.len() > MAX_MAPS {
+		if maps.len() > max_maps {
+			println!("--- Hit maximum maps ({}) ---",max_maps);
+			while maps.len() > max_maps {
 				maps.retain(|_m| rng.gen());
 			}
 		}
@@ -227,6 +232,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_
 			println!("Solution in {} moves: {}",max_moves.load(AtomicOrdering::SeqCst), solstr);
 		}
 		return Some(Solution {
+			msecs: get_time_ms() - msecs0,
 			moves: max_moves.load(AtomicOrdering::SeqCst),
 			depth: best_sol_depth.load(AtomicOrdering::SeqCst),
 			path: solstr.to_string(),
@@ -318,7 +324,7 @@ fn select_unique_n_from(count: usize, len: usize, rng: &mut rand_chacha::ChaCha8
 }
 
 
-pub fn unsolve_level(base_level: &Level, max_depth: u32, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Vec::<Level> {
+pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Vec::<Level> {
 	let mut base_level = base_level.clone();
 	base_level.clear_human();
 	let base_level = &base_level;
@@ -335,7 +341,7 @@ pub fn unsolve_level(base_level: &Level, max_depth: u32, rng: &mut rand_chacha::
 	let mapsr: Vec<PathNodeMap> = mapsr.iter().flat_map(|map| map.apply_key_pushes() ).collect();
 	let mut mapsr: Vec<PathNodeMap> = mapsr.iter().filter(|m| m.is_level_complete(base_level) ).cloned().collect();
 	mapsr.iter_mut().for_each(|mut map| { 
-		map.path = Vec::new(); 
+		map.path = ShrunkPath::new(); 
 		map.nodes[0].steps = 0;
 	});
 	if verbosity > 1 { 
@@ -347,7 +353,7 @@ pub fn unsolve_level(base_level: &Level, max_depth: u32, rng: &mut rand_chacha::
 
 	let mut non_contenders = Vec::<u128>::new();
 	let mut contenders = Vec::<PathNodeMap>::new();
-	mapsr.par_iter_mut().for_each(|m| m.level.make_cmp_data() );
+	mapsr.par_iter_mut().for_each(|m| m.level.make_cmp_data_fast_128() );
 	let mut mapsr = Rc::new(mapsr);
 
 	for count in 0..=(max_depth+1) {
@@ -410,10 +416,10 @@ pub fn unsolve_level(base_level: &Level, max_depth: u32, rng: &mut rand_chacha::
 		}
 
 		// check if we have waaaaaaaaaaay too many maps
-		if maps.len() > MAX_MAPS/8 {
+		if maps.len() > max_maps/8 {
 			// These are all at same depth so we can just randomly reduce it
-			println!("--- Hit maximum unsolve maps in maps {} ---",MAX_MAPS/8); 
-			while maps.len() > MAX_MAPS {
+			println!("--- Hit maximum unsolve maps {} ---",max_maps/8); 
+			while maps.len() > max_maps {
 				maps.retain(|_m| rng.gen());
 			}
 		}
@@ -456,7 +462,7 @@ pub fn unsolve_level(base_level: &Level, max_depth: u32, rng: &mut rand_chacha::
 		let splevel = &c.level;
 		let moves = c.path.len();
 		
-		let mut path: Vec::<Move> = c.path.iter().map(|m| m.reverse()).clone().collect();
+		let mut path: Vec::<Move> = c.path.to_path().iter().map(|m| m.reverse()).clone().collect();
 		path.reverse();
 		
 		if verbosity > 0 { println!("Selected level {}: depth {}, moves {}, path {}", idx, c.depth, moves, moves_to_string(&path)); }
@@ -474,13 +480,15 @@ pub fn unsolve_level(base_level: &Level, max_depth: u32, rng: &mut rand_chacha::
 	levels
 }
 
-const DEF_MAX_MOVES: u32 = 200;
-const DEF_MAX_DEPTH: u32 = 100;
+
+const DEF_MAX_MOVES: u16 = 200;
+const DEF_MAX_DEPTH: u16 = 100;
 const DEF_WIDTH: usize = 5;
 const DEF_HEIGHT: usize = 5;
 const DEF_BOX_DENSITY: u32 = 20;
 const DEF_WALL_DENSITY: u32 = 20;
 const DEF_VERBOSITY: u32 = 1;
+const DEF_MAX_MAPS: usize = 1_200_000; // typically ~12gig of ram, for 16gig desktop
 
 
 fn main() -> std::io::Result<()> {
@@ -489,12 +497,13 @@ fn main() -> std::io::Result<()> {
 	enum Mode { Help, Solve, Make };
 	let mut mode = Mode::Help;
 	let mut seed: u32 = 0;
-	let mut max_moves: u32 = DEF_MAX_MOVES;
-	let mut max_depth: u32 = DEF_MAX_DEPTH;
+	let mut max_moves: u16 = DEF_MAX_MOVES;
+	let mut max_depth: u16 = DEF_MAX_DEPTH;
 	let mut width: usize = DEF_WIDTH;
 	let mut height: usize = DEF_HEIGHT;
 	let mut box_density: u32 = DEF_BOX_DENSITY;
 	let mut wall_density: u32 = DEF_WALL_DENSITY;
+	let max_maps: usize = DEF_MAX_MAPS;
 	let mut filename: String = String::from("");
 	let mut builtin: u32 = 0;
 	let mut verbosity: u32 = DEF_VERBOSITY;
@@ -524,8 +533,8 @@ fn main() -> std::io::Result<()> {
 				"height" => { height = right.parse::<usize>().unwrap(); },
 				"box_density" => { box_density = right.parse::<u32>().unwrap(); },
 				"wall_density" => { wall_density = right.parse::<u32>().unwrap(); },
-				"max_moves" => { max_moves = right.parse::<u32>().unwrap(); },
-				"max_depth" => { max_depth = right.parse::<u32>().unwrap(); },
+				"max_moves" => { max_moves = right.parse::<u16>().unwrap(); },
+				"max_depth" => { max_depth = right.parse::<u16>().unwrap(); },
 				"filename"  => { filename = String::from(right); },
 				"builtin"   => { builtin = right.parse::<u32>().unwrap(); }
 				"verbosity" => { verbosity = right.parse::<u32>().unwrap(); },
@@ -537,8 +546,13 @@ fn main() -> std::io::Result<()> {
 		}
 	}
 
-	if width > 15 || height > 15 {
-		println!("ERROR: Current maximum width/height is 15");
+	if width > 15 || height > 15 || (width * height) > 120 {
+		println!("ERROR: Maximum width is 15. Maximum height is 15. Maximum width*height is 120.");
+		return Ok(());
+	} 
+
+	if width > 127 || height > 127 {
+		println!("ERROR: Maximum width is 127. Maximum height is 127.");
 		return Ok(());
 	} 
 
@@ -569,14 +583,14 @@ fn main() -> std::io::Result<()> {
 			println!("==== Unsolving level ===="); 
 			println!("{}", &random_level.to_string());
 		}
-		let unsolved_levels = unsolve_level(&random_level, max_depth, &mut rng, verbosity);
+		let unsolved_levels = unsolve_level(&random_level, max_depth, max_maps, &mut rng, verbosity);
 
 		let mut best_idx = None;
 		let mut solutions = Vec::<Option<Solution>>::new();
 		for x in 0..unsolved_levels.len() {
 			println!("==== Solving variation {} of {} ====", x, unsolved_levels.len()-1);
 			println!("{}", &unsolved_levels[x].to_string());
-			let solution = solve_level(&unsolved_levels[x], unsolved_levels[x].get_keyval("moves").parse::<u32>().expect("number->string->number failure!")+2, &mut rng, verbosity); // probably don't need the +2
+			let solution = solve_level(&unsolved_levels[x], unsolved_levels[x].get_keyval("moves").parse::<u16>().expect("number->string->number failure!")+2, max_maps, &mut rng, verbosity); // probably don't need the +2
 			solutions.push(solution.clone());
 			match solution {
 				Some(solution) => {
@@ -632,13 +646,14 @@ fn main() -> std::io::Result<()> {
 		output_str += &format!("depth: {}\n", solution.depth);
 		output_str += &format!("moves: {}\n", solution.moves);
 		output_str += &format!("path: {}\n", solution.path);
+		output_str += &format!("time: {:.1}\n", solution.msecs/1000_f64);
 		output_str += &format!("seed: {}\n", seed);
 		output_str += &format!("{}\n", level_params);
 		println!("{}",output_str);
 
 		// save level to disk if it meets threshold
 		if solution.moves as usize > (width-1)*(height-1) {
-			let filename = format!("levels/rl-{}x{}-b{}-d{}-m{}-{}.txt", unsolved_level.w, unsolved_level.h, unsolved_level.get_box_count(), solution.depth, solution.moves, unsolved_level.get_title_str());
+			let filename = format!("levels/rl-{}x{}-b{}-d{}-m{}-t{:.1}-{}.txt", unsolved_level.w, unsolved_level.h, unsolved_level.get_box_count(), solution.depth, solution.moves, solution.msecs/1000_f64, unsolved_level.get_title_str());
 			let mut fout = File::create(&filename).unwrap();
 			let result = fout.write_all(output_str.as_bytes());
 			if !result.is_ok() {
@@ -656,7 +671,7 @@ fn main() -> std::io::Result<()> {
 		
 		println!("{}",level.to_string());
 
-		let solution = solve_level(&level, max_moves, &mut rng, verbosity);
+		let solution = solve_level(&level, max_moves, max_maps, &mut rng, verbosity);
 		match solution {
 			Some(_sol) => {
 			},

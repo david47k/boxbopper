@@ -1,0 +1,22 @@
+#########
+#   # *O#
+#  * O###
+# *OO# ##
+##@ O*& #
+# **## ##
+#      O#
+# ##  ###
+#########
+
+title: zuzonimuti-77
+depth: 22
+moves: 77
+path: DDLLLUURUURURLDLLULLDRRRDDLURULULLDDRRDDDLLURURDLDRRRRUULRDDLLLUUUUULLDRDUURD
+time: 17.4
+seed: 11738
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

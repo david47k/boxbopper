@@ -1,0 +1,22 @@
+#########
+#   O#  #
+# *@*   #
+##O@   ##
+## O# *O#
+## &*   #
+###  @ ##
+##  #   #
+#########
+
+title: nohatezeve-67
+depth: 23
+moves: 67
+path: ULURRLLULURRDRDLDDDRRULRRRULUULRDLRDDLUDDDRUULURUULDDDLDLURRUUULRDL
+time: 132.9
+seed: 11922
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

@@ -1,0 +1,22 @@
+#########
+###     #
+###   ###
+# ##   ##
+##O@*** #
+#&@  O  #
+#@O@##  #
+##   #  #
+#########
+
+title: maponafemi-72
+depth: 29
+moves: 72
+path: RRRUURRDDUULLDDLLURDRRURRDLLLLULDRRRRRDDLURULLLLRRULLRRRULUULLDRDUURDDDL
+time: 42.1
+seed: 11696
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

@@ -1,0 +1,22 @@
+#########
+###O  # #
+#  *#&# #
+### *@###
+#O@ @ ###
+#   O   #
+###*   ##
+# #  @# #
+#########
+
+title: riyodirivo-60
+depth: 19
+moves: 60
+path: ULLDDDLDRRDRRULULLRRDDLULUUUURRDDDUUULLDDRLDDRDRRULDLDLUUUUU
+time: 3.6
+seed: 11480
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

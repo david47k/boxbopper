@@ -1,0 +1,22 @@
+#########
+#&*OO * #
+##*O* OO#
+## #* # #
+#OO  *  #
+## #*#  #
+#    #  #
+### #   #
+#########
+
+title: rotujeleti-122
+depth: 35
+moves: 122
+path: RDRRURDRRDDLLLUDRRRUULLDLDRRLLLLDDRRUDLLUURRURUULDRRRULLDLLLDDRRUDLLUURRRURRDDDLDDRUUUDLLLDDLLUURLDDRRUURUULLLDURRRDDLURUL
+time: 17.6
+seed: 11415
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

@@ -1,0 +1,22 @@
+#########
+## &## ##
+# #**O O#
+###  # ##
+#O# *####
+# * *   #
+# * #   #
+#O  O@ O#
+#########
+
+title: gapazegeko-78
+depth: 35
+moves: 78
+path: DRRRLLLDDDLRRRDRDLLLLUDRRRUULLDLLURDDRRRRULULUULURDDLDDLDRRLUURRDRRULLLULDDLDR
+time: 0.9
+seed: 11184
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

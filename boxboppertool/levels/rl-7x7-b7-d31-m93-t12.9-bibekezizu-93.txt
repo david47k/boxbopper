@@ -1,0 +1,22 @@
+#########
+#O#  O  #
+#*## *  #
+#  *  ###
+##O *  ##
+# * #@# #
+#O    *%#
+## O## ##
+#########
+
+title: bibekezizu-93
+depth: 31
+moves: 93
+path: LLLLLRUULDRDRRUULUURLDDRUDDDLLULURRURDDUULUURDDDLLLULUDRRDDDDLUURURRUUURRDLULLDDRUDDLULDDDRRR
+time: 12.9
+seed: 11970
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

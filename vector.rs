@@ -12,23 +12,57 @@ pub struct Vector (pub i32, pub i32);
 #[derive(Clone, Copy, PartialEq, Ord, PartialOrd, Eq)]
 pub struct VectorSm (pub i8, pub i8);
 impl VectorSm {
-	pub fn from(v: &Vector) -> VectorSm {
-		VectorSm(v.0 as i8, v.1 as i8)
-	}
-	pub fn into(&self) -> Vector {
-		Vector(self.0 as i32, self.1 as i32)
+	pub fn fromv(v: &Vector) -> Self {
+		Self(v.0 as i8, v.1 as i8)
 	}
 	pub fn intov(&self) -> Vector {
 		Vector(self.0 as i32, self.1 as i32)
 	}
-	pub fn add(&self, dir: &VectorSm) -> VectorSm {
-		VectorSm(self.0 + dir.0, self.1 + dir.1)
+	pub fn new(x: i8, y: i8) -> Self {
+		Self(x,y)
+	}
+	pub fn add(&self, dir: &Self) -> Self {
+		Self(self.0 + dir.0, self.1 + dir.1)
+	}
+	pub fn double(&self) -> Self {
+		Self(self.0 * 2, self.1 * 2)
+	}
+	pub fn mul(&self, n: i8) -> Self {
+		Self(self.0 * n, self.1 * n)
+	}
+	pub fn rotr(&self) -> Self {
+		Self(self.1, -self.0)
+	}
+	pub fn rotl(&self) -> Self {
+		Self(-self.1, self.0)
 	}	
-	pub fn addv(&self, dir: &Vector) -> VectorSm {
-		VectorSm(self.0 + dir.0 as i8, self.1 + dir.1 as i8)
-	}	
-	pub fn mul(&self, n: i8) -> VectorSm {
-		VectorSm(self.0 * n, self.1 * n)
+}
+
+impl VectorSm {
+	pub fn add_dir(&self, dir: &Move) -> Self {
+		match dir {
+			Move::Up    => Self( self.0,   self.1-1 ),
+			Move::Right => Self( self.0+1, self.1   ),
+			Move::Down  => Self( self.0,   self.1+1 ),
+			Move::Left  => Self( self.0-1, self.1   ),
+		}		
+	}
+	pub fn add_dir2(&self, dir: &Move) -> Self {
+		match dir {
+			Move::Up    => Self( self.0,   self.1-2 ),
+			Move::Right => Self( self.0+2, self.1   ),
+			Move::Down  => Self( self.0,   self.1+2 ),
+			Move::Left  => Self( self.0-2, self.1   ),
+		}		
+	}
+	pub fn to_index(&self, width: u16) -> usize {
+		width as usize * (self.1 as usize) + (self.0 as usize)
+    }
+    pub fn to_usize(&self) -> (usize,usize) {
+		(self.0 as usize, self.1 as usize)
+	}
+	pub fn to_string(&self) -> String {
+		format!("({},{})",self.0,self.1)
 	}
 }
 
@@ -36,26 +70,25 @@ impl VectorSm {
 impl Vector {
 	#[wasm_bindgen(constructor)]
 	pub fn new(x: i32, y: i32) -> Vector {
-		Vector(x,y)
+		Self(x,y)
 	}
-
-	pub fn add(&self, dir: &Vector) -> Vector {
-		Vector(self.0 + dir.0, self.1 + dir.1)
+	pub fn add(&self, dir: &Vector) -> Self {
+		Self(self.0 + dir.0, self.1 + dir.1)
 	}
-	pub fn double(&self) -> Vector {
-		Vector(self.0 * 2, self.1 * 2)
+	pub fn double(&self) -> Self {
+		Self(self.0 * 2, self.1 * 2)
 	}
-	pub fn mul(&self, n: i32) -> Vector {
-		Vector(self.0 * n, self.1 * n)
+	pub fn mul(&self, n: i32) -> Self {
+		Self(self.0 * n, self.1 * n)
 	}
-	pub fn rotr(&self) -> Vector {
-		Vector(self.1, -self.0)
+	pub fn rotr(&self) -> Self {
+		Self(self.1, -self.0)
 	}
-	pub fn rotl(&self) -> Vector {
-		Vector(-self.1, self.0)
+	pub fn rotl(&self) -> Self {
+		Self(-self.1, self.0)
 	}
-	pub fn scale_by(&self, n: i32) -> Vector {
-		Vector(self.0 * n, self.1 * n)
+	pub fn scale_by(&self, n: i32) -> Self {
+		Self(self.0 * n, self.1 * n)
 	}
 	pub fn as_array(&self) -> Array {
 		[ self.0, self.1 ].iter().map(|m| JsValue::from(*m)).collect()
@@ -67,20 +100,20 @@ impl Vector {
 
 // non-js
 impl Vector {
-	pub fn add_dir(&self, dir: &Move) -> Vector {
+	pub fn add_dir(&self, dir: &Move) -> Self {
 		match dir {
-			Move::Up    => Vector( self.0,   self.1-1 ),
-			Move::Right => Vector( self.0+1, self.1   ),
-			Move::Down  => Vector( self.0,   self.1+1 ),
-			Move::Left  => Vector( self.0-1, self.1   ),
+			Move::Up    => Self( self.0,   self.1-1 ),
+			Move::Right => Self( self.0+1, self.1   ),
+			Move::Down  => Self( self.0,   self.1+1 ),
+			Move::Left  => Self( self.0-1, self.1   ),
 		}		
 	}
-	pub fn add_dir2(&self, dir: &Move) -> Vector {
+	pub fn add_dir2(&self, dir: &Move) -> Self {
 		match dir {
-			Move::Up    => Vector( self.0,   self.1-2 ),
-			Move::Right => Vector( self.0+2, self.1   ),
-			Move::Down  => Vector( self.0,   self.1+2 ),
-			Move::Left  => Vector( self.0-2, self.1   ),
+			Move::Up    => Self( self.0,   self.1-2 ),
+			Move::Right => Self( self.0+2, self.1   ),
+			Move::Down  => Self( self.0,   self.1+2 ),
+			Move::Left  => Self( self.0-2, self.1   ),
 		}		
 	}
 	pub fn to_index(&self, width: u16) -> usize {
@@ -97,6 +130,7 @@ impl Vector {
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq)]
+#[repr(u8)]
 pub enum Move { Up=0, Right=1, Down=2, Left=3 }
 
 impl Move {
@@ -106,6 +140,14 @@ impl Move {
 			Move::Right => Vector( 1,  0 ),
 			Move::Down  => Vector( 0,  1 ),
 			Move::Left  => Vector(-1,  0 ),
+		}
+	}
+	pub fn to_vector_sm(&self) -> VectorSm {
+		match self {
+			Move::Up    => VectorSm( 0, -1 ),
+			Move::Right => VectorSm( 1,  0 ),
+			Move::Down  => VectorSm( 0,  1 ),
+			Move::Left  => VectorSm(-1,  0 ),
 		}
 	}
 	pub fn to_string(&self) -> String {
@@ -159,6 +201,9 @@ impl ShrunkPath {
 			data: Vec::<u8>::with_capacity(8),
 		}
 	}
+	pub fn len(&self) -> u16 {
+		self.count
+	}
 	pub fn from_path(path: &Vec::<Move>) -> Self {
 		let mut data = Vec::<u8>::with_capacity(path.len()/4+1);
 		for block in 0..path.len()/4 {
@@ -187,10 +232,10 @@ impl ShrunkPath {
 	pub fn to_path(&self) -> Vec::<Move> {
 		let mut path = Vec::<Move>::with_capacity(self.count as usize);
 		for block in 0..(self.count/4) as usize {
-			path.push( Move::from_u8(self.data[block*4] & 0x03).unwrap() );
-			path.push( Move::from_u8(self.data[block*4] >> 2 & 0x03).unwrap() );
-			path.push( Move::from_u8(self.data[block*4] >> 4 & 0x03).unwrap() );
-			path.push( Move::from_u8(self.data[block*4] >> 6 & 0x03).unwrap() );
+			path.push( Move::from_u8(self.data[block] & 0x03).unwrap() );
+			path.push( Move::from_u8(self.data[block] >> 2 & 0x03).unwrap() );
+			path.push( Move::from_u8(self.data[block] >> 4 & 0x03).unwrap() );
+			path.push( Move::from_u8(self.data[block] >> 6 & 0x03).unwrap() );
 		}
 		let base = (self.count/4) as usize;
 		for i in 0..self.count%4 {
@@ -205,11 +250,19 @@ impl ShrunkPath {
 			self.data.push(*move1 as u8);
 		} else {
 			// modify existing block
-			let mut x = self.data[(self.count/4+1) as usize];
+			let mut x = self.data[(self.count/4) as usize];
 			x <<= 2;
 			x |= *move1 as u8;
-			self.data[(self.count/4+1) as usize] = x;
+			self.data[(self.count/4) as usize] = x;
 		}
 		self.count += 1;
+	}
+	pub fn to_string(&self) -> String {
+		let path = self.to_path();
+		let mut s: String = "".to_string();
+		for m in path.iter() {
+			s = s + &m.to_string();
+		}
+		return s;
 	}
 }

@@ -11,6 +11,15 @@ use crate::vector::{Vector,VectorSm};
 use super::Obj;
 use crate::builtins::BUILTIN_LEVELS;
 
+
+#[derive(Clone,PartialEq)]
+pub enum CmpDataType {
+	Fast128(u128),
+	SlowMap(Vec::<u128>),
+	SlowPts(Vec::<(i8,i8)>),
+}
+
+
 const X1VARS: [[Vector;3];8] = // only interested in the neighbours (not the opposite)
 [
 [Vector(0,0),Vector(0,1),Vector(1,0)],
@@ -108,13 +117,53 @@ impl SpLevel {
 		s += "\n";
 		s
 	}	
-	pub fn make_cmp_data(&mut self) {
+	pub fn make_cmp_data_fast_128(&mut self) {
 		let mut cmp_data: u128 = ((self.human_pos.0 as u8) << 4 | (self.human_pos.1 as u8)) as u128;
 		for o in self.data.iter() {
 			cmp_data <<= 1;
 			cmp_data |= (*o==Obj::Boxx||*o==Obj::BoxxInHole) as u128;
 		}
 		self.cmp_data = cmp_data;
+	}
+	pub fn make_cmp_data_slow_map(&self) -> Vec::<u128> {
+		let mut all_data = Vec::<u128>::with_capacity((self.data.len()+16)/128);
+		let mut data: u128 = (self.human_pos.0 as u128) << 8 | (self.human_pos.1 as u128);
+		let mut bits_used: usize = 16;
+		for o in self.data.iter() {
+			if bits_used == 128 {
+				all_data.push(data);
+				data = 0;
+				bits_used = 0;
+			}						
+			data <<= 1;
+			data |= (*o==Obj::Boxx||*o==Obj::BoxxInHole) as u128;
+			bits_used += 1;
+		}
+		all_data.push(data);
+		all_data
+	}
+	pub fn make_cmp_data_slow_pts(&self, base_level: &Level) -> Vec::<(i8,i8)> {
+		let mut all_data = Vec::<(i8,i8)>::with_capacity(1+base_level.boxx_pts.len());
+		all_data.push( (self.human_pos.0 as i8, self.human_pos.1 as i8) );		
+		let boxx_pts = self.get_boxx_pts();
+		for pt in boxx_pts {
+			all_data.push( (pt.0 as i8, pt.1 as i8) );
+		}
+		all_data
+	}
+	pub fn get_boxx_pts(&self) -> Vec<Vector> {
+		// update_boxx_pts
+		let mut boxx_pts = Vec::<Vector>::with_capacity(8);
+		for y in 0..(self.data.len()/self.w as usize) {
+			for x in 0..self.w {
+				let pt = Vector(x.try_into().unwrap(),y.try_into().unwrap());
+				let obj = self.get_obj_at_pt(&pt);
+				if obj == Obj::Boxx || obj == Obj::BoxxInHole {
+					boxx_pts.push(pt);
+				}
+			}
+		}
+		boxx_pts
 	}
 }
 
@@ -583,11 +632,11 @@ impl Level {
 	pub fn eq_data(&self, b: &Level) -> bool {
 		self.data == b.data && self.human_pos == b.human_pos
 	}
-	pub fn get_noboxx_pts(&self) -> &Vec<Vector> {
-		&self.noboxx_pts
-	}
 	pub fn get_boxx_pts(&self) -> &Vec<Vector> {
 		&self.boxx_pts
+	}
+	pub fn get_noboxx_pts(&self) -> &Vec<Vector> {
+		&self.noboxx_pts
 	}
 	pub fn get_hole_pts(&self) -> &Vec<Vector> {
 		&self.hole_pts
