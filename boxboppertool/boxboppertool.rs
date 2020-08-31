@@ -14,14 +14,14 @@ use boxbopperbase::level::{Level};
 use boxbopperbase::vector::{Vector,ALLMOVES,Move};
 
 pub mod pathnodemap;
-use crate::pathnodemap::{PathNodeMap};
+use crate::pathnodemap::{PathNodeMap,KeyMove};
 
 extern crate rand;
 extern crate rand_chacha;
 
 use rand::{Rng, SeedableRng};
 
-const MAX_MAPS: usize = 800000; // 800,000 uses about 8 gig of ram
+const MAX_MAPS: usize = 1_200_000; // typically ~12gig of ram, for 16gig desktop
 
 fn is_pullable(level: &Level, pos: &Vector) -> bool {
 	// check all four directions, and see if we can pull in that direction
@@ -133,12 +133,13 @@ pub struct Solution {
 
 
 pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Option<Solution> {
-	let max_moves = Arc::new(AtomicU32::new(max_moves_requested));
+	let max_moves = Arc::new(AtomicU32::new(max_moves_requested+1));
 	let mut base_level = base_level.clone();
 	base_level.clear_human();
-	let base_level = Arc::new(base_level);
-	let base_map = PathNodeMap::new_from_level(&Arc::clone(&base_level));
+	let base_level = &base_level;
+	let base_map = PathNodeMap::new_from_level(base_level);
 
+	let mut non_contenders = Vec::<u128>::with_capacity(50000);
 	let mut mapsr = Rc::new(vec![base_map]);
 	
 	let have_solution = Arc::new(AtomicBool::new(false));
@@ -146,12 +147,12 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_
 	let best_sol_depth = Arc::new(AtomicU32::new(0));
 	let mut depth: u32 = 0;
 
-	while depth < max_moves.load(AtomicOrdering::SeqCst) {	// stop it running forever, it's unlikely to actually get that high
+	while depth < max_moves.load(AtomicOrdering::SeqCst) {
 		if verbosity > 0 { println!("-- Depth {:>2} --", depth); }
 
 		// check for level complete / having solution
 		if verbosity > 1 { println!("solution check..."); }
-		mapsr.par_iter().filter(|m| m.is_level_complete()).for_each(|m| {
+		mapsr.par_iter().filter(|m| m.is_level_complete(base_level)).for_each(|m| {
 			if m.nodes[0].steps < max_moves.load(AtomicOrdering::SeqCst) {
 				have_solution.store(true, AtomicOrdering::SeqCst);
 				max_moves.store(m.nodes[0].steps, AtomicOrdering::SeqCst);
@@ -166,11 +167,13 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_
 
 		// complete the maps
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
-		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve() ).collect(); // collect_into_vec doesn't seem to be any faster
+		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve(base_level) ).collect(); // collect_into_vec doesn't seem to be any faster
 
 		// apply key moves
-		if verbosity > 1 { println!("applying key moves..."); }				
-		let mut maps: Vec<PathNodeMap> = maps.iter().flat_map(|map| map.apply_key_pushes()).collect();	// par_iter slows this down a lot!!
+		if verbosity > 1 { println!("collecting kms..."); }
+		let todo_list: Vec<(&PathNodeMap,&KeyMove)> = maps.iter().flat_map(|m| m.key_moves.iter().map(|mv| (m,mv)).collect::<Vec::<(&PathNodeMap,&KeyMove)>>() ).collect();
+		if verbosity > 1 { println!("applying kms..."); }
+		let mut maps: Vec<PathNodeMap> = todo_list.par_iter().map(|(m,mv)| m.new_by_applying_key_push(mv)).collect();
 
 		// filter out the long paths
 		if verbosity > 1 { println!("pruning long paths..."); }
@@ -183,6 +186,21 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_
 			dedupe_equal_levels(&mut maps);
 			if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 		} 
+
+		// TO DO: Shrink mapsr, add it to non-contenders, sort, dedupe current maps against non-contenders
+		if verbosity > 1 { println!("Adding {} old maps to non-contenders...", mapsr.len()); }
+		let mut data: Vec::<u128> = mapsr.iter().map(|m| m.level.cmp_data).collect();
+		non_contenders.append(&mut data);
+		if verbosity > 1 { println!("Sorting {} non_contenders...", non_contenders.len()); }
+		non_contenders.par_sort_unstable();
+
+		// remove from maps, anyhthing that is in non_contenders
+		if verbosity > 1 { println!("deduping from n-c: before {:>7}", maps.len()); }
+		maps.par_iter_mut().for_each(|m| if non_contenders.binary_search(&m.level.cmp_data).is_ok() {
+			m.flag = true;
+		});
+		maps.retain(|m| !m.flag);
+		if verbosity > 1 { println!("deduping from n-c: after  {:>7}", maps.len()); }
 
 		// check if we've exhausted the search space
 		if maps.len() == 0 {
@@ -197,7 +215,6 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u32, rng: &mut rand_
 			}
 		}
 		
-
 		// loop and check the next depth
 		mapsr = Rc::new(maps);
 		depth += 1;
@@ -261,7 +278,8 @@ pub fn pnm_cmp_d(a: &PathNodeMap, b: &PathNodeMap) -> Ordering {
 
 fn dedupe_equal_levels(maps: &mut Vec::<PathNodeMap>) {
 	maps.par_sort_unstable_by(|a,b| {
-		let ord = a.level.partial_cmp(&b.level).unwrap();
+		let ord = a.level.cmp_data.partial_cmp(&b.level.cmp_data).unwrap();
+		//let ord = a.level.partial_cmp(&b.level).unwrap();
 		if ord == Ordering::Equal {
 			if a.nodes[0].steps < b.nodes[0].steps {
 				return Ordering::Less;
@@ -272,7 +290,7 @@ fn dedupe_equal_levels(maps: &mut Vec::<PathNodeMap>) {
 		}
 		ord			
 	});
-	maps.dedup_by(|a,b| a.level.eq(&b.level)); // it keeps the first match for each level (sorted to be smallest steps)
+	maps.dedup_by(|a,b| a.level.cmp_data.eq(&b.level.cmp_data)); // it keeps the first match for each level (sorted to be smallest steps)
 }
 
 
@@ -300,24 +318,22 @@ fn select_unique_n_from(count: usize, len: usize, rng: &mut rand_chacha::ChaCha8
 }
 
 
-pub fn unsolve_level(base_level: &Level, max_steps_p: u32, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Vec::<Level> {
-	let max_steps = max_steps_p;
-	let max_depth = max_steps / 2;
+pub fn unsolve_level(base_level: &Level, max_depth: u32, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Vec::<Level> {
 	let mut base_level = base_level.clone();
 	base_level.clear_human();
-	let base_level = Arc::new(base_level);
-	let base_map = PathNodeMap::new_from_level(&Arc::clone(&base_level));
+	let base_level = &base_level;
+	let base_map = PathNodeMap::new_from_level(base_level);
 
 	// A map is complete when the last box is pushed into place. So when unsolving, we need to start with the human
 	// in the appropriate spot(s) they'd be after pushing the last box.
 	// To do this, we unsolve once to find the appropriate spot(s), then re-solve to place the human and box in the final state.
 
 	if verbosity > 1 { println!("finding final maps..."); }
-	let mapsr: Vec<PathNodeMap> = vec![base_map].iter().map(|m| m.complete_map_unsolve() ).collect();
-	let mapsr: Vec<PathNodeMap> = mapsr.iter().flat_map(|map| map.apply_key_pulls()).collect();
-	let mapsr: Vec<PathNodeMap> = mapsr.iter().map(|m| m.complete_map_solve() ).collect();
-	let mapsr: Vec<PathNodeMap> = mapsr.iter().flat_map(|map| map.apply_key_pushes()).collect();
-	let mut mapsr: Vec<PathNodeMap> = mapsr.iter().filter(|m| m.is_level_complete()).cloned().collect();
+	let mapsr: Vec<PathNodeMap> = vec![base_map].iter().map(|m| m.complete_map_unsolve(base_level) ).collect();
+	let mapsr: Vec<PathNodeMap> = mapsr.iter().flat_map(|map| map.apply_key_pulls(0) ).collect();
+	let mapsr: Vec<PathNodeMap> = mapsr.iter().map(|m| m.complete_map_solve(base_level) ).collect();
+	let mapsr: Vec<PathNodeMap> = mapsr.iter().flat_map(|map| map.apply_key_pushes() ).collect();
+	let mut mapsr: Vec<PathNodeMap> = mapsr.iter().filter(|m| m.is_level_complete(base_level) ).cloned().collect();
 	mapsr.iter_mut().for_each(|mut map| { 
 		map.path = Vec::new(); 
 		map.nodes[0].steps = 0;
@@ -329,93 +345,83 @@ pub fn unsolve_level(base_level: &Level, max_steps_p: u32, rng: &mut rand_chacha
 		}
 	}
 
+	let mut non_contenders = Vec::<u128>::new();
 	let mut contenders = Vec::<PathNodeMap>::new();
+	mapsr.par_iter_mut().for_each(|m| m.level.make_cmp_data() );
 	let mut mapsr = Rc::new(mapsr);
 
-	for count in 0..(max_depth+1) {
+	for count in 0..=(max_depth+1) {
 		println!("--- Depth {:>2} ---", count);
 		
 		// complete the maps (finding keymoves as it goes)
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
-		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_unsolve() ).collect();
-
-		// move mapsr to contenders, then dedupe contenders
-		if verbosity > 1 { println!("saving new contenders..."); }
-		Rc::get_mut(&mut mapsr).expect("unable to get rc as mut").par_iter_mut().for_each(|pnm| { pnm.contender_flag = true; pnm.depth = count; });
-		contenders.append(Rc::get_mut(&mut mapsr).expect("unable to get rc as mut"));
-		if verbosity > 1 { println!("deduping contenders..."); }
-		dedupe_equal_levels(&mut contenders);
+		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_unsolve(base_level) ).collect();
 
 		// apply key moves
-		if verbosity > 1 { println!("applying key pulls..."); }
-		let mut maps: Vec<PathNodeMap> = maps.iter().flat_map(|m| m.apply_key_pulls()).collect();	// par_iter slows this down!
+		if verbosity > 1 { println!("collecting kms..."); }
+		let todo_list: Vec<(&PathNodeMap,&KeyMove)> = maps.iter().flat_map(|m| m.key_moves.iter().map(|mv| (m,mv)).collect::<Vec::<(&PathNodeMap,&KeyMove)>>() ).collect();
+		if verbosity > 1 { println!("applying kms..."); }
+		let mut maps: Vec<PathNodeMap> = todo_list.par_iter().map(|(m,mv)| m.new_by_applying_key_pull(mv,count+1)).collect();
+		
+		// sort and deduplicate
+		if verbosity > 1 { println!("deduping: before {:>7}", maps.len()); }
+		dedupe_equal_levels(&mut maps);
+		if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 
-		// check if we've run out of options
+		// mapsr --> contenders --> non-contenders	
+		if verbosity > 1 { println!("keep top 20 contenders..."); }
+
+		// save mapsr to contenders
+		contenders.append(Rc::get_mut(&mut mapsr).expect("couldn't get mut mapsr"));
+
+		// keep top 20 contenders
+		if contenders.len() > 20 {
+			// save excess contenders to non-contenders
+			let keep = contenders.split_off(contenders.len()-20);
+			let mut data = contenders.iter().map(|m| m.level.cmp_data).collect();
+			non_contenders.append(&mut data);			// save whats now in contendrs to non-contenders			
+			contenders = keep;					// copy keep back
+		}
+
+		// sort non-contenders, lets us do binary search
+		if verbosity > 1 { println!("sorting non-contenders..."); }
+		non_contenders.par_sort_unstable();
+
+		// remove from maps, anyhthing that is in non_contenders
+		if verbosity > 1 { println!("deduping from n-c: before {:>7}", maps.len()); }
+		maps.par_iter_mut().for_each(|m| if non_contenders.binary_search(&m.level.cmp_data).is_ok() {
+			m.flag = true;
+		});
+		maps.retain(|m| !m.flag);
+		if verbosity > 1 { println!("deduping from n-c: after  {:>7}", maps.len()); }
+		
+		// check if we've run out of options, if we have, then contenders is what we have
 		if maps.len() == 0 {
 			if verbosity > 0 { println!("-- Out of options (1) (no further moves possible) --"); }
 			break;
-		}
+		}		
 
-		// we also need to dedupe with contenders
-		maps.extend_from_slice(&contenders); // clones it over
-
-		// sort and deduplicate
-		if count >= 2 {
-			if verbosity > 1 { println!("deduping: before {:>7}", maps.len()); }
-			dedupe_equal_levels(&mut maps);
-			if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
-		} 
-
-		// remove the contenders from nextmaps
-		maps.retain(|m| !m.contender_flag);
-
-		// split off levels that already hit max path depth
-		if verbosity > 1 { println!("saving out long paths..."); }
-
-		// set flags on over-steps contenders
-		maps.par_iter_mut().for_each(|m| { if m.nodes[0].steps >= max_steps { m.contender_flag = true; m.depth = count; }});
-
-		// move new contenders out of maps into contenders
-		let mut new_contenders: Vec::<PathNodeMap> = maps.par_iter().filter(|m| m.contender_flag).cloned().collect();
-		contenders.append(&mut new_contenders);
-		maps.retain(|m| !m.contender_flag);
-
-		// check if we've run out of options
-		if maps.len() == 0 {
-			if verbosity > 0 { println!("-- Out of options (2) (hit possibility/move limit) ----"); }
+		// check if we've hit max depth, in which case we have maps / contenders
+		if count > max_depth {
+			// check if we've run out of options
+			if verbosity > 0 { println!("-- Out of options (3) (hit depth limit) --"); }
+			contenders.append(&mut maps);
 			break;
 		}
 
-		// Resource reducer: (we only have 16gig of ram) - TODO: if we hit this, solving is going to be problematic (memory intensive)
-		if contenders.len() > MAX_MAPS/8 {
-			// We probably want to keep the first half, and randomly decimate the second half
-			println!("--- Hit maximum unsolve maps in contenders {} ---",MAX_MAPS/8); 
-			let mut part_b = contenders.split_off(MAX_MAPS/16); // split into two parts
-			while part_b.len() > MAX_MAPS/16 {
-				part_b.retain(|_m| rng.gen());
-			}
-			contenders.append(&mut part_b); // add it back
-		}
+		// check if we have waaaaaaaaaaay too many maps
 		if maps.len() > MAX_MAPS/8 {
 			// These are all at same depth so we can just randomly reduce it
 			println!("--- Hit maximum unsolve maps in maps {} ---",MAX_MAPS/8); 
-			while maps.len() > MAX_MAPS/8 {
+			while maps.len() > MAX_MAPS {
 				maps.retain(|_m| rng.gen());
 			}
 		}
 
 		mapsr = Rc::new(maps);
-
-		if count >= max_depth {
-			// check if we've run out of options
-			if verbosity > 0 { println!("-- Out of options (3) (hit depth limit) --"); }
-			Rc::get_mut(&mut mapsr).expect("unable to get rc as mut").par_iter_mut().for_each(|m| { m.contender_flag = true; m.depth = count; });	
-			contenders.append(Rc::get_mut(&mut mapsr).expect("unable to get rc as mut"));
-			break;
-		}
 	}
 
-	if verbosity > 1 { println!("Max steps was {}",max_steps-1); }
+	if verbosity > 1 { println!("Max depth was {}",max_depth); }
 	if contenders.len() == 0 {
 		println!("-- No maps to choose from! --");
 		return Vec::<Level>::new();
@@ -457,7 +463,7 @@ pub fn unsolve_level(base_level: &Level, max_steps_p: u32, rng: &mut rand_chacha
 		
 		//TODO: move human to random (accessible) posn so first move is less obvious
 
-		let mut level = Level::from_parts(base_level.get_title_str(), base_level.w, base_level.h, splevel.human_pos, splevel.data.clone());
+		let mut level = Level::from_parts(base_level.get_title_str(), base_level.w, base_level.h, splevel.human_pos.clone(), splevel.get_data(&base_level));
 		level.set_keyval("moves", &moves.to_string());
 		level.set_keyval("depth", &c.depth.to_string());
 		level.set_keyval("path", &moves_to_string(&path));
@@ -468,20 +474,30 @@ pub fn unsolve_level(base_level: &Level, max_steps_p: u32, rng: &mut rand_chacha
 	levels
 }
 
+const DEF_MAX_MOVES: u32 = 200;
+const DEF_MAX_DEPTH: u32 = 100;
+const DEF_WIDTH: usize = 5;
+const DEF_HEIGHT: usize = 5;
+const DEF_BOX_DENSITY: u32 = 20;
+const DEF_WALL_DENSITY: u32 = 20;
+const DEF_VERBOSITY: u32 = 1;
+
+
 fn main() -> std::io::Result<()> {
 	let args: Vec::<String> = std::env::args().collect();
 	#[derive(PartialEq)]
 	enum Mode { Help, Solve, Make };
 	let mut mode = Mode::Help;
 	let mut seed: u32 = 0;
-	let mut max_steps: u32 = 100;
-	let mut width: usize = 5;
-	let mut height: usize = 5;
-	let mut box_density: u32 = 20;
-	let mut wall_density: u32 = 20;
+	let mut max_moves: u32 = DEF_MAX_MOVES;
+	let mut max_depth: u32 = DEF_MAX_DEPTH;
+	let mut width: usize = DEF_WIDTH;
+	let mut height: usize = DEF_HEIGHT;
+	let mut box_density: u32 = DEF_BOX_DENSITY;
+	let mut wall_density: u32 = DEF_WALL_DENSITY;
 	let mut filename: String = String::from("");
 	let mut builtin: u32 = 0;
-	let mut verbosity: u32 = 1;
+	let mut verbosity: u32 = DEF_VERBOSITY;
 	
 	// process params
 	for (count,arg) in args.into_iter().enumerate() {
@@ -508,7 +524,8 @@ fn main() -> std::io::Result<()> {
 				"height" => { height = right.parse::<usize>().unwrap(); },
 				"box_density" => { box_density = right.parse::<u32>().unwrap(); },
 				"wall_density" => { wall_density = right.parse::<u32>().unwrap(); },
-				"max_moves" => { max_steps = right.parse::<u32>().unwrap() + 1; },
+				"max_moves" => { max_moves = right.parse::<u32>().unwrap(); },
+				"max_depth" => { max_depth = right.parse::<u32>().unwrap(); },
 				"filename"  => { filename = String::from(right); },
 				"builtin"   => { builtin = right.parse::<u32>().unwrap(); }
 				"verbosity" => { verbosity = right.parse::<u32>().unwrap(); },
@@ -520,20 +537,26 @@ fn main() -> std::io::Result<()> {
 		}
 	}
 
+	if width > 15 || height > 15 {
+		println!("ERROR: Current maximum width/height is 15");
+		return Ok(());
+	} 
+
 	let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0x0d47d47000000000_u64 + seed as u64);
 
 	if mode == Mode::Help {
 		println!("boxboppertool make [vars...]\nboxboppertool solve [vars...]\n");
 		println!("vars for make:");
 		println!("  seed=n          rng seed (u32)");
-		println!("  width=n         level width 5+");
-		println!("  height=n        level height 5+");
-		println!("  box_density=n   box density 1-99");
-		println!("  wall_density=n  wall density 1-99");
+		println!("  width=n         level width 5-15                    default: {}", DEF_WIDTH);
+		println!("  height=n        level height 5-15                   default: {}", DEF_HEIGHT);
+		println!("  box_density=n   box density 1-99                    default: {}", DEF_BOX_DENSITY);
+		println!("  wall_density=n  wall density 1-99                   default: {}", DEF_WALL_DENSITY);
+		println!("  max_depth=n     maximum depth to try to reach 1+    default: {}", DEF_MAX_DEPTH);
 		println!("vars for both:");
-		println!("  max_moves=n     maximum number of moves to try 1+");
-		println!("  verbosity=n     how much information to provide 0-2");
+		println!("  verbosity=n     how much information to provide 0-2 default: {}", DEF_VERBOSITY);
 		println!("vars for solve:");
+		println!("  max_moves=n     maximum number of moves to try 1+   default: {}", DEF_MAX_MOVES);
 		println!("  builtin=n       builtin level to solve");
 		println!("  filename=f      custom level filename to solve");
 		println!("");
@@ -546,7 +569,7 @@ fn main() -> std::io::Result<()> {
 			println!("==== Unsolving level ===="); 
 			println!("{}", &random_level.to_string());
 		}
-		let unsolved_levels = unsolve_level(&random_level, max_steps, &mut rng, verbosity);
+		let unsolved_levels = unsolve_level(&random_level, max_depth, &mut rng, verbosity);
 
 		let mut best_idx = None;
 		let mut solutions = Vec::<Option<Solution>>::new();
@@ -633,7 +656,7 @@ fn main() -> std::io::Result<()> {
 		
 		println!("{}",level.to_string());
 
-		let solution = solve_level(&level, max_steps, &mut rng, verbosity);
+		let solution = solve_level(&level, max_moves, &mut rng, verbosity);
 		match solution {
 			Some(_sol) => {
 			},

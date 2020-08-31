@@ -7,7 +7,7 @@ use std::convert::TryInto;
 use std::collections::HashMap;
 use std::string::String;
 
-use crate::vector::Vector;
+use crate::vector::{Vector,VectorSm};
 use super::Obj;
 use crate::builtins::BUILTIN_LEVELS;
 
@@ -27,20 +27,22 @@ const X1VARS: [[Vector;3];8] = // only interested in the neighbours (not the opp
 #[wasm_bindgen]
 #[derive(Clone,PartialEq)] //,PartialOrd
 pub struct Level {
-	keyvals: HashMap::<String,String>,
 	pub w: u16,
 	pub h: u16,
 	pub human_pos: Vector,
+	data: Vec::<Obj>,
+	keyvals: HashMap::<String,String>,
 	noboxx_pts: Vec::<Vector>,
 	boxx_pts: Vec::<Vector>,
-	data: Vec::<Obj>,
+	hole_pts: Vec::<Vector>,
+	wall_pts: Vec::<Vector>,
 }
-
 
 #[derive(Clone,PartialEq,PartialOrd)]
 pub struct SpLevel {		/* special level for solving */
 	pub w: u16,
 	pub human_pos: Vector,
+	pub cmp_data: u128,
 	pub data: Vec::<Obj>,
 }
 
@@ -51,6 +53,7 @@ impl SpLevel {
 			w: level.w,
 			human_pos: level.human_pos.clone(),
 			data: level.data.clone(),
+			cmp_data: 0,
 		}
 	}
 	pub fn get_obj_at_pt(&self, pt: &Vector) -> Obj {
@@ -75,16 +78,19 @@ impl SpLevel {
 			self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)] = obj;
 		}
 	}	
-	pub fn have_win_condition(&self) -> bool {
+	pub fn get_data(&self, _ignore: &Level) -> Vec::<Obj> {
+		self.data.clone()
+	}
+	pub fn have_win_condition(&self, _ignore: &Level) -> bool {
 		for obj in self.data.iter() {
 			match obj {
-				Obj::Boxx | Obj::Hole | Obj::HumanInHole => return false,
+				Obj::Boxx | Obj::Hole => return false,
 				_ => {},
 			};
 		}
 		return true;
 	}
-	pub fn eq_data(&self, b: &SpLevel) -> bool {
+	pub fn eq(&self, b: &SpLevel) -> bool {
 		self.data == b.data && self.human_pos == b.human_pos
 	}	
 	pub fn to_string(&self) -> String {
@@ -102,7 +108,16 @@ impl SpLevel {
 		s += "\n";
 		s
 	}	
+	pub fn make_cmp_data(&mut self) {
+		let mut cmp_data: u128 = ((self.human_pos.0 as u8) << 4 | (self.human_pos.1 as u8)) as u128;
+		for o in self.data.iter() {
+			cmp_data <<= 1;
+			cmp_data |= (*o==Obj::Boxx||*o==Obj::BoxxInHole) as u128;
+		}
+		self.cmp_data = cmp_data;
+	}
 }
+
 
 #[wasm_bindgen]
 impl Level {
@@ -114,6 +129,8 @@ impl Level {
 			human_pos: self.human_pos.clone(),
 			boxx_pts: self.boxx_pts.clone(),
 			noboxx_pts: self.noboxx_pts.clone(),
+			hole_pts: self.hole_pts.clone(),
+			wall_pts: self.wall_pts.clone(),
 			data: self.data.clone(),
 		}
 	}
@@ -196,13 +213,12 @@ impl Level {
 	pub fn have_win_condition(&self) -> bool {
 		for obj in self.data.iter() {
 			match obj {
-				Obj::Boxx | Obj::Hole | Obj::HumanInHole => return false,
+				Obj::Boxx | Obj::Hole => return false,
 				_ => {},
 			};
 		}
 		return true;
 	}
-
 }
 
 // non-js
@@ -287,6 +303,8 @@ impl Level {
 			human_pos: human_pos,
 			noboxx_pts: Vec::new(),
 			boxx_pts: Vec::new(),
+			hole_pts: Vec::new(),
+			wall_pts: Vec::new(),
 			data: data,
 		};
 		level.do_noboxx_pts();
@@ -313,6 +331,8 @@ impl Level {
 			human_pos: human_pos,
 			noboxx_pts: Vec::new(),
 			boxx_pts: Vec::new(),
+			hole_pts: Vec::new(),
+			wall_pts: Vec::new(),
 			data: data,
 		};
 		level
@@ -414,7 +434,6 @@ impl Level {
 			println!();
 		} 
 		
-		println!("len of halls: {}", halls.len());
 		// check if the hall is a valid hall (has a complete wall on one side)
 		for h in halls {
 			let range1 = self.get_hslice(h.x+1,h.end_x,h.y-1);
@@ -452,7 +471,6 @@ impl Level {
 				}
 			}
 		} 
-		println!("len of halls: {}", halls.len());
 
 		// check if the hall is a valid hall (has a complete wall on one side)
 		for h in halls {
@@ -473,17 +491,30 @@ impl Level {
 		self.place_human();
 	}
 	pub fn do_boxx_pts(&mut self) {
-		let mut pts: Vec::<Vector> = Vec::new();
+		let mut bpts: Vec::<Vector> = Vec::new();
+		let mut hpts: Vec::<Vector> = Vec::new();
+		let mut wpts: Vec::<Vector> = Vec::new();
 		for y in 0..self.h {
 			for x in 0..self.w {
 				let pt = Vector(x.try_into().unwrap(),y.try_into().unwrap());
 				let obj = self.get_obj_at_pt(&pt);
 				if obj == Obj::Boxx || obj == Obj::BoxxInHole {
-					pts.push(pt);
+					bpts.push(pt);
+				}
+				if obj == Obj::BoxxInHole || obj == Obj::Hole || obj == Obj::HumanInHole {
+					hpts.push(pt);
+				}
+				if obj == Obj::Wall {
+					wpts.push(pt);
 				}
 			}
 		}
-		self.boxx_pts = pts;
+		bpts.sort();
+		hpts.sort();
+		wpts.sort();
+		self.boxx_pts = bpts;
+		self.hole_pts = hpts;
+		self.wall_pts = wpts;
 	}
 	pub fn get_box_count(&self) -> u32 {
 		let mut count: u32 = 0;
@@ -499,7 +530,42 @@ impl Level {
 		count
 	}
 	pub fn in_noboxx_pts(&self, v: &Vector) -> bool {
-		self.noboxx_pts.contains(&v)
+		self.noboxx_pts.contains(v)
+		/* match self.noboxx_pts.binary_search(v) {
+			Ok(_) => true,
+			_ => false,
+		} */
+	}
+	pub fn in_noboxx_pts8(&self, v: &VectorSm) -> bool {
+		//self.noboxx_pts.contains(&v.intov())
+		match self.noboxx_pts.binary_search(&v.intov()) {
+			Ok(_) => true,
+			_ => false,
+		}
+	}
+	pub fn in_boxx_pts(&self, v: &Vector) -> bool {
+		self.boxx_pts.contains(v)
+	}
+	pub fn in_boxx_pts8(&self, v: &VectorSm) -> bool {
+		self.boxx_pts.contains(&v.intov())
+	}
+	pub fn in_hole_pts(&self, v: &Vector) -> bool {
+		self.hole_pts.contains(v)
+	}
+	pub fn in_hole_pts8(&self, v: &VectorSm) -> bool {
+		match self.hole_pts.binary_search(&v.intov()) {
+			Ok(_) => true,
+			_ => false,
+		}
+	}
+	pub fn in_wall_pts(&self, v: &Vector) -> bool {
+		self.wall_pts.contains(v)
+	}
+	pub fn in_wall_pts8(&self, v: &VectorSm) -> bool {
+		match self.wall_pts.binary_search(&v.intov()) {
+			Ok(_) => true,
+			_ => false,
+		}
 	}
 	pub fn strip_sprites(&mut self) {
 		for idx in 0..(self.w * self.h) as usize {
@@ -521,10 +587,16 @@ impl Level {
 		&self.noboxx_pts
 	}
 	pub fn get_boxx_pts(&self) -> &Vec<Vector> {
-		return &self.boxx_pts;
+		&self.boxx_pts
+	}
+	pub fn get_hole_pts(&self) -> &Vec<Vector> {
+		&self.hole_pts
 	}
 	pub fn vector_in_bounds(&self, v: &Vector) -> bool {
 		v.0 >= 0 && v.0 < (self.w as i32) && v.1 >= 0 && v.1 < (self.h as i32)
+	}
+	pub fn vector_in_bounds8(&self, v: &VectorSm) -> bool {
+		v.0 >= 0 && v.0 < (self.w as i8) && v.1 >= 0 && v.1 < (self.h as i8)
 	}
 	pub fn force_vector_in_bounds(&self, v: &Vector) -> Vector {
 		let mut v = v.clone();
@@ -550,8 +622,4 @@ impl Level {
 		s
 	}
 }
-
-
-
-
 

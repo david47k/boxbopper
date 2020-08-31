@@ -130,9 +130,10 @@ r"######
 ######
 
 title: boweponeri
+num: 9
+moves: 42
+path: DDDRRURUULDRDDLLLUUURLDDDRRRUULLULDRRRULDD
 difficulty: 5
-moves required: 42
-solution: DDDRRURUULDRDDLLLUUURLDDDRRRUULLULDRRRULDD
 seed: 718
 width: 6
 height: 6
@@ -150,13 +151,15 @@ r"#########
 #########
 
 title: nuyolonoyi
-moves required: 38
-solution: URDLDDRRDRULLUDRRRUULDRDLLLULUURDDLLLDDRRURRLULL
+num: 10
+moves: 38
+path: URDLDDRRDRULLUDRRRUULDRDLLLULUURDDLLLDDRRURRLULL
 seed: 43
 width: 9
 height: 8
 wall_density: 20
 num_boxxes: 3
+time: 0.00user 0.03system 0:00.01elapsed 172%CPU (0avgtext+0avgdata 2756maxresident)k
 ",
 
 r"##########
@@ -171,17 +174,16 @@ r"##########
 ##########
 
 title: zegasaheke
+num: 11
+moves: 53
+path: DRDDLDDRDLLLRRUUUURRRRUULLDURRDDLLLULDDDDRDLRURULULDD
 difficulty: 7
-moves required: 53
-solution: DRDDLDDRDLLLRRUUUURRRRUULLDURRDDLLLULDDDDRDLRURULULDD
 seed: 66
 width: 10
 height: 10
 wall_density: 23
 num_boxxes: 5
-timereal:    0m21.951s
-timeuser:    0m36.688s
-timesys:     0m3.375s
+time: 5.26user 1.75system 0:03.22elapsed 217%CPU (0avgtext+0avgdata 341504maxresident)k
 
 ",
 
@@ -196,10 +198,10 @@ r"##########
 ##########
 
 title: getting tricky
-time: 212.21user 15.96system 2:01.77elapsed 187%CPU (0avgtext+0avgdata 3705864maxresident)k
 num: 12
 moves: 101
 path: LLUULUURLDDRULUUURRDLULDDDUURRRRRDDLLLLLLRRDLLRRDDRRUURULLLLUURRDLULDDRDLRDDRRRUULULLULDUURRRRRDDLLLL
+time: 11.64user 2.95system 0:06.07elapsed 240%CPU (0avgtext+0avgdata 537632maxresident)k
 ",
 
 r"##########
@@ -213,10 +215,10 @@ r"##########
 ##########
 
 title: too hard yet?
-time:  21.8 / 1.3 / 12.7 / 182% / 590M
 num: 13
 moves: 97
 path: URULUURUULDLLULLDRRRRURDLDDDRDDLULLUUUDDDRRUUUULLULLDRLDRURRRDDDDLLURDRUUUDDLLUULURDLLLDDRRRRDRUU
+time: 3.25user 0.48system 0:01.47elapsed 253%CPU (0avgtext+0avgdata 88168maxresident)k
 ",
 
 r"###########
@@ -229,7 +231,10 @@ r"###########
 ###########
 
 title: seven
-timereal: 3m0s
+num: 14
+moves: 105
+path: UURDRRDRRUUURULDDDDLLURDRUUUDDLLLLLDDRULURRRRDRUURULLRDDLLLLDDRULURRRDRUUDDRUUULRDDDDRRULDLUUUDDRRULLDLUU
+time: 20.25user 4.04system 0:10.45elapsed 232%CPU (0avgtext+0avgdata 845704maxresident)k
 ",
 
 r"##########
@@ -244,10 +249,10 @@ r"##########
 ##########
 
 title: need solution stat
-timereal:    0m0.6s
-timeuser:    0m0.9s
-timesys:     0m0.2s
 num: 15
+moves: 162
+path: LULUULLDDRDDUULUURRDRDDRRURUULDLLDDRRURULDDDDRRDDLLUULLLDLLURUUURLLUURRDULLDDRDDDRRRRDDRRUULLUUURUULDLLDURRDDDDRRDDLLUULLLDLLURRRRRUDDDRRUULRDDLLUULLLLUUURLLUURRD
+time: 0.26user 0.01system 0:00.15elapsed 184%CPU (0avgtext+0avgdata 8296maxresident)k
 ",
 
 r"###################

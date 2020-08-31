@@ -1,0 +1,19 @@
+#########
+# #    O#
+#    *&##
+# #  #  #
+#O**#O  #
+#   #   #
+#########
+
+title: gagekopevo-42
+depth: 12
+moves: 42
+path: ULLDRLLLLDDDRRUUDDLLUUURRDDLRURULURRRDDRDL
+seed: 0
+width: 7
+height: 5
+wall_density: 20
+box_density: 5
+num_boxxes: 3
+

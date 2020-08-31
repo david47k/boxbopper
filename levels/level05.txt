@@ -6,5 +6,5 @@
 ##  & ##
 ########
 
-moves required: 31
-solution: RULURLDDLLURDRULULRUURRDLULDULD
+moves: 31
+path: RULURLDDLLURDRULULRUURRDLULDULD

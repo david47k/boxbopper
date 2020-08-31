@@ -1,0 +1,19 @@
+#########
+#&# *O O#
+#**    ##
+# # O#* #
+#O* #@  #
+#O  #O* #
+#########
+
+title: gagekopevo-38
+depth: 16
+moves: 38
+path: DDDUURRURDRRULRDDRDDLUUULURDLLLURDLDDL
+seed: 0
+width: 7
+height: 5
+wall_density: 20
+box_density: 20
+num_boxxes: 7
+

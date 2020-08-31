@@ -1,0 +1,19 @@
+#######
+# #   #
+# @&* #
+#O**# #
+##  # #
+#@ OO##
+#######
+
+title: vowuluyeji-20
+depth: 8
+moves: 20
+path: DDLDRUUUURRDLULDDDUL
+seed: 0
+width: 5
+height: 5
+wall_density: 20
+box_density: 20
+num_boxxes: 5
+

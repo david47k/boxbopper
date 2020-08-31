@@ -6,5 +6,5 @@
 ##########
 
 title: still super easy
-moves required: 27
-solution: RRRRLDRLDRLDRRRLLURRLLURRLLURR
+moves: 27
+path: RRRRLDRLDRLDRRRLLURRLLURRLLURR

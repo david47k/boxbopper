@@ -9,10 +9,8 @@
 #   ###   #
 ###########
 
-moves required: 105
-solution: UURDRRDRRUUURULDDDDLLURDRUUDDRUUULLRDDLLLLLDDRULURRRRDRUURULDDLLLLDDRULURRRDRUUURDDDDRRULDLUUUDDRRULLDLUU
-
-points marked with '.' should be inaccessable.
+title: test level to check halls
+description: points marked with '.' should be inaccessable.
 
 ###########
 ####.  O###
@@ -22,9 +20,3 @@ points marked with '.' should be inaccessable.
 #.       .#
 #...###...#
 ###########
-
-
-
-real    3m0.605s
-user    5m29.453s
-sys     0m30.188s

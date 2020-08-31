@@ -5,7 +5,7 @@
 ##  O#
 ######
 
-title: test4
+title: test level
 description: solvable in 14 moves
-solution: RDDUULLDDRDRU
-
+moves: 14
+path: RDDUULLDDRDRU
