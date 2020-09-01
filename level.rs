@@ -1,4 +1,4 @@
-
+// level.rs: store level data and perform basic operations
 
 use wasm_bindgen::prelude::*;
 use js_sys::{Array,JsString};

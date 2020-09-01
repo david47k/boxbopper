@@ -181,7 +181,7 @@ width: 8
 height: 8
 wall_density: 23
 num_boxxes: 5
-time: 5.06user 1.45system 0:02.44elapsed 266%CPU (0avgtext+0avgdata 246224maxresident)k
+time: 3.57user 0.85system 0:01.55elapsed 285%CPU (0avgtext+0avgdata 165484maxresident)k
 ",
 
 r"##########
@@ -198,7 +198,7 @@ title: getting tricky
 num: 12
 moves: 101
 path: LLUULUURLDDRULUUURRDLULDDDUURRRRRDDLLLLLLRRDLLRRDDRRUURULLLLUURRDLULDDRDLRDDRRRUULULLULDUURRRRRDDLLLL
-time: 11.79user 1.81system 0:05.62elapsed 241%CPU (0avgtext+0avgdata 377220maxresident)k
+time: 8.00user 0.85system 0:03.40elapsed 260%CPU (0avgtext+0avgdata 231180maxresident)k
 ",
 
 r"##########
@@ -215,7 +215,7 @@ title: too hard yet?
 num: 13
 moves: 97
 path: URULUURUULDLLULLDRRRRURDLDDDRDDLULLUUUDDDRRUUUULLULLDRLDRURRRDDDDLLURDRUUUDDLLUULURDLLLDDRRRRDRUU
-time: 2.76user 0.34system 0:01.14elapsed 270%CPU (0avgtext+0avgdata 60292maxresident)k
+time: 1.93user 0.15system 0:00.95elapsed 220%CPU (0avgtext+0avgdata 44264maxresident)k
 ",
 
 r"###########
