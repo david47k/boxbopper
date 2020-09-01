@@ -224,7 +224,7 @@ fn main() -> std::io::Result<()> {
 		for x in 0..unsolved_levels.len() {
 			println!("==== Solving variation {} of {} ====", x, unsolved_levels.len()-1);
 			println!("{}", &unsolved_levels[x].to_string());
-			let solution = solve_level(&unsolved_levels[x], unsolved_levels[x].get_keyval("moves").parse::<u16>().expect("number->string->number failure!")+2, max_maps, &mut rng, verbosity); // probably don't need the +2
+			let solution = solve_level(&unsolved_levels[x], unsolved_levels[x].get_keyval("moves").parse::<u16>().expect("number->string->number failure!")+2, max_maps, verbosity); // probably don't need the +2
 			solutions.push(solution.clone());
 			match solution {
 				Some(solution) => {
@@ -305,7 +305,7 @@ fn main() -> std::io::Result<()> {
 		
 		println!("{}",level.to_string());
 
-		let solution = solve_level(&level, max_moves, max_maps, &mut rng, verbosity);
+		let solution = solve_level(&level, max_moves, max_maps, verbosity);
 		match solution {
 			Some(_sol) => {
 			},

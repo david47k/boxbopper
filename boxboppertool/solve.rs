@@ -14,8 +14,6 @@ use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
 extern crate rand;
 extern crate rand_chacha;
 
-use rand::{Rng};
-
 
 #[derive(Clone)]
 pub struct Solution {
@@ -26,7 +24,7 @@ pub struct Solution {
 }
 
 
-pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Option<Solution> {
+pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize, verbosity: u32) -> Option<Solution> {
 	let max_moves = Arc::new(AtomicU16::new(max_moves_requested+1));
 	let mut base_level = base_level.clone();
 	base_level.clear_human();
@@ -106,9 +104,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 		if maps.len() > max_maps {
 			println!("--- Hit maximum maps ({}) ---",max_maps);
-			while maps.len() > max_maps {
-				maps.retain(|_m| rng.gen());
-			}
+			break;
 		}
 		
 		// loop and check the next depth

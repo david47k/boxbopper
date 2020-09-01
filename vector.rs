@@ -232,14 +232,18 @@ impl ShrunkPath {
 	pub fn to_path(&self) -> Vec::<Move> {
 		let mut path = Vec::<Move>::with_capacity(self.count as usize);
 		for block in 0..(self.count/4) as usize {
-			path.push( Move::from_u8(self.data[block] & 0x03).unwrap() );
-			path.push( Move::from_u8(self.data[block] >> 2 & 0x03).unwrap() );
-			path.push( Move::from_u8(self.data[block] >> 4 & 0x03).unwrap() );
 			path.push( Move::from_u8(self.data[block] >> 6 & 0x03).unwrap() );
+			path.push( Move::from_u8(self.data[block] >> 4 & 0x03).unwrap() );
+			path.push( Move::from_u8(self.data[block] >> 2 & 0x03).unwrap() );
+			path.push( Move::from_u8(self.data[block] & 0x03).unwrap() );
 		}
-		let base = (self.count/4) as usize;
-		for i in 0..self.count%4 {
-			path.push( Move::from_u8(self.data[base] >> (2*i) & 0x03).unwrap() );
+		if self.count%4 != 0 {
+			let r = self.count%4;			// this will give number of 1,2,3 
+			let base = (self.count/4) as usize;
+			for i in 0..r {
+				let n = r - i - 1;
+				path.push( Move::from_u8(self.data[base] >> (n*2) & 0x03).unwrap() );
+			}
 		}
 
 		path

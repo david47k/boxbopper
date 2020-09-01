@@ -1,4 +1,4 @@
-pub const BUILTIN_LEVELS: [&str; 44] = [
+pub const BUILTIN_LEVELS: [&str; 51] = [
 
 r"##########
 #&   *  O#
@@ -15,6 +15,8 @@ r"##########
 ##########
 
 title: four-27
+path: RRRRRRLLLDRRRLLLDRRRLLLDRRR
+      RRRRRRLLLDRRRLLLDRRRLLLDRUR
 ",
 
 r"########
@@ -231,7 +233,7 @@ title: seven
 num: 14
 moves: 105
 path: UURDRRDRRUUURULDDDDLLURDRUUUDDLLLLLDDRULURRRRDRUURULLRDDLLLLDDRULURRRDRUUDDRUUULRDDDDRRULDLUUUDDRRULLDLUU
-time: 18.56user 2.78system 0:09.04elapsed 236%CPU (0avgtext+0avgdata 582364maxresident)k
+time: 12.50user 1.75system 0:05.52elapsed 258%CPU (0avgtext+0avgdata 369152maxresident)k
 ",
 
 r"##########
@@ -251,6 +253,101 @@ moves: 162
 path: LULUULLDDRDDUULUURRDRDDRRURUULDLLDDRRURULDDDDRRDDLLUULLLDLLURUUURLLUURRDULLDDRDDDRRRRDDRRUULLUUURUULDLLDURRDDDDRRDDLLUULLLDLLURRRRRUDDDRRUULRDDLLUULLLLUUURLLUURRD
 time: 0.26user 0.01system 0:00.15elapsed 184%CPU (0avgtext+0avgdata 8296maxresident)k
 ",
+
+r"#########
+#  @O # #
+#  * OO##
+#  * # ##
+# #* % ##
+#  *@*  #
+#    O ##
+# ### ###
+#########
+
+title: widorehadi-49
+num: 16
+depth: 14
+moves: 49
+path: LDDRRDULLUURLDLDULULRRUULLRRLRDLRDDLLUURLRRUURDDU
+time: 23.79user 5.50system 0:11.46elapsed 255%CPU (0avgtext+0avgdata 1218900maxresident)k
+seed: 11249
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+",
+
+r"#########
+# O    ##
+# ##** ##
+#O@  *###
+#O    ###
+#O*## ###
+# &O#@* #
+#       #
+#########
+
+title: lozomulehu-118
+num: 17
+depth: 33
+moves: 118
+path: UUULRRUURUDRULDRLLLLRDDDRLURURRDRURLDLLULDRDRULLURRDLDLULDLDRRDDDRLUUURRLDUUDLULRUUDLUURDRRRDLULLLDRDDRRRRDDLDLULLLLRU
+time: 7.09user 0.87system 0:02.95elapsed 269%CPU (0avgtext+0avgdata 128732maxresident)k
+seed: 11860
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+",
+
+r"#########
+##    OO#
+#####*  #
+#O##    #
+#&*     #
+#  @*@  #
+# #  *#O#
+# ##O * #
+#########
+
+title: juzehiguju-70
+num: 18
+depth: 31
+moves: 70
+path: RRRDRURRDDDLLUULUURRUULDRDDLLLLDRDRLULLURRRRRRDDDLLUURLLUURDRUUDDRDUUU
+time: 65.59user 9.39system 0:28.72elapsed 261%CPU (0avgtext+0avgdata 1643976maxresident)k
+seed: 11230
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+",
+
+r"#########
+## ##   #
+# O    O#
+#  *@*# #
+## O  *O#
+#O## #  #
+#**  # *#
+#   O##&#
+#########
+
+title: fewuhopiga-85
+num: 19
+depth: 36
+moves: 85
+path: UUULLLULURRDLDDDDLLLURRDRUUUURUURRDDDLLULDULULLDRRLDRRDDUURUUURRDDDLDDRULULLRUULRRLLL
+time: 25.2
+seed: 11452
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7",
 
 r"######
 #    #
@@ -774,6 +871,54 @@ box_density: 20
 num_boxxes: 6
 ",
 
+r"",
+
+r"#########
+#  OO   #
+#  *##  #
+#@   * ##
+## *#  ##
+##O  #  #
+# #**O@##
+# #   % #
+#########
+
+title: bevanehova-156
+depth: 49
+moves: 156
+path: LLLURULRDDRRUUUULLLDDUURRRURULLLLDLLURRDDRRRDDDDLLUULULURUULLDRDRDDRDDRRUUUUUULLLDDRRDRDDDLLUULULURUURRRDDDDDUUUUULLLDDRRLLUURRRDDDDUULLLULLURRDDDDRDDLUUUUU
+time: 7.6
+seed: 11589
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+",
+
+r"#########
+#   ###O#
+#   *   #
+##*#%** #
+#  #* O##
+#O@# ####
+#  * O  #
+#O    ###
+#########
+
+title: falodalore-142
+depth: 45
+moves: 142
+path: DRRUDLLURURDULLLULLDRRRRDDLDDLDLLUUURUDLDDDRRURRDLLURUUUULULLDRDDLDDRRDRULLLDRULUURDLDRRRUURUULLULDDDDUUURRRDRRULLLLULDDDUURRRDDLDDLLDLURRRDLL
+time: 48.2
+seed: 11208
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+",
+
 r"#################
 #               #
 # *  *  **  * * #
@@ -793,5 +938,6 @@ width: 17
 height: 11
 num_boxxes: 23
 ",
+
 ];
 

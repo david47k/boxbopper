@@ -1,0 +1,22 @@
+#########
+#  @O # #
+#   *%O##
+#  * # ##
+# #* O ##
+#  *@   #
+#    @ ##
+# ### ###
+#########
+
+title: widorehadi-41
+depth: 12
+moves: 41
+path: LDDRLUULLRDLRDDLURRDULLDLUURRRRUDDLLULURR
+time: 61.8
+seed: 11249
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+
