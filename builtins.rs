@@ -16,7 +16,6 @@ r"##########
 
 title: four-27
 path: RRRRRRLLLDRRRLLLDRRRLLLDRRR
-      RRRRRRLLLDRRRLLLDRRRLLLDRUR
 ",
 
 r"########
@@ -62,6 +61,7 @@ r"######
 ######
 
 title: yegupumubi-60
+num: 5
 moves: 60
 path: LRUULDRDDLLLUURRLLDDRUDRRULUURDLDDLLUUURLDDDRRUULRDDLLURUULD
 seed: 654
@@ -79,6 +79,7 @@ r"######
 ######
 
 title: zizikamabe-26
+num: 6
 moves: 26
 path: DULULLDRRLLDDRULUURRDLULDD
 seed: 12
@@ -96,6 +97,7 @@ r"######
 ######
 
 title: pavahibete-30
+num: 7
 moves: 30
 path: LLDDDRRRUDLLLUUURRDDRDLUUULLDR
 seed: 896
@@ -113,6 +115,7 @@ r"######
 ######
 
 title: kihuwolobi-32
+num: 8
 difficulty: 4
 moves: 32
 path: RUUULLLDDDRRUUDDLLUURLDDRRURUULD
@@ -133,7 +136,7 @@ r"######
 title: boweponeri-42
 num: 9
 moves: 42
-path: DDDRRURUULDRDDLLLUUURLDDDRRRUULLULDRRRULDD
+path: DDDRRURUULDRDDLLLUUURLDDDRRRUULDULULDRRRUL
 seed: 718
 width: 4
 height: 4
@@ -153,7 +156,7 @@ r"#########
 title: nuyolonoyi-38
 num: 10
 moves: 38
-path: URDLDDRRDRULLUDRRRUULDRDLLLULUURDDLLLDDRRURRLULL
+path: DRDRDRURUULDRDLLLULUURDDLLLDDRRURRLULL
 seed: 43
 width: 7
 height: 6
@@ -176,7 +179,7 @@ r"##########
 title: zegasaheke-53
 num: 11
 moves: 53
-path: DRDDLDDRDLLLRRUUUURRRRUULLDURRDDLLLULDDDDRDLRURULULDD
+path: DRDDLDDRDLLLRRUUUURRRRUULLDURRDDLLLULDDDDRDLURRULULDD
 difficulty: 7
 seed: 66
 width: 8
@@ -199,6 +202,7 @@ r"##########
 title: getting tricky
 num: 12
 moves: 101
+depth: 32
 path: LLUULUURLDDRULUUURRDLULDDDUURRRRRDDLLLLLLRRDLLRRDDRRUURULLLLUURRDLULDDRDLRDDRRRUULULLULDUURRRRRDDLLLL
 time: 8.00user 0.85system 0:03.40elapsed 260%CPU (0avgtext+0avgdata 231180maxresident)k
 ",
@@ -251,7 +255,7 @@ title: need solution stat
 num: 15
 moves: 162
 path: LULUULLDDRDDUULUURRDRDDRRURUULDLLDDRRURULDDDDRRDDLLUULLLDLLURUUURLLUURRDULLDDRDDDRRRRDDRRUULLUUURUULDLLDURRDDDDRRDDLLUULLLDLLURRRRRUDDDRRUULRDDLLUULLLLUUURLLUURRD
-time: 0.26user 0.01system 0:00.15elapsed 184%CPU (0avgtext+0avgdata 8296maxresident)k
+time: 0.01user 0.01system 0:00.07elapsed 42%CPU (0avgtext+0avgdata 4792maxresident)k
 ",
 
 r"#########
@@ -268,7 +272,7 @@ title: widorehadi-49
 num: 16
 depth: 14
 moves: 49
-path: LDDRRDULLUURLDLDULULRRUULLRRLRDLRDDLLUURLRRUURDDU
+path: RDDLLUDRRUULDLDLLULUUURRRRLLLDRLLDDRRUULURRLDDRUU
 time: 23.79user 5.50system 0:11.46elapsed 255%CPU (0avgtext+0avgdata 1218900maxresident)k
 seed: 11249
 width: 7
@@ -292,7 +296,7 @@ title: lozomulehu-118
 num: 17
 depth: 33
 moves: 118
-path: UUULRRUURUDRULDRLLLLRDDDRLURURRDRURLDLLULDRDRULLURRDLDLULDLDRRDDDRLUUURRLDUUDLULRUUDLUURDRRRDLULLLDRDDRRRRDDLDLULLLLRU
+path: LUUUUURRRDURRDLULLLLDDDRRULRDRRULRURULLDDRDLLLURDRRUULDLDLDLDDRRULRDRRUUUUDLLULDDUURRUULRRRDLULDRDLLRRDDDDRRULDLLLLLUR
 time: 7.09user 0.87system 0:02.95elapsed 269%CPU (0avgtext+0avgdata 128732maxresident)k
 seed: 11860
 width: 7
@@ -316,7 +320,7 @@ title: juzehiguju-70
 num: 18
 depth: 31
 moves: 70
-path: RRRDRURRDDDLLUULUURRUULDRDDLLLLDRDRLULLURRRRRRDDDLLUURLLUURDRUUDDRDUUU
+path: RRRDRURRDDDLLUULUURRUULDRDDLLLLDLURDRDRLUURRRRDDDLLUURLLUURDRUUDDRDUUU
 time: 65.59user 9.39system 0:28.72elapsed 261%CPU (0avgtext+0avgdata 1643976maxresident)k
 seed: 11230
 width: 7
@@ -336,18 +340,19 @@ r"#########
 #   O##&#
 #########
 
-title: fewuhopiga-85
+title: fewuhopiga-86
 num: 19
-depth: 36
-moves: 85
-path: UUULLLULURRDLDDDDLLLURRDRUUUURUURRDDDLLULDULULLDRRLDRRDDUURUUURRDDDLDDRULULLRUULRRLLL
-time: 25.2
+depth: 34
+moves: 86
+path: UUULLLULURRURRDDDLLLDDDLLLURRDRUUURRRUUULLDRLLDDDDUURULULLLDRRURRURRDLLLLRRDDRRUDLDDRU
+time: 4.17user 0.42system 0:01.79elapsed 255%CPU (0avgtext+0avgdata 119036maxresident)k
 seed: 11452
 width: 7
 height: 7
 wall_density: 35
 box_density: 15
-num_boxxes: 7",
+num_boxxes: 7
+",
 
 r"######
 #    #
@@ -357,6 +362,7 @@ r"######
 ######
 
 title: kefikuboju-26
+num: 20
 moves: 26
 path: RUULDURRRDLLDDRULUURRDLULD
 seed: 209
@@ -374,6 +380,7 @@ r"######
 ######
 
 title: jodihitudu-26
+num: 21
 moves: 26
 path: LLDDUURRDDLDLRURUULLDDRRUL
 seed: 914
@@ -389,9 +396,10 @@ r"######
 #O  O#
 ######
 
-title: hanemuwazi-37
+title: hanemuwazi-33
+num: 22
 moves: 33
-path: DDDRRURUULDRDDLLLUURRDRDLUUURDDLDL
+path: DDDRRURUULDRDDLLLUURRDRDLLRUUURDD
 seed: 235
 width: 6
 height: 6
@@ -408,6 +416,7 @@ r"#########
 #########
 
 title: gagekopevo-42
+num: 23
 depth: 12
 moves: 42
 path: ULLDRLLLLDDDRRUUDDLLUUURRDDLRURULURRRDDRDL
@@ -428,6 +437,7 @@ r"#########
 #########
 
 title: gagekopevo-ii-38
+num: 24
 depth: 16
 moves: 38
 path: DDDUURRURDRRULRDDRDDLUUULURDLLLURDLDDL
@@ -447,6 +457,7 @@ r"#######
 #######
 
 title: vijarozajo-56
+num: 25
 depth: 17
 moves: 56
 path: RRUURRDDUULLDDRLUURRDLDLLLUURDURDRRULLDLLDDRULURRURRDLDL
@@ -484,7 +495,7 @@ r"#######
 title: hizozuwozo-64
 depth: 20
 moves: 64
-path: DULDRDRRULDLURDDDRUDLLULLDRRURUULLDRDDLLURDRURRDLLULUURRRDDLUDLU
+path: LDURDDRRULDLURDDDRUDLLULLDRRURUULLDRDDLLURDRURRDLLULUURRRDDLUDLU
 seed: 338
 width: 5
 height: 5
@@ -521,6 +532,7 @@ r"########
 
 title: ribubobono-76
 moves: 76
+depth: 15
 path: ULLUURRRDRDDLDLLUDRRULULRDDLURRRUULULLLDLDDRULUURRRRDRDDLLULLULURDDDLURRRDLL
 seed: 3414
 width: 6
@@ -539,7 +551,7 @@ r"########
 
 title: kesokehofu-76
 moves: 76
-description: is it solvable in 69?! 
+depth: 20
 path: DLLUUURRULLLRDDDDRRULDLUULUURRDLULDLDDRRDRRULDLUUDLLUURURRDLDDLLUULURRRDLRDL
 seed: 3836
 width: 6
@@ -557,6 +569,7 @@ r"#######
 #######
 
 title: nuvoradene-69
+comment: UP TO HERE IN CHECKING LEVELS TODO NUM 31
 depth: 23
 moves: 69
 path: RLDDDRRULULUURDULLLDDDDRRULDLURRRRDLLUUURDLDDRRULDLULLUUDDDRRRUUUULDD
