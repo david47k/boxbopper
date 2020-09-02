@@ -36,6 +36,7 @@ pub struct PathMap {
 	pub flag: bool,
 }
 
+
 impl PathMap {
 	pub fn new_from_level(level: &Level) -> PathMap {
 		PathMap {
@@ -79,7 +80,7 @@ impl PathMap {
 		map_b.level.set_obj_at_pt(&np, new_obj);
 		map_b.level.human_pos = np;				// place human
 
-		map_b.level.make_cmp_data_fast_128();
+		map_b.level.make_cmp_data();
 			
 		let bm = pnm.backtrace_moves(&km.pn);
 		for m in bm {
@@ -138,7 +139,7 @@ impl PathMap {
 		let np = km.pn.pt.add_dir(&km.move_dir);
 		map_b.level.human_pos = np;
 
-		map_b.level.make_cmp_data_fast_128();
+		map_b.level.make_cmp_data();
 		
 		let bm = pnm.backtrace_moves(&km.pn);
 		for m in bm {
@@ -341,8 +342,19 @@ impl PathNodeMap {
 	}
 }
 
+// sort by len first, then leveldata
+/* pub fn dedupe_equal_levels_fast_128(maps: &mut Vec::<PathMap>) {
+	maps.par_sort_unstable_by(|a,b| {
+		let ord = a.level.cmp_data.blocks[0..2].partial_cmp(&b.level.cmp_data.blocks[0..2]).unwrap();
+		if ord == Ordering::Equal {
+			return a.path.len().partial_cmp(&b.path.len()).unwrap();
+		}
+		ord			
+	});
+	maps.dedup_by(|a,b| a.level.cmp_data.fast_128 == b.level.cmp_data.fast_128); // it keeps the first match for each level (sorted to be smallest moves)
+}
 
-pub fn dedupe_equal_levels(maps: &mut Vec::<PathMap>) {
+pub fn dedupe_equal_levels_slow_map(maps: &mut Vec::<PathMap>) {
 	maps.par_sort_unstable_by(|a,b| {
 		let ord = a.level.cmp_data.partial_cmp(&b.level.cmp_data).unwrap();
 		if ord == Ordering::Equal {
@@ -355,5 +367,21 @@ pub fn dedupe_equal_levels(maps: &mut Vec::<PathMap>) {
 		}
 		ord			
 	});
-	maps.dedup_by(|a,b| a.level.cmp_data.eq(&b.level.cmp_data)); // it keeps the first match for each level (sorted to be smallest moves)
+	maps.dedup_by(|a,b| a.level.cmp_data.slow_map == b.level.cmp_data.slow_map); // it keeps the first match for each level (sorted to be smallest moves)
+} */
+
+pub fn dedupe_equal_levels(maps: &mut Vec::<PathMap>, size: usize) {
+	maps.par_sort_unstable_by(|a,b| {
+		let ord = a.level.cmp_data.blocks[0..size].partial_cmp(&b.level.cmp_data.blocks[0..size]).unwrap();
+		if ord == Ordering::Equal {
+			if a.path.len() < b.path.len() {
+				return Ordering::Less;
+			}
+			if a.path.len() > b.path.len() {
+				return Ordering::Greater;
+			}
+		}
+		ord			
+	});
+	maps.dedup_by(|a,b| a.level.cmp_data.blocks[0..size] == b.level.cmp_data.blocks[0..size]); // it keeps the first match for each level (sorted to be smallest moves)
 }

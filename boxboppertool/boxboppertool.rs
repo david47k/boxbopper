@@ -155,7 +155,7 @@ fn main() -> std::io::Result<()> {
 		} else if count >= 2 {
 			let eq_idx = arg.find('=');
 			if eq_idx.is_none() {
-				println!("No equals symbol found in var {}", arg);
+				println!("No equals symbol found in var");
 				mode = Mode::Help;
 			}
 			let eq_idx = eq_idx.unwrap();
@@ -180,13 +180,8 @@ fn main() -> std::io::Result<()> {
 		}
 	}
 
-	if width > 15 || height > 15 || (width * height) > 120 {
-		println!("ERROR: Maximum width is 15. Maximum height is 15. Maximum width*height is 120.");
-		return Ok(());
-	} 
-
-	if width > 127 || height > 127 {
-		println!("ERROR: Maximum width is 127. Maximum height is 127.");
+	if width > 127 || height > 127 || width * height > 240 {
+		println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 240.");
 		return Ok(());
 	} 
 
@@ -280,7 +275,7 @@ fn main() -> std::io::Result<()> {
 		output_str += &format!("depth: {}\n", solution.depth);
 		output_str += &format!("moves: {}\n", solution.moves);
 		output_str += &format!("path: {}\n", solution.path);
-		output_str += &format!("time: {:.1}\n", solution.msecs/1000_f64);
+		output_str += &format!("time: {:.1}\n", (solution.msecs+500_f64)/1000_f64);
 		output_str += &format!("seed: {}\n", seed);
 		output_str += &format!("{}\n", level_params);
 		println!("{}",output_str);
@@ -305,9 +300,21 @@ fn main() -> std::io::Result<()> {
 		
 		println!("{}",level.to_string());
 
+		if width > 127 || height > 127 || width * height > 240 {
+			println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 240.");
+			return Ok(());
+		} 
+
 		let solution = solve_level(&level, max_moves, max_maps, verbosity);
 		match solution {
-			Some(_sol) => {
+			Some(sol) => {
+				let mut output_str = "".to_string();
+				output_str += &format!("title: {}\n", level.get_title_str());
+				output_str += &format!("depth: {}\n", sol.depth);
+				output_str += &format!("moves: {}\n", sol.moves);
+				output_str += &format!("path: {}\n", sol.path);
+				output_str += &format!("time: {:.1}\n", (sol.msecs+500_f64)/1000_f64);
+				println!("{}", output_str);
 			},
 			None => {
 			}

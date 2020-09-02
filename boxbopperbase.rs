@@ -45,6 +45,7 @@ pub fn console_log(s: &str) {
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq)]
+#[repr(u8)]
 pub enum Obj { Wall=0, Space=1, Boxx=2, Hole=3, Human=4, HumanInHole=5, BoxxInHole=6 }
 
 impl Obj {

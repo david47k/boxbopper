@@ -11,12 +11,20 @@ use crate::vector::{Vector,VectorSm};
 use super::Obj;
 use crate::builtins::BUILTIN_LEVELS;
 
+#[derive(Clone,PartialEq,PartialOrd,Ord,Eq)]
+pub struct CmpData {
+	pub blocks: [u64; 4],
+}
 
-#[derive(Clone,PartialEq)]
-pub enum CmpDataType {
-	Fast128(u128),
-	SlowMap(Vec::<u128>),
-	SlowPts(Vec::<(i8,i8)>),
+impl CmpData {
+	pub fn new() -> CmpData { 
+		CmpData {
+			blocks: [0_u64; 4],
+		}
+	}
+	pub fn get_size(w: u16, h: u16) -> usize {
+		return (w*h+16) as usize / 64 as usize;	// we'll use 16 bits to store x and y (8 bits each, 0..127/255)
+	}
 }
 
 
@@ -47,11 +55,11 @@ pub struct Level {
 	wall_pts: Vec::<Vector>,
 }
 
-#[derive(Clone,PartialEq,PartialOrd)]
+#[derive(Clone,PartialEq)]
 pub struct SpLevel {		/* special level for solving */
 	pub w: u16,
 	pub human_pos: Vector,
-	pub cmp_data: u128,
+	pub cmp_data: CmpData,
 	pub data: Vec::<Obj>,
 }
 
@@ -62,7 +70,7 @@ impl SpLevel {
 			w: level.w,
 			human_pos: level.human_pos.clone(),
 			data: level.data.clone(),
-			cmp_data: 0,
+			cmp_data: CmpData::new(),
 		}
 	}
 	pub fn get_obj_at_pt(&self, pt: &Vector) -> Obj {
@@ -99,9 +107,6 @@ impl SpLevel {
 		}
 		return true;
 	}
-	pub fn eq(&self, b: &SpLevel) -> bool {
-		self.data == b.data && self.human_pos == b.human_pos
-	}	
 	pub fn to_string(&self) -> String {
 		let mut s = String::new();
 		for _ in 0..self.w+2 { s+="#"; }
@@ -117,39 +122,25 @@ impl SpLevel {
 		s += "\n";
 		s
 	}	
-	pub fn make_cmp_data_fast_128(&mut self) {
-		let mut cmp_data: u128 = ((self.human_pos.0 as u8) << 4 | (self.human_pos.1 as u8)) as u128;
-		for o in self.data.iter() {
-			cmp_data <<= 1;
-			cmp_data |= (*o==Obj::Boxx||*o==Obj::BoxxInHole) as u128;
-		}
-		self.cmp_data = cmp_data;
-	}
-	pub fn make_cmp_data_slow_map(&self) -> Vec::<u128> {
-		let mut all_data = Vec::<u128>::with_capacity((self.data.len()+16)/128);
-		let mut data: u128 = (self.human_pos.0 as u128) << 8 | (self.human_pos.1 as u128);
+	pub fn make_cmp_data(&mut self) {
+		let mut data: u64 = (self.human_pos.0 as u64) << 8 | (self.human_pos.1 as u64);
 		let mut bits_used: usize = 16;
+		let mut block = 0;
 		for o in self.data.iter() {
-			if bits_used == 128 {
-				all_data.push(data);
+			if bits_used % 64 == 0 {
+				self.cmp_data.blocks[block] = data;
+				block += 1;
 				data = 0;
-				bits_used = 0;
-			}						
+			}
 			data <<= 1;
-			data |= (*o==Obj::Boxx||*o==Obj::BoxxInHole) as u128;
+			data |= (*o==Obj::Boxx||*o==Obj::BoxxInHole) as u64;
 			bits_used += 1;
 		}
-		all_data.push(data);
-		all_data
+		self.cmp_data.blocks[block] = data;
 	}
-	pub fn make_cmp_data_slow_pts(&self, base_level: &Level) -> Vec::<(i8,i8)> {
-		let mut all_data = Vec::<(i8,i8)>::with_capacity(1+base_level.boxx_pts.len());
-		all_data.push( (self.human_pos.0 as i8, self.human_pos.1 as i8) );		
-		let boxx_pts = self.get_boxx_pts();
-		for pt in boxx_pts {
-			all_data.push( (pt.0 as i8, pt.1 as i8) );
-		}
-		all_data
+	pub fn get_cmp_data(&self) -> &[u64] {
+		let size = CmpData::get_size(self.w, self.data.len() as u16 / self.w);
+		return &self.cmp_data.blocks[0..size];
 	}
 	pub fn get_boxx_pts(&self) -> Vec<Vector> {
 		// update_boxx_pts

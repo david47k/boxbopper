@@ -1,0 +1,20 @@
+###################
+#@  #   ##O * ##  #
+#  ####  #    O# O#
+#  #   * * *&     #
+# #       *  O O  #
+###################
+
+title: nuromisedo-65
+depth: 37
+moves: 65
+path: DLUDLLLURRURRRULLDDLDRRRRLLLLLLLLURRRRRRLLLLLLLLDRRRRRRRRURRRRDRU
+time: 9.3
+time2: 20.18user 1.85system 0:08.71elapsed 252%CPU (0avgtext+0avgdata 282664maxresident)k
+seed: 3
+width: 17
+height: 4
+wall_density: 20
+box_density: 10
+num_boxxes: 6
+
