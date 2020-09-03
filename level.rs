@@ -126,6 +126,7 @@ impl SpLevel {
 		let cmp_data = &self.cmp_data;
 		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
 		let is_boxx = (cmp_data.blocks[idx_bits/64] & (0x8000_0000_0000_0000 >> (idx_bits%64))) != 0;
+
 		let is_human = pt.0 == self.cmp_data.human_x as i32 && pt.1 == self.cmp_data.human_y as i32;
 		let base_obj = base_level.get_obj_at_pt(pt);
 		match (base_obj, is_human, is_boxx) {
@@ -143,21 +144,20 @@ impl SpLevel {
 		// ignores underlying level
 		let cmp_data = &self.cmp_data;
 		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
-		let is_boxx = (cmp_data.blocks[idx_bits/64] & (1 << (63-(idx_bits%64)))) != 0;
+		let is_boxx = (cmp_data.blocks[idx_bits/64] & (0x8000_0000_0000_0000 >> (idx_bits%64))) != 0;
 		is_boxx
 	}
 	pub fn set_boxx_at_pt(&mut self, pt: &Vector) {
 		// ignores underlying level
 		let cmp_data = &mut self.cmp_data;
 		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
-		let or_val = 1 << (63-(idx_bits%64));
-		cmp_data.blocks[idx_bits/64] |= or_val;
+		cmp_data.blocks[idx_bits/64] |= 0x8000_0000_0000_0000 >> (idx_bits%64);
 	}
 	pub fn clear_boxx_at_pt(&mut self, pt: &Vector) {
 		// ignores underlying level
 		let cmp_data = &mut self.cmp_data;
 		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
-		let and_val = !(1 << (63-(idx_bits%64)));		
+		let and_val = !(0x8000_0000_0000_0000 >> (idx_bits%64));		
 		cmp_data.blocks[idx_bits/64] &= and_val;
 	}
 	pub fn set_human_pos(&mut self, pt: &Vector) {
