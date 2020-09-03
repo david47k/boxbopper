@@ -113,6 +113,9 @@ impl Game {			// non-js
 	pub fn append_move(&mut self, _move : &Move) {
 		self.move_queue.insert(0, *_move);
 	}
+	pub fn is_queued_moves(&self) -> bool {
+		self.move_queue.len() > 0
+	}
 	pub fn process_moves(&mut self)  {
 		if self.move_queue.len() == 0 { 
 			return; 

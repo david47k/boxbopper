@@ -17,33 +17,49 @@ pub fn get_user_input() -> String {
 	}
 }
 
+const DEF_VERBOSITY: u32 = 1;
 
 fn main() -> Result<(),String> {
+	let args: Vec::<String> = std::env::args().collect();
 	let mut filename: String = String::from("");
+	let mut builtin: u32 = 0;
+	let mut verbosity: u32 = DEF_VERBOSITY;
 	
-	let mut count = 0;
-	for env in std::env::args() {
-		if count > 0 {
-			filename = env;
+	// process params
+	for (count,arg) in args.into_iter().enumerate() {
+		if count >= 1 {
+			let eq_idx = arg.find('=');
+			if eq_idx.is_none() {
+				println!("No equals symbol found in var");
+			}
+			let eq_idx = eq_idx.unwrap();
+			let left = &arg[0..eq_idx];
+			let right = &arg[eq_idx+1..];
+			match left {
+				"filename"  => { filename = String::from(right); },
+				"builtin"   => { builtin = right.parse::<u32>().unwrap(); }
+				"verbosity" => { verbosity = right.parse::<u32>().unwrap(); },
+				_ => {
+					println!("Unrecognised variable {}", left);
+				}
+			}
 		}
-		count += 1;
 	}
+
 	
-	let custom_level;
-	let mut state;
-	
-	// load level
-	if filename.len() > 0 {
-		custom_level = Level::from_file(&filename).expect("Unable to open custom level file");
-		state = Game::new_from_level(&custom_level,0);
+	let mut state = if filename.len() > 0 {
+		Game::new_from_level(&Level::from_file(&filename).expect("Unable to open specified file"), 0)
 	} else {
-		state = Game::new(0);
-	}
+		Game::new(builtin)
+	};
+		
+	let mut current_level: u32 = builtin;
+	let mut quit = false;
 	
-	let mut current_level: u32 = 0;	
-	
-	loop {
-		state.process_moves();
+	while !quit {
+		while state.is_queued_moves() {
+			state.process_moves();
+		}
 		
 		&state.display();
 		
@@ -68,10 +84,10 @@ fn main() -> Result<(),String> {
 		}
 		println!(" > ");
 		
-		let c = get_user_input()[0..1].parse::<char>().unwrap();
-	
-		match c {
-			'q' | 'Q' => break,
+		//let c = get_user_input()[0..1].parse::<char>().unwrap();
+		
+		get_user_input().chars().for_each( |c| match c {
+			'q' | 'Q' => quit = true,
 			'`' => state = Game::new(current_level),
 			'n' =>  { if current_level < BUILTIN_LEVELS.len() as u32 {
 						current_level += 1;
@@ -88,7 +104,7 @@ fn main() -> Result<(),String> {
 			'd' | 'D' => state.append_move(&Move::Down),
 			'l' | 'L' => state.append_move(&Move::Left),
 			_ => {}
-		}
+		});
 	}
 	
 	return Ok(());

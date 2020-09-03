@@ -125,7 +125,7 @@ impl SpLevel {
 		// THIS IS A SLOW FUNCTION...
 		let cmp_data = &self.cmp_data;
 		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
-		let is_boxx = (cmp_data.blocks[idx_bits/64] & (1 << (63-(idx_bits%64)))) != 0;
+		let is_boxx = (cmp_data.blocks[idx_bits/64] & (0x8000_0000_0000_0000 >> (idx_bits%64))) != 0;
 		let is_human = pt.0 == self.cmp_data.human_x as i32 && pt.1 == self.cmp_data.human_y as i32;
 		let base_obj = base_level.get_obj_at_pt(pt);
 		match (base_obj, is_human, is_boxx) {
