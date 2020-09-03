@@ -6,6 +6,7 @@ use boxbopperbase::vector::{Move,ShrunkPath};
 
 use rayon::prelude::*;
 use std::rc::Rc;
+use std::collections::HashSet;
 
 use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
 
@@ -65,13 +66,10 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 			println!("{}",m.level.to_level(base_level).to_string());
 		}
 	}
-
-	let mut non_contenders = Vec::<CmpData>::with_capacity(50000);
-
-	let mut contenders = Vec::<PathMap>::new();
-	//mapsr.par_iter_mut().for_each(|m| m.level.make_cmp_data() );
-	
 	let mut mapsr = Rc::new(mapsr);
+
+	let mut non_contenders = HashSet::<CmpData>::new();
+	let mut contenders = Vec::<PathMap>::new();	
 
 	for count in 0..=(max_depth+1) {
 		println!("--- Depth {:>2} ---", count);
@@ -100,8 +98,9 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 		let mut top_20 = Rc::get_mut(&mut mapsr).unwrap().split_off(split_idx);
 		// send rest of mapsr to non_contenders
 		if non_contenders.len() < max_maps {
-			let mut data = mapsr.iter().map(|m| m.level.cmp_data.clone()).collect();
-			non_contenders.append(&mut data);
+			mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data); });
+		} else {
+			println!("--- Hit maximum old maps, not adding any more ---");
 		}
 		// don't need mapsr anymore
 		std::mem::drop(mapsr);
@@ -116,25 +115,16 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 			// save excess contenders to non-contenders
 			let keep = contenders.split_off(contenders.len()-20);
 			if non_contenders.len() < max_maps {
-				let mut data = contenders.iter().map(|m| m.level.cmp_data.clone()).collect();
-				non_contenders.append(&mut data); 
+				contenders.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data); });
+			} else {
+				println!("--- Hit maximum old maps, not adding any more ---");
 			}
 			contenders = keep;					// copy keep back
 		}
 
-		// check if non-contenders is too big
-		if non_contenders.len() > max_maps {			
-			println!("--- Hit maximum old maps, truncating {} ---",max_maps); 
-			non_contenders.truncate(max_maps);
-		}
-
-		// sort non-contenders, lets us do binary search
-		if verbosity > 1 { println!("sorting non-contenders {}...", non_contenders.len()); }
-		non_contenders.par_sort_unstable();
-
 		// remove from maps, anyhthing that is in non_contenders
 		if verbosity > 1 { println!("deduping from n-c: before {:>7}", maps.len()); }
-		maps.par_iter_mut().for_each(|m| if non_contenders.binary_search(&m.level.cmp_data).is_ok() { m.flag = true; }); 
+		maps.par_iter_mut().for_each(|m| if non_contenders.contains(&m.level.cmp_data) { m.flag = true; }); 
 		maps.retain(|m| !m.flag);
 		if verbosity > 1 { println!("deduping from n-c: after  {:>7}", maps.len()); }
 

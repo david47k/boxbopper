@@ -11,7 +11,7 @@ use crate::vector::{Vector,VectorSm};
 use super::Obj;
 use crate::builtins::BUILTIN_LEVELS;
 
-#[derive(Clone,PartialEq,PartialOrd,Ord,Eq,Hash)]
+#[derive(Copy,Clone,PartialEq,PartialOrd,Ord,Eq,Hash)]
 pub struct CmpData {
 	pub human_x: i8,
 	pub human_y: i8,

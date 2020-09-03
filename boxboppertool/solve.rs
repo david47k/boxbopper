@@ -35,7 +35,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 	println!("reversed base level:\n{}", base_map.level.to_level(base_level).to_string());
 
-	let mut non_contenders = HashSet::<CmpData>::new(); //::with_capacity(5_000_000);
+	let mut non_contenders = HashSet::<CmpData>::new();
 
 	let mut mapsr = Rc::new(vec![base_map]);
 	
@@ -64,17 +64,15 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 			}
 		});
 
-		// Get cmp_data from mapsr, add it to non-contenders, then sort non-contenders so we can binary search it
+		// Get cmp_data from mapsr, add it to non-contenders
 		if verbosity > 1 { println!("adding {} old maps to non-contenders...", mapsr.len()); }
-		mapsr.iter().map(|m| m.level.cmp_data.clone()).for_each(|cd| { non_contenders.insert(cd); });
-		//if verbosity > 1 { println!("sorting {} non_contenders...", non_contenders.len()); }
-		//non_contenders.sort_unstable();
+		mapsr.iter().map(|m| m.level.cmp_data).for_each(|cd| { non_contenders.insert(cd); });
 
 		// Complete the maps, converting from PathMap into PathNodeMap
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
 		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve(base_level) ).collect(); // collect_into_vec doesn't seem to be any faster
 
-		// Free up memory used by the vec in mapsr. If this doesn't work could use mapsr.clear(); mapsr.shrink_to_fit();
+		// Free up memory used by the vec in mapsr
 		std::mem::drop(mapsr);
 
 		// Apply key moves
