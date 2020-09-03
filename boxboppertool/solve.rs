@@ -8,6 +8,7 @@ use std::sync::{Arc,Mutex};
 use std::sync::atomic::Ordering as AtomicOrdering;
 use std::sync::atomic::*;
 use std::rc::Rc;
+use std::collections::HashSet;
 
 use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
 
@@ -34,7 +35,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 	println!("reversed base level:\n{}", base_map.level.to_level(base_level).to_string());
 
-	let mut non_contenders = Vec::<CmpData>::with_capacity(50000);
+	let mut non_contenders = HashSet::<CmpData>::new(); //::with_capacity(5_000_000);
 
 	let mut mapsr = Rc::new(vec![base_map]);
 	
@@ -65,11 +66,9 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 		// Get cmp_data from mapsr, add it to non-contenders, then sort non-contenders so we can binary search it
 		if verbosity > 1 { println!("adding {} old maps to non-contenders...", mapsr.len()); }
-
-		let mut data: Vec::<CmpData> = mapsr.iter().map(|m| m.level.cmp_data.clone()).collect(); 			// par_iter doesn't seem to make a difference
-		non_contenders.append(&mut data);
-		if verbosity > 1 { println!("sorting {} non_contenders...", non_contenders.len()); }
-		non_contenders.par_sort_unstable();
+		mapsr.iter().map(|m| m.level.cmp_data.clone()).for_each(|cd| { non_contenders.insert(cd); });
+		//if verbosity > 1 { println!("sorting {} non_contenders...", non_contenders.len()); }
+		//non_contenders.sort_unstable();
 
 		// Complete the maps, converting from PathMap into PathNodeMap
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
@@ -98,7 +97,8 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 		// Remove from maps anything that is in non_contenders
 		if verbosity > 1 { println!("deduping from n-c: before {:>7}", maps.len()); }
-		maps.par_iter_mut().for_each(|m| if non_contenders.binary_search(&m.level.cmp_data).is_ok() {
+		//maps.par_iter_mut().for_each(|m| if non_contenders.binary_search(&m.level.cmp_data).is_ok() {
+		maps.par_iter_mut().for_each(|m| if non_contenders.contains(&m.level.cmp_data) {
 			m.flag = true;
 		});
 		maps.retain(|m| !m.flag);

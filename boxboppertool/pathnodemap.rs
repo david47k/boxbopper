@@ -46,6 +46,25 @@ impl PathMap {
 			flag: false,
 		}
 	}
+	pub fn to_pnm(&self) -> PathNodeMap {		// this one clones across our data
+		let initial_pn = PathNode {
+			pt: Vector(self.level.cmp_data.human_x.into(), self.level.cmp_data.human_y.into()),
+			move_taken: None,
+			prev_node_idx: 0,
+		};
+		let mut nodes = Vec::<PathNode>::with_capacity(32);
+		nodes.push(initial_pn);
+		PathNodeMap {
+			map: PathMap {
+				level: self.level.clone(),
+				path: self.path.clone(),
+				depth: 0,
+				flag: false,
+			},
+			nodes: nodes,
+			key_moves: Vec::<KeyMove>::with_capacity(32),
+		}
+	}	
 	pub fn new_by_applying_key_push(pnm: &PathNodeMap, km: &KeyMove) -> PathMap { 	// after we complete a map, we need to take a key move and start again
 		// do we read from pnm.map, or from map_b??? which is faster?
 		
@@ -79,25 +98,6 @@ impl PathMap {
 		map_b.path.push(&km.move_dir);
 		
 		map_b
-	}
-	pub fn to_pnm(&self) -> PathNodeMap {		// this one clones across our data
-		let initial_pn = PathNode {
-			pt: Vector(self.level.cmp_data.human_x.into(), self.level.cmp_data.human_y.into()),
-			move_taken: None,
-			prev_node_idx: 0,
-		};
-		let mut nodes = Vec::<PathNode>::with_capacity(32);
-		nodes.push(initial_pn);
-		PathNodeMap {
-			map: PathMap {
-				level: self.level.clone(),
-				path: self.path.clone(),
-				depth: 0,
-				flag: false,
-			},
-			nodes: nodes,
-			key_moves: Vec::<KeyMove>::with_capacity(16),
-		}
 	}
 	pub fn new_by_applying_key_pull(pnm: &PathNodeMap, km: &KeyMove, depth: u16) -> PathMap { 	// after we complete a map, we need to take a key move and start again
 		// do we read from pnm.map, or from map_b??? which is faster?
@@ -151,10 +151,8 @@ impl PathMap {
 					if pnm.map.level.is_boxx_at_pt(&npt) {
 						// What's past the boxx? We can push into Space and Hole.
 						let bnpt = &pt.add_dir2(&movedir);
-						//if !base_level.vector_in_bounds(bnpt) { continue; }
 						let nobj = pnm.map.level.get_obj_at_pt_checked(bnpt, base_level);
 						if nobj == Obj::Space || nobj == Obj::Hole {
-							// Obj::Space | Obj::Hole => { 
 							// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
 							// TODO: see if double_Boxx_situation is too slow (after optimising it)
 							if !base_level.in_noboxx_pts(bnpt) && !self.double_boxx_situation(pt,*movedir,base_level) {
@@ -212,10 +210,8 @@ impl PathMap {
 					if pnm.map.level.is_boxx_at_pt(&npt) {
 						// What's in our reverse direction? We can pull into Space and Hole.
 						let bnpt = &pt.add_dir(&movedir.reverse());
-						//if !base_level.vector_in_bounds(bnpt) { continue; }
 						let nobj = pnm.map.level.get_obj_at_pt_checked(bnpt, base_level);
 						if nobj == Obj::Space || nobj == Obj::Hole {
-							// Obj::Space | Obj::Hole => { 
 							// yep, its a keypull, save key move.. 
 							let km = KeyMove {
 								pn: tnode.clone(),
