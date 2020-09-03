@@ -137,9 +137,9 @@ impl PathMap {
 	}
 	pub fn complete_map_solve(&self, base_level: &Level) -> PathNodeMap {
 		let mut pnm = self.to_pnm();					// we want complete_map to clone from self
-		let mut tail_nodes = Vec::<u16>::with_capacity(32);
+		let mut tail_nodes = Vec::<u16>::with_capacity(64);
 		tail_nodes.push(0);
-		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
+		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(64);	// somewhere to store new tail nodes
 		while tail_nodes.len() != 0 {			// check if map is complete
 			new_tail_nodes.clear();
 			for tnidx in tail_nodes.iter() {							// for each tail node
@@ -151,19 +151,19 @@ impl PathMap {
 					if pnm.map.level.is_boxx_at_pt(&npt) {
 						// What's past the boxx? We can push into Space and Hole.
 						let bnpt = &pt.add_dir2(&movedir);
-						match pnm.map.level.get_obj_at_pt_checked(bnpt, base_level) {
-							Obj::Space | Obj::Hole => { 
-								// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
-								// TODO: see if double_Boxx_situation is too slow (after optimising it)
-								if !base_level.in_noboxx_pts(bnpt) && !self.double_boxx_situation(pt,*movedir,base_level) {
-									let km = KeyMove {
-										pn: tnode.clone(),
-										move_dir: *movedir,
-									};
-									pnm.key_moves.push(km);
-								}
-							},
-							_ => {} // can't push the boxx				
+						//if !base_level.vector_in_bounds(bnpt) { continue; }
+						let nobj = pnm.map.level.get_obj_at_pt_checked(bnpt, base_level);
+						if nobj == Obj::Space || nobj == Obj::Hole {
+							// Obj::Space | Obj::Hole => { 
+							// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
+							// TODO: see if double_Boxx_situation is too slow (after optimising it)
+							if !base_level.in_noboxx_pts(bnpt) && !self.double_boxx_situation(pt,*movedir,base_level) {
+								let km = KeyMove {
+									pn: tnode.clone(),
+									move_dir: *movedir,
+								};
+								pnm.key_moves.push(km);
+							}
 						}
 					} else if base_level.get_obj_at_pt(&npt) != Obj::Wall {											
 						// first check this point isn't already in our list!!!						
@@ -198,9 +198,9 @@ impl PathMap {
 	}
 	pub fn complete_map_unsolve(&self, base_level: &Level) -> PathNodeMap {
 		let mut pnm = self.to_pnm();					// we want complete_map to clone from self
-		let mut tail_nodes = Vec::<u16>::with_capacity(32);
+		let mut tail_nodes = Vec::<u16>::with_capacity(64);
 		tail_nodes.push(0);
-		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
+		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(64);	// somewhere to store new tail nodes
 		while tail_nodes.len() != 0 {			// check if map is complete
 			new_tail_nodes.clear();
 			for tnidx in tail_nodes.iter() {							// for each tail node
@@ -212,16 +212,16 @@ impl PathMap {
 					if pnm.map.level.is_boxx_at_pt(&npt) {
 						// What's in our reverse direction? We can pull into Space and Hole.
 						let bnpt = &pt.add_dir(&movedir.reverse());
-						match pnm.map.level.get_obj_at_pt_checked(bnpt, base_level) {
-							Obj::Space | Obj::Hole => { 
-								// yep, its a keypull, save key move.. 
-								let km = KeyMove {
-									pn: tnode.clone(),
-									move_dir: movedir.clone().reverse(),
-								};
-								pnm.key_moves.push(km);
-							},
-							_ => {} // can't pull the boxx				
+						//if !base_level.vector_in_bounds(bnpt) { continue; }
+						let nobj = pnm.map.level.get_obj_at_pt_checked(bnpt, base_level);
+						if nobj == Obj::Space || nobj == Obj::Hole {
+							// Obj::Space | Obj::Hole => { 
+							// yep, its a keypull, save key move.. 
+							let km = KeyMove {
+								pn: tnode.clone(),
+								move_dir: movedir.clone().reverse(),
+							};
+							pnm.key_moves.push(km);
 						}
 					} else if base_level.get_obj_at_pt(&npt) != Obj::Wall {
 						// first check this point isn't already in our list!!!						
