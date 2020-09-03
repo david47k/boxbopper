@@ -238,8 +238,7 @@ title: seven
 num: 14
 moves: 105
 path: UURDRRDRRUUURULDDDDLLURDRUUUDDLLLLLDDRULURRRRDRUURULLRDDLLLLDDRULURRRDRUUDDRUUULRDDDDRRULDLUUUDDRRULLDLUU
-time_fast_128: 12.40user 1.67system 0:05.54elapsed 253%CPU (0avgtext+0avgdata 287608maxresident)k
-time_four_64:  14.96user 1.64system 0:06.68elapsed 248%CPU (0avgtext+0avgdata 324512maxresident)k
+time: 12.42user 1.04system 0:05.28elapsed 254%CPU (0avgtext+0avgdata 259664maxresident)k
 ",
 
 r"##########
@@ -275,7 +274,7 @@ num: 16
 depth: 14
 moves: 49
 path: RDDLLUDRRUULDLDLLULUUURRRRLLLDRLLDDRRUULURRLDDRUU
-time: 23.32user 5.37system 0:10.83elapsed 264%CPU (0avgtext+0avgdata 937364maxresident)k
+time: 18.73user 3.93system 0:08.68elapsed 261%CPU (0avgtext+0avgdata 724152maxresident)k
 seed: 11249
 width: 7
 height: 7
@@ -323,7 +322,7 @@ num: 18
 depth: 31
 moves: 70
 path: RRRDRURRDDDLLUULUURRUULDRDDLLLLDLURDRDRLUURRRRDDDLLUURLLUURDRUUDDRDUUU
-time: 65.59user 9.39system 0:28.72elapsed 261%CPU (0avgtext+0avgdata 1272588maxresident)k
+time: 51.57user 6.89system 0:22.60elapsed 258%CPU (0avgtext+0avgdata 1036980maxresident)k
 seed: 11230
 width: 7
 height: 7

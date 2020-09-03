@@ -28,10 +28,12 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 	let max_moves = Arc::new(AtomicU16::new(max_moves_requested+1));
 	let mut base_level = base_level.clone();
 	base_level.clear_human();
-	let base_level = &base_level;
+	let base_level = &mut base_level;
 	let base_map = PathMap::new_from_level(base_level);
+	base_level.clear_boxxes();
 
-	let cmp_data_size = CmpData::get_size(base_level.w, base_level.h);
+	println!("reversed base level:\n{}", base_map.level.to_level(base_level).to_string());
+
 	let mut non_contenders = Vec::<CmpData>::with_capacity(50000);
 
 	let mut mapsr = Rc::new(vec![base_map]);
@@ -90,7 +92,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 		// Sort and deduplicate
 		if depth >= 2 { 
 			if verbosity > 1 { println!("deduping: before {:>7}", maps.len()); }
-			dedupe_equal_levels(&mut maps, cmp_data_size);
+			dedupe_equal_levels(&mut maps);
 			if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 		} 
 
@@ -119,7 +121,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 		depth += 1;
 	}
 
-	if have_solution.load(AtomicOrdering::SeqCst) && base_level.get_box_count()>0 {
+	if have_solution.load(AtomicOrdering::SeqCst) {
 		let solstr = best_solution_str.lock().unwrap();		
 		if verbosity > 0 { 
 			println!("-- Best solution --");

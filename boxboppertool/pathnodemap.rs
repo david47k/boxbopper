@@ -55,32 +55,22 @@ impl PathMap {
 		let np = km.pn.pt.add_dir(&km.move_dir);
 		
 		// check destination point
-		let obj = pnm.map.level.get_obj_at_pt(&np);
-		let new_obj = match obj {
-			Obj::Boxx | Obj::BoxxInHole => {  
-				// Move boxx in to next square
-				let boxx_pt = &np.add_dir(&km.move_dir);
-				let o = pnm.map.level.get_obj_at_pt(&boxx_pt);
-				match o {
-					Obj::Hole  => { map_b.level.set_obj_at_pt(&boxx_pt, Obj::BoxxInHole); },
-					Obj::Space => {	map_b.level.set_obj_at_pt(&boxx_pt, Obj::Boxx); },
-					_          => { panic!("trying to push boxx into unexpected obj"); }
-				}
-			
-				// We pushed the boxx
-				if obj == Obj::BoxxInHole {
-					Obj::Hole
-				} else {
-					Obj::Space
-				}
-			},
-			_ => { panic!("Human not allowed there!"); }
-		};
+		if pnm.map.level.is_boxx_at_pt(&np) {
+			let boxx_pt = &np.add_dir(&km.move_dir);
+			let is_clear = !pnm.map.level.is_boxx_at_pt(&boxx_pt);
+			if is_clear {
+				map_b.level.set_boxx_at_pt(&boxx_pt);
+			} else {
+				panic!("trying to push boxx into unexpected obj");
+			}
+		
+			// We pushed the boxx
+			map_b.level.clear_boxx_at_pt(&np);
+		} else {
+			panic!("Human not allowed there! (No boxx to push!)");
+		}
 
-		map_b.level.set_obj_at_pt(&np, new_obj);
-		map_b.level.human_pos = np;				// place human
-
-		map_b.level.make_cmp_data();
+		map_b.level.set_human_pos(&np);				// move human
 			
 		let bm = pnm.backtrace_moves(&km.pn);
 		for m in bm {
@@ -92,7 +82,7 @@ impl PathMap {
 	}
 	pub fn to_pnm(&self) -> PathNodeMap {		// this one clones across our data
 		let initial_pn = PathNode {
-			pt: self.level.human_pos.clone(),
+			pt: Vector(self.level.cmp_data.human_x.into(), self.level.cmp_data.human_y.into()),
 			move_taken: None,
 			prev_node_idx: 0,
 		};
@@ -117,30 +107,26 @@ impl PathMap {
 				
 		// remove old boxx
 		let pull_from_pt = km.pn.pt.add_dir(&km.move_dir.reverse());
-		let pull_obj = pnm.map.level.get_obj_at_pt(&pull_from_pt);
-		let new_obj = match pull_obj {
-			Obj::Boxx       => { Obj::Space },
-			Obj::BoxxInHole => { Obj::Hole },
-			_ => { panic!("Key pull doesn't seem to be moving a boxx!"); }
-		};
-		map_b.level.set_obj_at_pt(&pull_from_pt, new_obj);
+		let is_boxx = pnm.map.level.is_boxx_at_pt(&pull_from_pt);
+		if is_boxx {
+			map_b.level.clear_boxx_at_pt(&pull_from_pt);
+		} else {
+			panic!("Key pull doesn't seem to be moving a boxx!");
+		}
 
 		// place new boxx
 		let pull_to_pt = &km.pn.pt;
-		let pull_to_obj = pnm.map.level.get_obj_at_pt(pull_to_pt);
-		let new_obj = match pull_to_obj {
-			Obj::Space		=> { Obj::Boxx },
-			Obj::Hole		=> { Obj::BoxxInHole },
-			_ => { panic!("Key pull seems to be moving boxx into something weird!"); }
-		};
-		map_b.level.set_obj_at_pt(pull_to_pt, new_obj);
-	
+		let is_clear = !pnm.map.level.is_boxx_at_pt(&pull_from_pt);
+		if is_clear {
+			map_b.level.set_boxx_at_pt(pull_to_pt);
+		} else {
+			panic!("Key pull seems to be moving boxx into something weird!");
+		}
+		
 		// new human point
 		let np = km.pn.pt.add_dir(&km.move_dir);
-		map_b.level.human_pos = np;
+		map_b.level.set_human_pos(&np);
 
-		map_b.level.make_cmp_data();
-		
 		let bm = pnm.backtrace_moves(&km.pn);
 		for m in bm {
 			map_b.path.push(&m);
@@ -153,153 +139,154 @@ impl PathMap {
 		let mut pnm = self.to_pnm();					// we want complete_map to clone from self
 		let mut tail_nodes = Vec::<u16>::with_capacity(32);
 		tail_nodes.push(0);
+		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
 		while tail_nodes.len() != 0 {			// check if map is complete
-			let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
-		
+			new_tail_nodes.clear();
 			for tnidx in tail_nodes.iter() {							// for each tail node
 				let tnode = &pnm.nodes[(*tnidx) as usize];
+				let pt = tnode.pt;									
 				for movedir in ALLMOVES.iter() {							// for each possible move
-					let pt = tnode.pt;									
-					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
-					match pnm.map.level.get_obj_at_pt_checked(&npt) {
-						Obj::Space | Obj::Hole => {
-							// first check this point isn't already in our list!!!						
-							let mut ok = true;
-							for n in pnm.nodes.iter() {
-								if n.pt == npt { ok = false; break; }
-							}
-							for n in new_tail_nodes.iter() {
-								if n.pt == npt { ok = false; break; }
-							}
-							if !ok { continue; }
-	
-							// yep, we can move here, make a new tail node
-							let pn = PathNode {
-								pt: npt.clone(),
-								move_taken: Some(*movedir),
-								prev_node_idx: *tnidx,
-							};
-							new_tail_nodes.push(pn);
+					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out
+					if !base_level.vector_in_bounds(&npt) { continue; }
+					if pnm.map.level.is_boxx_at_pt(&npt) {
+						// What's past the boxx? We can push into Space and Hole.
+						let bnpt = &pt.add_dir2(&movedir);
+						match pnm.map.level.get_obj_at_pt_checked(bnpt, base_level) {
+							Obj::Space | Obj::Hole => { 
+								// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
+								// TODO: see if double_Boxx_situation is too slow (after optimising it)
+								if !base_level.in_noboxx_pts(bnpt) && !self.double_boxx_situation(pt,*movedir,base_level) {
+									let km = KeyMove {
+										pn: tnode.clone(),
+										move_dir: *movedir,
+									};
+									pnm.key_moves.push(km);
+								}
+							},
+							_ => {} // can't push the boxx				
 						}
-						Obj::Boxx | Obj::BoxxInHole => { 
-							// What's past the boxx? We can push into Space and Hole.
-							let bnpt = &pt.add_dir2(&movedir);
-							match pnm.map.level.get_obj_at_pt_checked(bnpt) {
-								Obj::Space | Obj::Hole => { 
-									// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
-									if !base_level.in_noboxx_pts(bnpt) && !self.double_boxx_situation(pt,*movedir) {
-										let km = KeyMove {
-											pn: tnode.clone(),
-											move_dir: *movedir,
-										};
-										pnm.key_moves.push(km);
-									}
-								},
-								_ => {} // can't push the boxx				
-							}
+					} else if base_level.get_obj_at_pt(&npt) != Obj::Wall {											
+						// first check this point isn't already in our list!!!						
+						let mut ok = true;
+						for n in pnm.nodes.iter() {
+							if n.pt == npt { ok = false; break; }
 						}
-						_ => {} // not a move we can take
-					};
+						for n in new_tail_nodes.iter() {
+							if n.pt == npt { ok = false; break; }
+						}
+						if !ok { continue; }
+
+						// yep, we can move here, make a new tail node
+						let pn = PathNode {
+							pt: npt.clone(),
+							move_taken: Some(*movedir),
+							prev_node_idx: *tnidx,
+						};
+						new_tail_nodes.push(pn);
+					}
 				}	
 			}
 	
 			// append new tail nodes to nodes and tail nodes
 			tail_nodes.clear();
-			for n in new_tail_nodes {
-				pnm.nodes.push(n);
+			for n in new_tail_nodes.iter() {
+				pnm.nodes.push(*n);
 				tail_nodes.push((pnm.nodes.len()-1) as u16);
 			}
 		}
 		pnm
 	}
-	pub fn complete_map_unsolve(&self) -> PathNodeMap {
+	pub fn complete_map_unsolve(&self, base_level: &Level) -> PathNodeMap {
 		let mut pnm = self.to_pnm();					// we want complete_map to clone from self
 		let mut tail_nodes = Vec::<u16>::with_capacity(32);
 		tail_nodes.push(0);
+		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
 		while tail_nodes.len() != 0 {			// check if map is complete
-			let mut new_tail_nodes = Vec::<PathNode>::with_capacity(32);	// somewhere to store new tail nodes
-		
+			new_tail_nodes.clear();
 			for tnidx in tail_nodes.iter() {							// for each tail node
 				let tnode = &pnm.nodes[*tnidx as usize];
+				let pt = tnode.pt;									
 				for movedir in ALLMOVES.iter() {							// for each possible move
-					let pt = tnode.pt;									
 					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
-					match pnm.map.level.get_obj_at_pt_checked(&npt) {
-						Obj::Space | Obj::Hole => {
-							// first check this point isn't already in our list!!!						
-							let mut ok = true;
-							for n in pnm.nodes.iter() {
-								if n.pt == npt { ok = false; break; }
-							}
-							for n in new_tail_nodes.iter() {
-								if n.pt == npt { ok = false; break; }
-							}
-							if !ok { continue; }
+					if !base_level.vector_in_bounds(&npt) { continue; }
+					if pnm.map.level.is_boxx_at_pt(&npt) {
+						// What's in our reverse direction? We can pull into Space and Hole.
+						let bnpt = &pt.add_dir(&movedir.reverse());
+						match pnm.map.level.get_obj_at_pt_checked(bnpt, base_level) {
+							Obj::Space | Obj::Hole => { 
+								// yep, its a keypull, save key move.. 
+								let km = KeyMove {
+									pn: tnode.clone(),
+									move_dir: movedir.clone().reverse(),
+								};
+								pnm.key_moves.push(km);
+							},
+							_ => {} // can't pull the boxx				
+						}
+					} else if base_level.get_obj_at_pt(&npt) != Obj::Wall {
+						// first check this point isn't already in our list!!!						
+						let mut ok = true;
+						for n in pnm.nodes.iter() {
+							if n.pt == npt { ok = false; break; }
+						}
+						for n in new_tail_nodes.iter() {
+							if n.pt == npt { ok = false; break; }
+						}
+						if !ok { continue; }
 
-							// yep, we can move here, make a new tail node
-							let pn = PathNode {
-								pt: npt.clone(),
-								move_taken: Some(*movedir),
-								prev_node_idx: *tnidx,
-							};
-							new_tail_nodes.push(pn);
-						}
-						Obj::Boxx | Obj::BoxxInHole => { 
-							// What's in our reverse direction? We can pull into Space and Hole.
-							let bnpt = &pt.add_dir(&movedir.reverse());
-							match pnm.map.level.get_obj_at_pt_checked(bnpt) {
-								Obj::Space | Obj::Hole => { 
-									// yep, its a keypull, save key move.. 
-									let km = KeyMove {
-										pn: tnode.clone(),
-										move_dir: movedir.clone().reverse(),
-									};
-									pnm.key_moves.push(km);
-								},
-								_ => {} // can't pull the boxx				
-							}
-						}
-						_ => {} // not a move we can take
-					};
+						// yep, we can move here, make a new tail node
+						let pn = PathNode {
+							pt: npt.clone(),
+							move_taken: Some(*movedir),
+							prev_node_idx: *tnidx,
+						};
+						new_tail_nodes.push(pn);
+					}
 				}	
 			}
 
 			// append new tail nodes to nodes and tail nodes
 			tail_nodes.clear();
-			for n in new_tail_nodes {
-				pnm.nodes.push(n);
+			for n in new_tail_nodes.iter() {
+				pnm.nodes.push(*n);
 				tail_nodes.push((pnm.nodes.len()-1) as u16);
 			}
 		}		
 		pnm
 	}
-	pub fn double_boxx_situation(&self, human_pos: Vector, pushdir: Move) -> bool {
+	pub fn double_boxx_situation(&self, human_pos: Vector, pushdir: Move, base_level: &Level) -> bool {
 		// checks for a situation where we would be pushing the boxx next to another boxx against a wall and getting ourselves stuck
 		//         a = anything, h = human, pushdir = right, * = boxx, # = wall, ' ' = space, only need row 1 or 3 not both
-		//  aa*#	match1
-		//  h* #	match0
-		//  aa*#	match1
+		//  aa*#	matchB
+		//  h* #	matchA
+		//  aa*#	matchB
 		// test 1 (horizontal in pushdir direction): [ Obj::Boxx, Obj::Space, Obj::Wall ]
 		// test 2: above OR below (either or both, +1 in pushdir direction than above): [ Obj::Boxx, Obj::Wall ]
 		// 
 		// this method improves solution time by about 4-5%
 
-		let match0 = vec![Obj::Boxx, Obj::Space, Obj::Wall];
-		let match1 = vec! [ vec![Obj::Boxx, Obj::Wall],
-						    vec![Obj::BoxxInHole, Obj::Wall] ];
+		const MATCH_A: [Obj; 3] = [Obj::Boxx, Obj::Space, Obj::Wall];			
+		// let _match0b = [Obj::BoxxInHole, Obj::Space, Obj::Wall];		// too slow
+		
+		const MATCH_B: [Obj; 2] = [Obj::Boxx, Obj::Wall];				
+		// let _match1b = [Obj::BoxxInHole, Obj::Wall];					// too slow
 
-		let vecs0 = vec![human_pos.add(&pushdir.to_vector()),
-						 human_pos.add(&pushdir.to_vector().mul(2)),
-						 human_pos.add(&pushdir.to_vector().mul(3))];
-		let line0: Vec::<Obj> = vecs0.into_iter().map(|v| self.level.get_obj_at_pt_checked(&v)).collect();
-		let vecs1 = vec![human_pos.add(&pushdir.to_vector().mul(2)).add(&pushdir.to_vector().rotl()),
-						 human_pos.add(&pushdir.to_vector().mul(3)).add(&pushdir.to_vector().rotl())];
-		let vecs2 = vec![human_pos.add(&pushdir.to_vector().mul(2)).add(&pushdir.to_vector().rotr()),
-						 human_pos.add(&pushdir.to_vector().mul(3)).add(&pushdir.to_vector().rotr())];
-		let line1: Vec::<Obj> = vecs1.into_iter().map(|v| self.level.get_obj_at_pt_checked(&v)).collect();
-		let line2: Vec::<Obj> = vecs2.into_iter().map(|v| self.level.get_obj_at_pt_checked(&v)).collect();
+		let pushv = pushdir.to_vector();
 
-		line0 == match0 && ( line1 == match1[0] || line2 == match1[0] )
+		let line0 = [ self.level.get_obj_at_pt_checked(&human_pos.add(&pushv), base_level),
+					  self.level.get_obj_at_pt_checked(&human_pos.add(&pushv.mul(2)), base_level),
+					  self.level.get_obj_at_pt_checked(&human_pos.add(&pushv.mul(3)), base_level) ];
+
+		let hpadd2 = human_pos.add(&pushv.mul(2));
+		let hpadd3 = human_pos.add(&pushv.mul(3));
+
+		let line1 = [ self.level.get_obj_at_pt_checked(&hpadd2.add(&pushv.rotl()), base_level),
+					  self.level.get_obj_at_pt_checked(&hpadd3.add(&pushv.rotl()), base_level) ];
+		let line2 = [ self.level.get_obj_at_pt_checked(&hpadd2.add(&pushv.rotr()), base_level),
+					  self.level.get_obj_at_pt_checked(&hpadd3.add(&pushv.rotr()), base_level) ];
+
+		line0 == MATCH_A && ( line1 == MATCH_B || line2 == MATCH_B )
+		
 		// line0 == match0 && ( line1 == match1[0] || line2 == match1[0] || line1 == match1[1] || line2 == match1[1] ) // slows us down by 2.5%
 		// line0 == match0 && ( contains_only(&match1, &line1) || contains_only(&match1, &line2) ) // too slow
 	}	
@@ -342,19 +329,8 @@ impl PathNodeMap {
 	}
 }
 
-// sort by len first, then leveldata
-/* pub fn dedupe_equal_levels_fast_128(maps: &mut Vec::<PathMap>) {
-	maps.par_sort_unstable_by(|a,b| {
-		let ord = a.level.cmp_data.blocks[0..2].partial_cmp(&b.level.cmp_data.blocks[0..2]).unwrap();
-		if ord == Ordering::Equal {
-			return a.path.len().partial_cmp(&b.path.len()).unwrap();
-		}
-		ord			
-	});
-	maps.dedup_by(|a,b| a.level.cmp_data.fast_128 == b.level.cmp_data.fast_128); // it keeps the first match for each level (sorted to be smallest moves)
-}
 
-pub fn dedupe_equal_levels_slow_map(maps: &mut Vec::<PathMap>) {
+pub fn dedupe_equal_levels(maps: &mut Vec::<PathMap>) {
 	maps.par_sort_unstable_by(|a,b| {
 		let ord = a.level.cmp_data.partial_cmp(&b.level.cmp_data).unwrap();
 		if ord == Ordering::Equal {
@@ -367,21 +343,5 @@ pub fn dedupe_equal_levels_slow_map(maps: &mut Vec::<PathMap>) {
 		}
 		ord			
 	});
-	maps.dedup_by(|a,b| a.level.cmp_data.slow_map == b.level.cmp_data.slow_map); // it keeps the first match for each level (sorted to be smallest moves)
-} */
-
-pub fn dedupe_equal_levels(maps: &mut Vec::<PathMap>, size: usize) {
-	maps.par_sort_unstable_by(|a,b| {
-		let ord = a.level.cmp_data.blocks[0..size].partial_cmp(&b.level.cmp_data.blocks[0..size]).unwrap();
-		if ord == Ordering::Equal {
-			if a.path.len() < b.path.len() {
-				return Ordering::Less;
-			}
-			if a.path.len() > b.path.len() {
-				return Ordering::Greater;
-			}
-		}
-		ord			
-	});
-	maps.dedup_by(|a,b| a.level.cmp_data.blocks[0..size] == b.level.cmp_data.blocks[0..size]); // it keeps the first match for each level (sorted to be smallest moves)
+	maps.dedup_by(|a,b| a.level.cmp_data == b.level.cmp_data); // it keeps the first match for each level (sorted to be smallest moves)
 }

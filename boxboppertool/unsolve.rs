@@ -42,16 +42,16 @@ pub fn select_unique_n_from(count: usize, len: usize, rng: &mut rand_chacha::Cha
 pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Vec::<Level> {
 	let mut base_level = base_level.clone();
 	base_level.clear_human();
-	let base_level = &base_level;
+	let base_level = &mut base_level;
 	let base_map = PathMap::new_from_level(base_level);
-	let cmp_data_size = CmpData::get_size(base_level.w, base_level.h);
+	base_level.clear_boxxes();
 
 	// A map is complete when the last box is pushed into place. So when unsolving, we need to start with the human
 	// in the appropriate spot(s) they'd be after pushing the last box.
 	// To do this, we unsolve once to find the appropriate spot(s), then re-solve to place the human and box in the final state.
 
 	if verbosity > 1 { println!("finding final maps..."); }
-	let mapsr: Vec<PathNodeMap> = vec![base_map].iter().map(|m| m.complete_map_unsolve() ).collect();
+	let mapsr: Vec<PathNodeMap> = vec![base_map].iter().map(|m| m.complete_map_unsolve(base_level) ).collect();
 	let mapsr: Vec<PathMap> = mapsr.iter().flat_map(|map| map.apply_key_pulls() ).collect();
 	let mapsr: Vec<PathNodeMap> = mapsr.iter().map(|m| m.complete_map_solve(base_level) ).collect();
 	let mapsr: Vec<PathMap> = mapsr.iter().flat_map(|map| map.apply_key_pushes() ).collect();
@@ -62,14 +62,14 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 	if verbosity > 1 { 
 		println!("final maps found: {}", mapsr.len()); 
 		for m in mapsr.iter() {
-			println!("{}",m.level.to_string());
+			println!("{}",m.level.to_level(base_level).to_string());
 		}
 	}
 
 	let mut non_contenders = Vec::<CmpData>::with_capacity(50000);
 
 	let mut contenders = Vec::<PathMap>::new();
-	mapsr.par_iter_mut().for_each(|m| m.level.make_cmp_data() );
+	//mapsr.par_iter_mut().for_each(|m| m.level.make_cmp_data() );
 	
 	let mut mapsr = Rc::new(mapsr);
 
@@ -78,7 +78,7 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 		
 		// complete the maps (finding keymoves as it goes)
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
-		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_unsolve() ).collect();
+		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_unsolve(base_level) ).collect();
 
 		// apply key moves
 		if verbosity > 1 { println!("collecting kms..."); }
@@ -88,7 +88,7 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 		
 		// sort and deduplicate
 		if verbosity > 1 { println!("deduping: before {:>7}", maps.len()); }
-		dedupe_equal_levels(&mut maps, cmp_data_size);
+		dedupe_equal_levels(&mut maps);
 		if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 
 		// mapsr --> contenders --> non-contenders	
@@ -203,7 +203,7 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 		// TODO?: move human to random (accessible) posn so first move is less obvious
 		// In practice, the human has usually pulled themselves in to a corner or something so we can't move anyway
 
-		let mut level = Level::from_parts(base_level.get_title_str(), base_level.w, base_level.h, splevel.human_pos.clone(), splevel.get_data(&base_level));
+		let mut level = splevel.to_level(base_level);
 		level.set_keyval("moves", &moves.to_string());
 		level.set_keyval("depth", &c.depth.to_string());
 		level.set_keyval("path", &moves_to_string(&path));

@@ -13,17 +13,52 @@ use crate::builtins::BUILTIN_LEVELS;
 
 #[derive(Clone,PartialEq,PartialOrd,Ord,Eq)]
 pub struct CmpData {
+	pub human_x: i8,
+	pub human_y: i8,
 	pub blocks: [u64; 4],
 }
 
 impl CmpData {
 	pub fn new() -> CmpData { 
 		CmpData {
+			human_x: 0,
+			human_y: 0,
 			blocks: [0_u64; 4],
 		}
 	}
-	pub fn get_size(w: u16, h: u16) -> usize {
-		return (w*h+16) as usize / 64 as usize;	// we'll use 16 bits to store x and y (8 bits each, 0..127/255)
+	pub fn get_block_count(w: u16, h: u16) -> usize {
+		return (w*h) as usize / 64 as usize + 1;
+	}
+	pub fn from_data(human_pos: &Vector, ldata: &Vec::<Obj>) -> CmpData {
+		let mut cmp_data = CmpData::new();
+		cmp_data.human_x = human_pos.0 as i8;
+		cmp_data.human_y = human_pos.1 as i8;
+		let mut data: u64 = 0;
+		let mut bits_used: usize = 0;
+		let mut block = 0;
+		for o in ldata.iter() {
+			if bits_used % 64 == 0 && bits_used != 0 {
+				cmp_data.blocks[block] = data;
+				block += 1;
+				data = 0;
+			}
+			data <<= 1;
+			data |= (*o==Obj::Boxx||*o==Obj::BoxxInHole) as u64;
+			bits_used += 1;
+		}
+		// align last block
+		data <<= 64-bits_used;
+		cmp_data.blocks[block] = data;
+		
+		println!("cmp data:");
+		for block in cmp_data.blocks.iter() {
+			for i in 0..63 {
+				print!("{}", (block >> (63-i)) & 1);
+			}
+			println!();
+		}
+		
+		cmp_data
 	}
 }
 
@@ -47,6 +82,7 @@ pub struct Level {
 	pub w: u16,
 	pub h: u16,
 	pub human_pos: Vector,
+	win_data: [u64; 4],
 	data: Vec::<Obj>,
 	keyvals: HashMap::<String,String>,
 	noboxx_pts: Vec::<Vector>,
@@ -55,108 +91,97 @@ pub struct Level {
 	wall_pts: Vec::<Vector>,
 }
 
+
 #[derive(Clone,PartialEq)]
-pub struct SpLevel {		/* special level for solving */
-	pub w: u16,
-	pub human_pos: Vector,
+pub struct SpLevel {
+	pub w: i8,
+	pub h: i8,
 	pub cmp_data: CmpData,
-	pub data: Vec::<Obj>,
 }
 
 
 impl SpLevel {
 	pub fn from_level(level: &Level) -> Self {		
 		Self {
-			w: level.w,
-			human_pos: level.human_pos.clone(),
-			data: level.data.clone(),
-			cmp_data: CmpData::new(),
+			w: level.w as i8,
+			h: level.h as i8,
+			cmp_data: CmpData::from_data(&level.human_pos, &level.data),
 		}
 	}
-	pub fn get_obj_at_pt(&self, pt: &Vector) -> Obj {
-		self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)]
-	}
-	pub fn set_obj_at_pt(&mut self, pt: &Vector, obj: Obj) {
-		self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)] = obj;
+	pub fn to_level(&self, base_level: &Level) -> Level {
+		let mut level = base_level.clone();
+
+		level.data.clear();
+		for y in 0..(self.h as i32) {
+			for x in 0..(self.w as i32) {
+				level.data.push(self.get_obj_at_pt(&Vector(x, y), base_level));
+			}
+		}
+		
+		level.human_pos = Vector(self.cmp_data.human_x as i32, self.cmp_data.human_y as i32);
+		level
 	}	
-	pub fn get_obj_at_pt_checked(&self, pt: &Vector) -> Obj {
-		let h: u16 = (self.data.len() / self.w as usize) as u16;
-		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= h as i32 {
+	pub fn get_obj_at_pt(&self, pt: &Vector, base_level: &Level) -> Obj {
+		// THIS IS A SLOW FUNCTION...
+		let cmp_data = &self.cmp_data;
+		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
+		let is_boxx = (cmp_data.blocks[idx_bits/64] & (1 << (63-(idx_bits%64)))) != 0;
+		let is_human = pt.0 == self.cmp_data.human_x as i32 && pt.1 == self.cmp_data.human_y as i32;
+		let base_obj = base_level.get_obj_at_pt(pt);
+		match (base_obj, is_human, is_boxx) {
+			(Obj::Hole,true,_)  => Obj::HumanInHole,
+			(Obj::Hole,_,true)  => Obj::BoxxInHole,
+			(Obj::Hole,_,_)     => Obj::Hole,
+			(Obj::Space,true,_) => Obj::Human,
+			(Obj::Space,_,true) => Obj::Boxx,
+			(Obj::Space,_,_)    => Obj::Space,
+			(Obj::Wall,_,_)     => Obj::Wall,
+			(_,_,_)             => panic!("WEirdness in SpLevel::get_obj_at_pt"),
+		}
+	}
+	pub fn is_boxx_at_pt(&self, pt: &Vector) -> bool {
+		// ignores underlying level
+		let cmp_data = &self.cmp_data;
+		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
+		let is_boxx = (cmp_data.blocks[idx_bits/64] & (1 << (63-(idx_bits%64)))) != 0;
+		is_boxx
+	}
+	pub fn set_boxx_at_pt(&mut self, pt: &Vector) {
+		// ignores underlying level
+		let cmp_data = &mut self.cmp_data;
+		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
+		let or_val = 1 << (63-(idx_bits%64));
+		cmp_data.blocks[idx_bits/64] |= or_val;
+	}
+	pub fn clear_boxx_at_pt(&mut self, pt: &Vector) {
+		// ignores underlying level
+		let cmp_data = &mut self.cmp_data;
+		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
+		let and_val = !(1 << (63-(idx_bits%64)));		
+		cmp_data.blocks[idx_bits/64] &= and_val;
+	}
+	pub fn set_human_pos(&mut self, pt: &Vector) {
+		// ignores underlying level
+		let cmp_data = &mut self.cmp_data;
+		cmp_data.human_x = pt.0 as i8;
+		cmp_data.human_y = pt.1 as i8;
+	}
+	pub fn get_human_pos(&self) -> Vector {
+		// ignores underlying level
+		Vector(self.cmp_data.human_x as i32, self.cmp_data.human_y as i32)
+	}
+	pub fn get_obj_at_pt_checked(&self, pt: &Vector, base_level: &Level) -> Obj {
+		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= self.h as i32 {
 			Obj::Wall
 		} else {
-			self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)]
-		}
-	}
-	pub fn set_obj_at_pt_checked(&mut self, pt: &Vector, obj: Obj) {
-		let h: u16 = (self.data.len() / self.w as usize) as u16;
-		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= h as i32 {
-			panic!("set_obj_at_pt_checked(): out of bounds pt");
-		} else {
-			self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)] = obj;
-		}
-	}	
-	pub fn get_data(&self, _ignore: &Level) -> Vec::<Obj> {
-		self.data.clone()
-	}
-	pub fn have_win_condition(&self, _ignore: &Level) -> bool {
-		for obj in self.data.iter() {
-			match obj {
-				Obj::Boxx | Obj::Hole => return false,
-				_ => {},
-			};
-		}
-		return true;
-	}
-	pub fn to_string(&self) -> String {
-		let mut s = String::new();
-		for _ in 0..self.w+2 { s+="#"; }
-		s += "\n";
-		for y in 0..(self.data.len()/self.w as usize) {
-			s += "#";
-			for x in 0..self.w as usize {
-				s += &self.get_obj_at_pt(&Vector(x as i32,y as i32)).to_char().to_string();
-			}
-			s += "#\n";
-		}
-		for _ in 0..self.w+2 { s+="#"; }
-		s += "\n";
-		s
-	}	
-	pub fn make_cmp_data(&mut self) {
-		let mut data: u64 = (self.human_pos.0 as u64) << 8 | (self.human_pos.1 as u64);
-		let mut bits_used: usize = 16;
-		let mut block = 0;
-		for o in self.data.iter() {
-			if bits_used % 64 == 0 {
-				self.cmp_data.blocks[block] = data;
-				block += 1;
-				data = 0;
-			}
-			data <<= 1;
-			data |= (*o==Obj::Boxx||*o==Obj::BoxxInHole) as u64;
-			bits_used += 1;
-		}
-		self.cmp_data.blocks[block] = data;
-	}
-	pub fn get_cmp_data(&self) -> &[u64] {
-		let size = CmpData::get_size(self.w, self.data.len() as u16 / self.w);
-		return &self.cmp_data.blocks[0..size];
-	}
-	pub fn get_boxx_pts(&self) -> Vec<Vector> {
-		// update_boxx_pts
-		let mut boxx_pts = Vec::<Vector>::with_capacity(8);
-		for y in 0..(self.data.len()/self.w as usize) {
-			for x in 0..self.w {
-				let pt = Vector(x.try_into().unwrap(),y.try_into().unwrap());
-				let obj = self.get_obj_at_pt(&pt);
-				if obj == Obj::Boxx || obj == Obj::BoxxInHole {
-					boxx_pts.push(pt);
-				}
-			}
-		}
-		boxx_pts
+			self.get_obj_at_pt(pt, base_level)
+		} 
+	} 
+	pub fn have_win_condition(&self, base_level: &Level) -> bool {
+		self.cmp_data.blocks == base_level.win_data
 	}
 }
+
 
 
 #[wasm_bindgen]
@@ -172,6 +197,7 @@ impl Level {
 			hole_pts: self.hole_pts.clone(),
 			wall_pts: self.wall_pts.clone(),
 			data: self.data.clone(),
+			win_data: self.win_data.clone(),
 		}
 	}
 	#[wasm_bindgen]
@@ -238,13 +264,12 @@ impl Level {
 		}
 		return rv;
 	}
-/*	pub fn get_level_width(&self) -> u32 {
-		self.level.w as u32
+	pub fn get_level_width(&self) -> u32 {
+		self.w as u32
 	}
-	
 	pub fn get_level_height(&self) -> u32 {
-		self.level.h as u32
-	} */
+		self.h as u32
+	} 
 	pub fn get_title(&self) -> JsString {
 		let s = self.keyvals.get(&"title".to_string());
 		let s2 = s.unwrap_or(&"untitled".to_string()).to_string();
@@ -273,10 +298,6 @@ impl Level {
 		let mut kvmode = false;
 	
 		for line in level_str.lines() {		
-	/*		let txt = match line {
-				Ok(o) => o,
-				_ => panic!("Failed to read line from level string."),
-			};*/
 			let txt = line;
 			if count == 0 {
 				// read in length
@@ -345,8 +366,10 @@ impl Level {
 			boxx_pts: Vec::new(),
 			hole_pts: Vec::new(),
 			wall_pts: Vec::new(),
+			win_data: [0_u64; 4],
 			data: data,
 		};
+		level.make_win_data();
 		level.do_noboxx_pts();
 		level.do_boxx_pts();
 		return Some(level);
@@ -364,7 +387,7 @@ impl Level {
 	}
 	
 	pub fn from_parts(title: String, w: u16, h: u16, human_pos: Vector, data: Vec::<Obj>) -> Level {
-		let level = Level {
+		let mut level = Level {
 			keyvals: HashMap::from( [("title".to_string(),title)].iter().cloned().collect() ),
 			w: w as u16,
 			h: h as u16,
@@ -374,7 +397,9 @@ impl Level {
 			hole_pts: Vec::new(),
 			wall_pts: Vec::new(),
 			data: data,
+			win_data: [0_u64; 4],
 		};
+		level.make_win_data();
 		level
 	}
 	pub fn get_title_str(&self) -> String {
@@ -411,6 +436,13 @@ impl Level {
 			_ => panic!("Human cannot be there!"),
 		};
 		self.set_obj_at_pt(&pt, obj2);
+	}
+	pub fn clear_boxxes(&mut self) {
+		// clear the boxxes from the level to make certain things easier
+		for o in self.data.iter_mut() {
+			if *o == Obj::Boxx { *o = Obj::Space; }
+			else if *o == Obj::BoxxInHole { *o = Obj::Hole; }
+		}
 	}
 	pub fn do_noboxx_pts(&mut self) {
 		let mut noboxx_pts: Vec::<Vector> = Vec::new();
@@ -660,6 +692,34 @@ impl Level {
 		for _ in 0..self.w+2 { s+="#"; }
 		s += "\n";
 		s
+	}
+	pub fn make_win_data(&mut self) {
+		// we need to cache this part, map out where the holes are
+		let mut blocks: [u64; 4] = [0_u64; 4];
+		let mut data: u64 = 0; // zero out human location
+		let mut bits_used: usize = 0;
+		let mut block = 0;
+		for o in self.data.iter() {
+			if bits_used % 64 == 0 && bits_used != 0 {
+				blocks[block] = data;
+				block += 1;
+				data = 0;
+			}
+			data = data << 1;
+			data |= (*o==Obj::Hole || *o==Obj::BoxxInHole || *o==Obj::HumanInHole) as u64;
+			bits_used += 1;
+		}
+		// align last block
+		data = data << (64-bits_used);
+		blocks[block] = data;
+		self.win_data = blocks;
+		println!("win data:");
+		for block in self.win_data.iter() {
+			for i in 0..63 {
+				print!("{}", (block >> (63-i)) & 1);
+			}
+			println!();
+		}
 	}
 }
 
