@@ -151,7 +151,7 @@ impl PathMap {
 					if pnm.map.level.is_boxx_at_pt(&npt) {
 						// What's past the boxx? We can push into Space and Hole.
 						let bnpt = &pt.add_dir2(&movedir);
-						let nobj = pnm.map.level.get_obj_at_pt_checked(bnpt, base_level);
+						let nobj = pnm.map.level.get_obj_at_pt_nohuman_checked(bnpt, base_level);
 						if nobj == Obj::Space || nobj == Obj::Hole {
 							// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
 							// TODO: see if double_Boxx_situation is too slow (after optimising it)
@@ -162,6 +162,8 @@ impl PathMap {
 								};
 								pnm.key_moves.push(km);
 							}
+						} else if nobj != Obj::Wall && nobj != Obj::BoxxInHole && nobj != Obj::Boxx {
+							panic!("nobj error! {}", nobj.to_char());
 						}
 					} else if base_level.get_obj_at_pt(&npt) != Obj::Wall {											
 						// first check this point isn't already in our list!!!						
@@ -210,7 +212,7 @@ impl PathMap {
 					if pnm.map.level.is_boxx_at_pt(&npt) {
 						// What's in our reverse direction? We can pull into Space and Hole.
 						let bnpt = &pt.add_dir(&movedir.reverse());
-						let nobj = pnm.map.level.get_obj_at_pt_checked(bnpt, base_level);
+						let nobj = pnm.map.level.get_obj_at_pt_nohuman_checked(bnpt, base_level);
 						if nobj == Obj::Space || nobj == Obj::Hole {
 							// yep, its a keypull, save key move.. 
 							let km = KeyMove {

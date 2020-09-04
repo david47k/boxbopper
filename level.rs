@@ -88,6 +88,8 @@ pub struct Level {
 	boxx_pts: Vec::<Vector>,
 	hole_pts: Vec::<Vector>,
 	wall_pts: Vec::<Vector>,
+	cleared_of_human: bool,
+	//cleared_of_boxx: bool,
 }
 
 
@@ -139,6 +141,22 @@ impl SpLevel {
 			(_,_,_)             => panic!("WEirdness in SpLevel::get_obj_at_pt"),
 		}
 	}
+	pub fn get_obj_at_pt_nohuman(&self, pt: &Vector, base_level: &Level) -> Obj {
+		// THIS IS A SLOW FUNCTION...
+		let cmp_data = &self.cmp_data;
+		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
+		let is_boxx = (cmp_data.blocks[idx_bits/64] & (0x8000_0000_0000_0000 >> (idx_bits%64))) != 0;
+		let base_obj = base_level.get_obj_at_pt(pt);
+
+		match (base_obj, is_boxx) {
+			(Obj::Hole,true)  => Obj::BoxxInHole,
+			(Obj::Hole,_)     => Obj::Hole,
+			(Obj::Space,true) => Obj::Boxx,
+			(Obj::Space,_)    => Obj::Space,
+			(Obj::Wall,_)     => Obj::Wall,
+			(_,_)             => panic!("WEirdness in SpLevel::get_obj_at_pt_nohuman"),
+		}
+	}	
 	pub fn is_boxx_at_pt(&self, pt: &Vector) -> bool {
 		// ignores underlying level
 		let cmp_data = &self.cmp_data;
@@ -176,6 +194,13 @@ impl SpLevel {
 			self.get_obj_at_pt(pt, base_level)
 		} 
 	} 
+	pub fn get_obj_at_pt_nohuman_checked(&self, pt: &Vector, base_level: &Level) -> Obj {
+		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= self.h as i32 {
+			Obj::Wall
+		} else {
+			self.get_obj_at_pt_nohuman(pt, base_level)
+		} 
+	} 
 	pub fn have_win_condition(&self, base_level: &Level) -> bool {
 		self.cmp_data.blocks == base_level.win_data
 	}
@@ -185,20 +210,6 @@ impl SpLevel {
 
 #[wasm_bindgen]
 impl Level {
-	pub fn clone(&self) -> Level {
-		Level {
-			keyvals: self.keyvals.clone(),
-			w: self.w,
-			h: self.h,
-			human_pos: self.human_pos.clone(),
-			boxx_pts: self.boxx_pts.clone(),
-			noboxx_pts: self.noboxx_pts.clone(),
-			hole_pts: self.hole_pts.clone(),
-			wall_pts: self.wall_pts.clone(),
-			data: self.data.clone(),
-			win_data: self.win_data.clone(),
-		}
-	}
 	#[wasm_bindgen]
 	pub fn from_builtin(number: usize) -> Option<Level> {
 		// locate string
@@ -367,6 +378,7 @@ impl Level {
 			wall_pts: Vec::new(),
 			win_data: [0_u64; 4],
 			data: data,
+			cleared_of_human: false,
 		};
 		level.make_win_data();
 		level.do_noboxx_pts();
@@ -396,8 +408,15 @@ impl Level {
 			wall_pts: Vec::new(),
 			data: data,
 			win_data: [0_u64; 4],
+			cleared_of_human: false,
 		};
+		if level.confirm_no_human() {
+			level.place_human();
+		}
+		level.do_noboxx_pts();
+		level.do_boxx_pts();
 		level.make_win_data();
+
 		level
 	}
 	pub fn get_title_str(&self) -> String {
@@ -413,18 +432,58 @@ impl Level {
 	pub fn set_keyval(&mut self, key: &str, val: &str) {
 		self.keyvals.insert(key.to_string(),val.to_string());
 	}
+	pub fn confirm_no_human(&self) -> bool {
+		for y in 0..self.h as i32 {
+			for x in 0..self.w as i32 {
+				match self.get_obj_at_pt(&Vector(x,y)) {
+					Obj::Human|Obj::HumanInHole => { 
+						println!("WARNING in confirm_no_human(): Human found at ({},{})",x,y); return false; },
+					_ => {},
+				}
+			}
+		}
+		true
+	}
 	pub fn clear_human(&mut self) {
+		if self.cleared_of_human {
+			panic!("clear_human() called twice!");
+		}
+
 		// clear the human from the level to make certain things easier
 		let pt = self.human_pos;
-		let obj = self.get_obj_at_pt(&self.human_pos);
+		let obj = self.get_obj_at_pt(&pt);
 		let obj2 = match obj {
 			Obj::Human => Obj::Space,
 			Obj::HumanInHole => Obj::Hole,
-			_ => panic!("Human not where it should be"),
+			_ => panic!("Human not where it should be ({},{})",pt.0,pt.1),
 		};
 		self.set_obj_at_pt(&pt, obj2);
+
+		if !self.confirm_no_human() {
+			panic!("confirm_no_human() failed")
+		}
+
+		self.cleared_of_human = true;
+	}
+	pub fn clear_human_cloned(&self) -> Level {
+		let mut level = self.clone();
+		level.clear_human();
+		level
+	}
+	pub fn clear_boxxes_cloned(&self) -> Level {
+		let mut level = self.clone();
+		level.clear_boxxes();
+		level
 	}
 	pub fn place_human(&mut self) {
+		if !self.cleared_of_human {
+			panic!("place_human() called but level has not been cleared");
+		}
+		println!("Verifying no human...");
+		if !self.confirm_no_human() {
+			panic!("Human found before place_human()!");
+		}
+		
 		// place the human in the level data
 		let pt = self.human_pos;
 		let obj = self.get_obj_at_pt(&self.human_pos);
@@ -434,6 +493,10 @@ impl Level {
 			_ => panic!("Human cannot be there!"),
 		};
 		self.set_obj_at_pt(&pt, obj2);
+		if self.confirm_no_human() {
+			panic!("Human NOT found AFTER place_human({},{})!",pt.0,pt.1);
+		}
+		self.cleared_of_human = false;
 	}
 	pub fn clear_boxxes(&mut self) {
 		// clear the boxxes from the level to make certain things easier
@@ -553,7 +616,6 @@ impl Level {
 
 		self.noboxx_pts.sort_unstable();
 		self.noboxx_pts.dedup();
-		print!("noboxx_pts: ");
 		for p in &self.noboxx_pts {
 			print!("{} ",p.to_string());
 		}

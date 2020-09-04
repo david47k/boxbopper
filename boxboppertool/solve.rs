@@ -25,15 +25,13 @@ pub struct Solution {
 }
 
 
-pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize, verbosity: u32) -> Option<Solution> {
+pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: usize, verbosity: u32) -> Option<Solution> {
 	let max_moves = Arc::new(AtomicU16::new(max_moves_requested+1));
-	let mut base_level = base_level.clone();
-	base_level.clear_human();
-	let base_level = &mut base_level;
-	let base_map = PathMap::new_from_level(base_level);
-	base_level.clear_boxxes();
+	let base_level1 = base_level_in.clear_human_cloned();
+	let base_map = PathMap::new_from_level(&base_level1);
+	let base_level = base_level1.clear_boxxes_cloned();
 
-	println!("reversed base level:\n{}", base_map.level.to_level(base_level).to_string());
+	println!("reversed base level:\n{}", base_map.level.to_level(&base_level).to_string());
 
 	let mut non_contenders = BTreeSet::<CmpData>::new();
 
@@ -51,7 +49,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 		// Check for level complete / having solution
 		if verbosity > 1 { println!("solution check..."); }
-		mapsr.par_iter().filter(|m| m.level.have_win_condition(base_level)).for_each(|m| {
+		mapsr.par_iter().filter(|m| m.level.have_win_condition(&base_level)).for_each(|m| {
 			if m.path.len() < max_moves.load(AtomicOrdering::SeqCst) {
 				have_solution.store(true, AtomicOrdering::SeqCst);
 				max_moves.store(m.path.len(), AtomicOrdering::SeqCst);
@@ -74,7 +72,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 		// Complete the maps, converting from PathMap into PathNodeMap
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
-		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve(base_level) ).collect(); // collect_into_vec doesn't seem to be any faster
+		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve(&base_level) ).collect(); // collect_into_vec doesn't seem to be any faster
 
 		// Free up memory used by the vec in mapsr
 		std::mem::drop(mapsr);
