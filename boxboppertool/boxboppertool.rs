@@ -325,7 +325,8 @@ fn main() -> std::io::Result<()> {
 		let mut success = true;
 		let mut solutions = Vec::<Option::<Solution>>::new();
 		let mut stored_times = Vec::<f64>::new();
-		for level_num in 0..20 {
+		let top_level = 50;
+		for level_num in 0..=top_level {
 			let level = Level::from_builtin(level_num).expect(&format!("Unable to open builtin level {}!", builtin));
 			println!("Solving level {}...",level_num);
 
@@ -360,12 +361,12 @@ fn main() -> std::io::Result<()> {
 			println!("-------------------------------------");
 			println!(" Level | Stored Time | Profiled Time ");
 			println!("-------------------------------------");
-			let mut total_time_s = 0_f64;
 			let mut total_time = 0_f64;
-			for level_num in 0..20 {
-				total_time_s += stored_times[level_num];
+			let mut total_time_s = 0_f64;
+			for level_num in 0..=top_level {
 				let t = solutions[level_num].as_ref().unwrap().msecs / 1000_f64;
 				total_time += t;
+				total_time_s += stored_times[level_num];
 				println!("   {:>2}    {:>8.3}      {:>8.3}", level_num, stored_times[level_num], t);
 			}
 			println!("-------------------------------------");

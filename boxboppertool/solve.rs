@@ -4,9 +4,6 @@ use boxbopperbase::level::{Level,CmpData};
 use boxbopperbase::time::{get_time_ms};
 
 use rayon::prelude::*;
-use std::sync::{Arc,Mutex};
-use std::sync::atomic::Ordering as AtomicOrdering;
-use std::sync::atomic::*;
 use std::rc::Rc;
 use std::collections::BTreeSet;
 
@@ -86,8 +83,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 
 		// Filter out the long paths
 		if verbosity > 1 { println!("pruning long paths..."); }
-		let ms = max_moves;
-		maps.retain(|m| m.path.len() < ms);
+		maps.retain(|m| m.path.len() < max_moves);
 
 		// Sort and deduplicate
 		if depth >= 2 { 
