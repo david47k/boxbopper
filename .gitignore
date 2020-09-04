@@ -4,5 +4,5 @@ pkg
 www/package-lock.json
 www/node_modules
 boxbopperconsole/target
-boxboppersolver/target
-
+boxboppertool/target
+boxboppersolver_old

@@ -253,30 +253,13 @@ impl PathMap {
 	pub fn double_boxx_situation(&self, human_pos: Vector, pushdir: Move, base_level: &Level) -> bool {
 		// checks for a situation where we would be pushing the boxx next to another boxx against a wall and getting ourselves stuck
 		//         a = anything, h = human, pushdir = right, * = boxx, # = wall, ' ' = space, only need row 1 or 3 not both
-		//  aa*#	matchB
-		//  h* #	matchA
-		//  aa*#	matchB
+		//  aa*#	matchB                        pp1     pp1a
+		//  h* #	matchA         h_pos  hpadd1  hpadd2  hpadd3
+		//  aa*#	matchB                        pp2     pp2a
 		// test 1 (horizontal in pushdir direction): [ Obj::Boxx, Obj::Space, Obj::Wall ]
 		// test 2: above OR below (either or both, +1 in pushdir direction than above): [ Obj::Boxx, Obj::Wall ]
 		// 
 		// this method improves solution time by about 4-5%
-
-		// const MATCH_A: [Obj; 3] = [Obj::Boxx, Obj::Space, Obj::Wall];			
-		// const MATCH_A1: [Obj; 3] = [Obj::BoxxInHole, Obj::Space, Obj::Wall];		// too slow
-		// const MATCH_B: [Obj; 2] = [Obj::Boxx, Obj::Wall];				
-		// const MATCH_B1: [Obj; 2] = [Obj::BoxxInHole, Obj::Wall];					// too slow
-/*			let line0 = [ self.level.get_obj_at_pt_checked(&hpadd1, base_level),
-						self.level.get_obj_at_pt_checked(&hpadd2, base_level),
-						self.level.get_obj_at_pt_checked(&hpadd3, base_level) ];
-
-			let line1 = [ self.level.get_obj_at_pt_checked(&hpadd2.add(&pushv.rotl()), base_level),
-						self.level.get_obj_at_pt_checked(&hpadd3.add(&pushv.rotl()), base_level) ];
-			let line2 = [ self.level.get_obj_at_pt_checked(&hpadd2.add(&pushv.rotr()), base_level),
-						self.level.get_obj_at_pt_checked(&hpadd3.add(&pushv.rotr()), base_level) ];
-
-			line0 == MATCH_A && ( line1 == MATCH_B || line2 == MATCH_B )*/
-		// line0 == match0 && ( line1 == match1[0] || line2 == match1[0] || line1 == match1[1] || line2 == match1[1] ) // slows us down by 2.5%
-		// line0 == match0 && ( contains_only(&match1, &line1) || contains_only(&match1, &line2) ) // too slow
 
 		let pushv = pushdir.to_vector();
 
@@ -309,7 +292,7 @@ impl PathMap {
 			}
 		}
 
-		return false;		
+		return false;
 	}	
 }
 

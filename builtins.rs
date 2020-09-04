@@ -186,7 +186,7 @@ width: 8
 height: 8
 wall_density: 23
 num_boxxes: 5
-time: 3.57user 0.85system 0:01.55elapsed 285%CPU (0avgtext+0avgdata 165484maxresident)k
+time: 2.68user 0.51system 0:01.10elapsed 290%CPU (0avgtext+0avgdata 124232maxresident)k
 ",
 
 r"##########
@@ -204,8 +204,7 @@ num: 12
 moves: 101
 depth: 32
 path: LLUULUURLDDRULUUURRDLULDDDUURRRRRDDLLLLLLRRDLLRRDDRRUURULLLLUURRDLULDDRDLRDDRRRUULULLULDUURRRRRDDLLLL
-time: 8.23user 1.14system 0:03.67elapsed 255%CPU (0avgtext+0avgdata 191536maxresident)k
---- gotta get it back down
+time: 5.37user 0.82system 0:02.23elapsed 277%CPU (0avgtext+0avgdata 184980maxresident)k
 ",
 
 r"##########
@@ -274,7 +273,7 @@ num: 16
 depth: 14
 moves: 49
 path: RDDLLUDRRUULDLDLLULUUURRRRLLLDRLLDDRRUULURRLDDRUU
-time: 18.73user 3.93system 0:08.68elapsed 261%CPU (0avgtext+0avgdata 724152maxresident)k
+time: 12.82user 4.39system 0:06.98elapsed 246%CPU (0avgtext+0avgdata 804668maxresident)k
 seed: 11249
 width: 7
 height: 7
