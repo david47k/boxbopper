@@ -26,9 +26,6 @@ impl CmpData {
 			blocks: [0_u64; 4],
 		}
 	}
-	pub fn get_block_count(w: u16, h: u16) -> usize {
-		return (w*h) as usize / 64 as usize + 1;
-	}
 	pub fn from_data(human_pos: &Vector, ldata: &Vec::<Obj>) -> CmpData {
 		let mut cmp_data = CmpData::new();
 		cmp_data.human_x = human_pos.0 as i8;
@@ -50,12 +47,14 @@ impl CmpData {
 		data <<= 64-bits_used;
 		cmp_data.blocks[block] = data;
 		
-		println!("cmp data:");
-		for block in cmp_data.blocks.iter() {
-			for i in 0..63 {
-				print!("{}", (block >> (63-i)) & 1);
+		if false {
+			println!("cmp data:");
+			for block in cmp_data.blocks.iter() {
+				for i in 0..63 {
+					print!("{}", (block >> (63-i)) & 1);
+				}
+				println!();
 			}
-			println!();
 		}
 		
 		cmp_data
@@ -126,9 +125,9 @@ impl SpLevel {
 		let cmp_data = &self.cmp_data;
 		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
 		let is_boxx = (cmp_data.blocks[idx_bits/64] & (0x8000_0000_0000_0000 >> (idx_bits%64))) != 0;
-
 		let is_human = pt.0 == self.cmp_data.human_x as i32 && pt.1 == self.cmp_data.human_y as i32;
 		let base_obj = base_level.get_obj_at_pt(pt);
+
 		match (base_obj, is_human, is_boxx) {
 			(Obj::Hole,true,_)  => Obj::HumanInHole,
 			(Obj::Hole,_,true)  => Obj::BoxxInHole,
@@ -385,7 +384,6 @@ impl Level {
 		level
 
 	}
-	
 	pub fn from_parts(title: String, w: u16, h: u16, human_pos: Vector, data: Vec::<Obj>) -> Level {
 		let mut level = Level {
 			keyvals: HashMap::from( [("title".to_string(),title)].iter().cloned().collect() ),
@@ -603,10 +601,6 @@ impl Level {
 	}
 	pub fn in_noboxx_pts(&self, v: &Vector) -> bool {
 		self.noboxx_pts.contains(v)
-		/* match self.noboxx_pts.binary_search(v) {
-			Ok(_) => true,
-			_ => false,
-		} */
 	}
 	pub fn in_noboxx_pts8(&self, v: &VectorSm) -> bool {
 		//self.noboxx_pts.contains(&v.intov())
@@ -713,12 +707,14 @@ impl Level {
 		data = data << (64-bits_used);
 		blocks[block] = data;
 		self.win_data = blocks;
-		println!("win data:");
-		for block in self.win_data.iter() {
-			for i in 0..63 {
-				print!("{}", (block >> (63-i)) & 1);
+		if false {
+			println!("win data:");
+			for block in self.win_data.iter() {
+				for i in 0..63 {
+					print!("{}", (block >> (63-i)) & 1);
+				}
+				println!();
 			}
-			println!();
 		}
 	}
 }
