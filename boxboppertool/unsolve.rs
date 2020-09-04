@@ -6,7 +6,7 @@ use boxbopperbase::vector::{Move,ShrunkPath};
 
 use rayon::prelude::*;
 use std::rc::Rc;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
 
@@ -68,7 +68,7 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 	}
 	let mut mapsr = Rc::new(mapsr);
 
-	let mut non_contenders = HashSet::<CmpData>::new();
+	let mut non_contenders = BTreeSet::<CmpData>::new();
 	let mut contenders = Vec::<PathMap>::new();	
 
 	for count in 0..=(max_depth+1) {
@@ -97,10 +97,10 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 		let split_idx = if mapsr.len() > 20 { mapsr.len() - 20 } else { mapsr.len() };
 		let mut top_20 = Rc::get_mut(&mut mapsr).unwrap().split_off(split_idx);
 		// send rest of mapsr to non_contenders
-		if non_contenders.len() < max_maps {
+		if non_contenders.len() < max_maps * 4 {
 			mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data); });
 		} else {
-			println!("--- Hit maximum old maps, not adding any more ---");
+			if verbosity > 0 { println!("--- Hit maximum old maps, not adding any more ---"); }
 		}
 		// don't need mapsr anymore
 		std::mem::drop(mapsr);
@@ -114,10 +114,10 @@ pub fn unsolve_level(base_level: &Level, max_depth: u16, max_maps: usize, rng: &
 		if contenders.len() > 20 {
 			// save excess contenders to non-contenders
 			let keep = contenders.split_off(contenders.len()-20);
-			if non_contenders.len() < max_maps {
+			if non_contenders.len() < max_maps * 4 {
 				contenders.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data); });
 			} else {
-				println!("--- Hit maximum old maps, not adding any more ---");
+				if verbosity > 0 { println!("--- Hit maximum old maps, not adding any more ---"); }
 			}
 			contenders = keep;					// copy keep back
 		}

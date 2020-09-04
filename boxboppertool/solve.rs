@@ -8,7 +8,7 @@ use std::sync::{Arc,Mutex};
 use std::sync::atomic::Ordering as AtomicOrdering;
 use std::sync::atomic::*;
 use std::rc::Rc;
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
 
@@ -35,7 +35,7 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 	println!("reversed base level:\n{}", base_map.level.to_level(base_level).to_string());
 
-	let mut non_contenders = HashSet::<CmpData>::new();
+	let mut non_contenders = BTreeSet::<CmpData>::new();
 
 	let mut mapsr = Rc::new(vec![base_map]);
 	
@@ -66,7 +66,11 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 		// Get cmp_data from mapsr, add it to non-contenders
 		if verbosity > 1 { println!("adding {} old maps to non-contenders...", mapsr.len()); }
-		mapsr.iter().map(|m| m.level.cmp_data).for_each(|cd| { non_contenders.insert(cd); });
+		if non_contenders.len() < max_maps * 4 {
+			mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data); });
+		} else {
+			if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }
+		}
 
 		// Complete the maps, converting from PathMap into PathNodeMap
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
@@ -95,7 +99,6 @@ pub fn solve_level(base_level: &Level, max_moves_requested: u16, max_maps: usize
 
 		// Remove from maps anything that is in non_contenders
 		if verbosity > 1 { println!("deduping from n-c: before {:>7}", maps.len()); }
-		//maps.par_iter_mut().for_each(|m| if non_contenders.binary_search(&m.level.cmp_data).is_ok() {
 		maps.par_iter_mut().for_each(|m| if non_contenders.contains(&m.level.cmp_data) {
 			m.flag = true;
 		});

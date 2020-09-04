@@ -4,7 +4,6 @@ TODO:
 HIGH PRIORITY
 -------------
 o  tool: Better warnings on tool when running out of memory
-o  web: Disable next button so you can't skip more than one level
 o  web: Check css media brackets on chrome
 
 
