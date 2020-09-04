@@ -128,7 +128,7 @@ fn random_level_creator(width: u16, height: u16, wall_density: u32, box_density:
 fn main() -> std::io::Result<()> {
 	let args: Vec::<String> = std::env::args().collect();
 	#[derive(PartialEq)]
-	enum Mode { Help, Solve, Make };
+	enum Mode { Help, Solve, Make, Profile };
 	let mut mode = Mode::Help;
 	let mut seed: u32 = 0;
 	let mut max_moves: u16 = DEF_MAX_MOVES;
@@ -148,8 +148,9 @@ fn main() -> std::io::Result<()> {
 			match arg.as_str() {
 				"solve" => { mode = Mode::Solve; },
 				"make"  => { mode = Mode::Make; },
+				"profile" => { mode = Mode::Profile; verbosity = 0; }
 				_ => {
-					println!("First argument should be make or solve");
+					println!("First argument should be make or solve or profile");
 				}
 			};
 		} else if count >= 2 {
@@ -188,7 +189,7 @@ fn main() -> std::io::Result<()> {
 	let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0x0d47d47000000000_u64 + seed as u64);
 
 	if mode == Mode::Help {
-		println!("boxboppertool make [vars...]\nboxboppertool solve [vars...]\n");
+		println!("boxboppertool make [vars...]\nboxboppertool solve [vars...]\nboxboppertool profile [vars...]\n");
 		println!("vars for make:");
 		println!("  seed=n          rng seed (u32)");
 		println!("  width=n         level width 5-15                    default: {}", DEF_WIDTH);
@@ -290,7 +291,7 @@ fn main() -> std::io::Result<()> {
 				return Err(std::io::Error::last_os_error());
 			}
 		}
-	} else { // mode == solve
+	} else if mode == Mode::Solve {
 		// load level
 		let level = if filename.len() > 0 {
 			Level::from_file(&filename).expect("Unable to open specified file")
@@ -313,11 +314,68 @@ fn main() -> std::io::Result<()> {
 				output_str += &format!("depth: {}\n", sol.depth);
 				output_str += &format!("moves: {}\n", sol.moves);
 				output_str += &format!("path: {}\n", sol.path);
-				output_str += &format!("time: {:.1}\n", (sol.msecs+500_f64)/1000_f64);
+				output_str += &format!("time: {:.1}\n", (sol.msecs/1000_f64));
 				println!("{}", output_str);
 			},
 			None => {
+			},
+		};
+	} else { // mode = profile
+		// Solve levels 1-20 and check they solved correctly
+		let mut success = true;
+		let mut solutions = Vec::<Option::<Solution>>::new();
+		let mut stored_times = Vec::<f64>::new();
+		for level_num in 0..20 {
+			let level = Level::from_builtin(level_num).expect(&format!("Unable to open builtin level {}!", builtin));
+			println!("Solving level {}...",level_num);
+
+			let solution = solve_level(&level, max_moves, max_maps, verbosity);
+			match &solution {
+				Some(sol) => {
+					if level.get_keyval("depth").parse::<u16>().expect("Builtin depth error") != sol.depth {
+						println!("  Depth mismatch (stored: {}, profiled: {})", level.get_keyval("depth"), sol.depth);
+						success = false;
+					}
+					if level.get_keyval("moves").parse::<u16>().expect("Builtin moves error") != sol.moves {
+						println!("  Moves mismatch (stored: {}, profiled: {})", level.get_keyval("moves"), sol.moves);
+						success = false;
+					}
+					if level.get_keyval("path") != sol.path {
+						println!("  Path differs\n  Stored:   {}\n  Profiled: {}", level.get_keyval("path"), sol.path);
+					}
+					stored_times.push(level.get_keyval("time").parse::<f64>().expect("Builtin level time error"));
+				},
+				None => {
+					println!("  Failed to find solution");
+					stored_times.push(0_f64);
+					success = false;
+				}
 			}
+			solutions.push(solution);
+		}
+		if success {
+			println!();
+			println!("Profile OK.");
+			println!();
+			println!("-------------------------------------");
+			println!(" Level | Stored Time | Profiled Time ");
+			println!("-------------------------------------");
+			let mut total_time_s = 0_f64;
+			let mut total_time = 0_f64;
+			for level_num in 0..20 {
+				total_time_s += stored_times[level_num];
+				let t = solutions[level_num].as_ref().unwrap().msecs / 1000_f64;
+				total_time += t;
+				println!("   {:>2}    {:>8.3}      {:>8.3}", level_num, stored_times[level_num], t);
+			}
+			println!("-------------------------------------");
+			println!(" Total | {:>8.3}    | {:>8.3}", total_time_s, total_time);
+			println!("-------------------------------------");
+			println!(" Improvement: {:>4.1}%", (total_time_s - total_time) / total_time_s * 100_f64);
+		} else {
+			println!();
+			println!("Profile failed.");
+			println!();
 		}
 	}
 

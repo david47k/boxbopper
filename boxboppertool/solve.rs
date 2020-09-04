@@ -26,36 +26,37 @@ pub struct Solution {
 
 
 pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: usize, verbosity: u32) -> Option<Solution> {
-	let max_moves = Arc::new(AtomicU16::new(max_moves_requested+1));
+	let mut max_moves = max_moves_requested+1;
 	let base_level1 = base_level_in.clear_human_cloned();
 	let base_map = PathMap::new_from_level(&base_level1);
 	let base_level = base_level1.clear_boxxes_cloned();
-
-	println!("reversed base level:\n{}", base_map.level.to_level(&base_level).to_string());
 
 	let mut non_contenders = BTreeSet::<CmpData>::new();
 
 	let mut mapsr = Rc::new(vec![base_map]);
 	
-	let have_solution = Arc::new(AtomicBool::new(false));
-	let best_solution_str = Arc::new(Mutex::new(String::new()));
-	let best_sol_depth = Arc::new(AtomicU16::new(0));
+	let mut have_solution = false;
+	struct BestSolution {
+		s: String,
+		depth: u16,
+	};
+	let mut best_solution = BestSolution { s: String::new(), depth: 0 };
+
 	let mut depth: u16 = 0;
 
 	let msecs0 = get_time_ms();
 
-	while depth < max_moves.load(AtomicOrdering::SeqCst) {
+	while depth < max_moves {
 		if verbosity > 0 { println!("-- Depth {:>2} --", depth); }
 
 		// Check for level complete / having solution
 		if verbosity > 1 { println!("solution check..."); }
-		mapsr.par_iter().filter(|m| m.level.have_win_condition(&base_level)).for_each(|m| {
-			if m.path.len() < max_moves.load(AtomicOrdering::SeqCst) {
-				have_solution.store(true, AtomicOrdering::SeqCst);
-				max_moves.store(m.path.len(), AtomicOrdering::SeqCst);
-				best_sol_depth.store(depth, AtomicOrdering::SeqCst);
-				let mut solstr = best_solution_str.lock().unwrap();
-				*solstr = format!("{}", &m.path.to_string());
+		mapsr.iter().filter(|m| m.level.have_win_condition(&base_level)).for_each(|m| {
+			if m.path.len() < max_moves {
+				have_solution = true;
+				max_moves = m.path.len();
+				best_solution.depth = depth;
+				best_solution.s = format!("{}", &m.path.to_string());
 				if verbosity > 0 { 
 					println!("-- Solution found in {} moves --", m.path.len());
 				}
@@ -85,7 +86,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 
 		// Filter out the long paths
 		if verbosity > 1 { println!("pruning long paths..."); }
-		let ms = max_moves.load(AtomicOrdering::SeqCst);
+		let ms = max_moves;
 		maps.retain(|m| m.path.len() < ms);
 
 		// Sort and deduplicate
@@ -120,20 +121,20 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 		depth += 1;
 	}
 
-	if have_solution.load(AtomicOrdering::SeqCst) {
-		let solstr = best_solution_str.lock().unwrap();		
+	if have_solution {
+		let sol = best_solution;		
 		if verbosity > 0 { 
 			println!("-- Best solution --");
-			println!("Solution in {} moves: {}",max_moves.load(AtomicOrdering::SeqCst), solstr);
+			println!("Solution in {} moves: {}",max_moves, sol.s);
 		}
 		return Some(Solution {
 			msecs: get_time_ms() - msecs0,
-			moves: max_moves.load(AtomicOrdering::SeqCst),
-			depth: best_sol_depth.load(AtomicOrdering::SeqCst),
-			path: solstr.to_string(),
+			moves: max_moves,
+			depth: sol.depth,
+			path: sol.s.to_string(),
 		});
 	} else {
-		let ms = max_moves.load(AtomicOrdering::SeqCst);
+		let ms = max_moves;
 		if verbosity > 0 {
 			println!("-- No solution found --");
 			if ms > 1 { println!("Max moves was {}",ms-1); }

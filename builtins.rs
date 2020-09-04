@@ -5,6 +5,10 @@ r"##########
 ##########
 
 title: easy-peasy
+depth: 3
+moves: 6
+path: RRRRRR
+time: 0.0
 ",
 
 r"##########
@@ -15,7 +19,10 @@ r"##########
 ##########
 
 title: four-27
+depth: 12
+moves: 27
 path: RRRRRRLLLDRRRLLLDRRRLLLDRRR
+time: 0.2
 ",
 
 r"########
@@ -28,6 +35,10 @@ r"########
 ########
 
 title: tenner
+depth: 6
+moves: 10
+path: DULLRUUDRR
+time: 0.0
 ",
 
 r"########
@@ -40,6 +51,10 @@ r"########
 ########
 
 title: four-56
+depth: 16
+moves: 56
+path: LUURRUUDDLLDDRRUUDDRRULDLLLUURRURDLLLDDRRUURULDDDRUULLUU
+time: 0.0
 ",
 
 r"########
@@ -51,6 +66,10 @@ r"########
 ########
 
 title: six-31
+depth: 10
+moves: 31
+path: RUDLLLURULRRRDDLULUUURRDLULDULD
+time: 0.0
 ",
 
 r"######
@@ -62,6 +81,8 @@ r"######
 
 title: yegupumubi-60
 num: 5
+depth: 11
+time: 0.0
 moves: 60
 path: LRUULDRDDLLLUURRLLDDRUDRRULUURDLDDLLUUURLDDDRRUULRDDLLURUULD
 seed: 654
@@ -81,7 +102,9 @@ r"######
 title: zizikamabe-26
 num: 6
 moves: 26
+depth: 7
 path: DULULLDRRLLDDRULUURRDLULDD
+time: 0.0
 seed: 12
 width: 4
 height: 4
@@ -97,9 +120,11 @@ r"######
 ######
 
 title: pavahibete-30
-num: 7
+depth: 5
 moves: 30
 path: LLDDDRRRUDLLLUUURRDDRDLUUULLDR
+time: 0.0
+num: 7
 seed: 896
 width: 4
 height: 4
@@ -116,9 +141,10 @@ r"######
 
 title: kihuwolobi-32
 num: 8
-difficulty: 4
+depth: 7
 moves: 32
 path: RUUULLLDDDRRUUDDLLUURLDDRRURUULD
+time: 0.0
 seed: 997
 width: 4
 height: 4
@@ -142,6 +168,9 @@ width: 4
 height: 4
 wall_density: 20
 num_boxxes: 3
+depth: 6
+moves: 42
+time: 0.0
 ",
 
 r"#########
@@ -162,7 +191,8 @@ width: 7
 height: 6
 wall_density: 20
 num_boxxes: 3
-time: 0.00user 0.03system 0:00.01elapsed 172%CPU (0avgtext+0avgdata 2756maxresident)k
+depth: 12
+time: 0.0
 ",
 
 r"##########
@@ -180,13 +210,14 @@ title: zegasaheke-53
 num: 11
 moves: 53
 path: DRDDLDDRDLLLRRUUUURRRRUULLDURRDDLLLULDDDDRDLURRULULDD
-difficulty: 7
+path: DRDDDLDURRDLDLLLRRRUULDRDLUUUURRRRUULLDURRDDLLLULDDDD
 seed: 66
 width: 8
 height: 8
 wall_density: 23
 num_boxxes: 5
-time: 2.68user 0.51system 0:01.10elapsed 290%CPU (0avgtext+0avgdata 124232maxresident)k
+depth: 18
+time: 1.1
 ",
 
 r"##########
@@ -204,7 +235,7 @@ num: 12
 moves: 101
 depth: 32
 path: LLUULUURLDDRULUUURRDLULDDDUURRRRRDDLLLLLLRRDLLRRDDRRUURULLLLUURRDLULDDRDLRDDRRRUULULLULDUURRRRRDDLLLL      
-time: 5.37user 0.82system 0:02.23elapsed 277%CPU (0avgtext+0avgdata 184980maxresident)k
+time: 2.3
 ",
 
 r"##########
@@ -221,7 +252,8 @@ title: too hard yet?
 num: 13
 moves: 97
 path: URULUURUULDLLULLDRRRRURDLDDDRDDLULLUUUDDDRRUUUULLULLDRLDRURRRDDDDLLURDRUUUDDLLUULURDLLLDDRRRRDRUU
-time: 1.93user 0.15system 0:00.95elapsed 220%CPU (0avgtext+0avgdata 44264maxresident)k
+depth: 36
+time: 0.7
 ",
 
 r"###########
@@ -237,7 +269,9 @@ title: seven
 num: 14
 moves: 105
 path: UURDRRDRRUUURULDDDDLLURDRUUUDDLLLLLDDRULURRRRDRUURULLRDDLLLLDDRULURRRDRUUDDRUUULRDDDDRRULDLUUUDDRRULLDLUU
-time: 7.01user 1.56system 0:03.43elapsed 249%CPU (0avgtext+0avgdata 299888maxresident)k
+path: UURDRRDRRUUUDDDLLURDRUURULRULDLRDDLLLLLDDRULURRRRDRUUDDRUUULRDDDDRRUULLRRDLDLUUUDDLUUUDDLLLLDDRULURRRDRUU
+depth: 39
+time: 3.5
 ",
 
 r"##########
@@ -255,7 +289,8 @@ title: need solution stat
 num: 15
 moves: 162
 path: LULUULLDDRDDUULUURRDRDDRRURUULDLLDDRRURULDDDDRRDDLLUULLLDLLURUUURLLUURRDULLDDRDDDRRRRDDRRUULLUUURUULDLLDURRDDDDRRDDLLUULLLDLLURRRRRUDDDRRUULRDDLLUULLLLUUURLLUURRD
-time: 0.01user 0.01system 0:00.07elapsed 42%CPU (0avgtext+0avgdata 4792maxresident)k
+depth: 48
+time: 0.1
 ",
 
 r"#########
@@ -273,7 +308,7 @@ num: 16
 depth: 14
 moves: 49
 path: RDDLLUDRRUULDLDLLULUUURRRRLLLDRLLDDRRUULURRLDDRUU
-time: 12.82user 4.39system 0:06.98elapsed 246%CPU (0avgtext+0avgdata 804668maxresident)k
+time: 7.5
 seed: 11249
 width: 7
 height: 7
@@ -297,7 +332,7 @@ num: 17
 depth: 33
 moves: 118
 path: LUUUUURRRDURRDLULLLLDDDRRULRDRRULRURULLDDRDLLLURDRRUULDLDLDLDDRRULRDRRUUUUDLLULDDUURRUULRRRDLULDRDLLRRDDDDRRULDLLLLLUR
-time: 6.62user 0.68system 0:02.86elapsed 254%CPU (0avgtext+0avgdata 105428maxresident)k
+time: 2.1
 seed: 11860
 width: 7
 height: 7
@@ -323,7 +358,7 @@ moves: 70
 path:  RRRDRURRDDDLLUULUURRUULDRDDLLLLDLURDRDRLUURRRRDDDLLUURLLUURDRUUDDRDUUU
 path2: RRRDRURRDDDLLUULUURRUULDRDDLLLLDLURDRDRLUURURDRRDDDLLUULRRUUUDLDRRDUUU
 path3: RRRDRURRDDDLLUULUURRUULDRDDLLLLDRDRLULLURRRRRRDDDLLUURLLUURDRUUDDRDUUU
-time: 29.76user 5.57system 0:14.10elapsed 250%CPU (0avgtext+0avgdata 958932maxresident)k
+time: 15.9
 seed: 11230
 width: 7
 height: 7
@@ -347,7 +382,7 @@ num: 19
 depth: 34
 moves: 86
 path: UUULLLULURRURRDDDLLLDDDLLLURRDRUUURRRUUULLDRLLDDDDUURULULLLDRRURRURRDLLLLRRDDRRUDLDDRU
-time: 4.17user 0.42system 0:01.79elapsed 255%CPU (0avgtext+0avgdata 119036maxresident)k
+time: 1.2
 seed: 11452
 width: 7
 height: 7
@@ -372,6 +407,8 @@ width: 4
 height: 4
 wall_density: 20
 num_boxxes: 6
+depth: 7
+time: 0.0
 ",
 
 r"######

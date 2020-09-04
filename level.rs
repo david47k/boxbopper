@@ -89,7 +89,6 @@ pub struct Level {
 	hole_pts: Vec::<Vector>,
 	wall_pts: Vec::<Vector>,
 	cleared_of_human: bool,
-	//cleared_of_boxx: bool,
 }
 
 
@@ -355,17 +354,22 @@ impl Level {
 		w -= 2;
 		h -= 2;
 		let human_pos = human_pos.add(&Vector(-1,-1));
-		println!("Dimensions: {} x {}", w, h);
-		
+
+		if w < 1 || h < 1 {
+			println!("Dimensions: {} x {}", w, h);
+			panic!("Width and Height must be at least 1!");
+		}
+		if w > 127 || h > 127 || w * h > 240 {
+			println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 240.");
+			println!("Dimensions: {} x {}", w, h);
+			panic!("Level dimensions too big");
+		} 		
+
 		if human_pos.0 == -1 || human_pos.1 == -1 {
 			panic!("Human not found in level");
 		}
 		
-		println!("Human at: {}, {}", human_pos.0, human_pos.1);
-		
-		if w < 1 || h < 1 {
-			panic!("Width and Height must be >= 2");
-		}
+		// println!("Human at: {}, {}", human_pos.0, human_pos.1);
 		
 		let mut level = Level {
 			keyvals: keyvals,
@@ -437,7 +441,8 @@ impl Level {
 			for x in 0..self.w as i32 {
 				match self.get_obj_at_pt(&Vector(x,y)) {
 					Obj::Human|Obj::HumanInHole => { 
-						println!("WARNING in confirm_no_human(): Human found at ({},{})",x,y); return false; },
+						return false; 
+					},
 					_ => {},
 				}
 			}
@@ -479,7 +484,6 @@ impl Level {
 		if !self.cleared_of_human {
 			panic!("place_human() called but level has not been cleared");
 		}
-		println!("Verifying no human...");
 		if !self.confirm_no_human() {
 			panic!("Human found before place_human()!");
 		}
@@ -549,7 +553,6 @@ impl Level {
 		for y in -1..=self.h as isize {
 			for x in -1..=self.w as isize {
 				let obj_here = self.get_obj_at_pt_checked(&Vector(x as i32,y as i32));
-				print!("{}",obj_here.to_char());
 				if start_x.is_some() && obj_here == Obj::Space { 					// Continuation of hallway
 					// do nothing
 				} else if start_x.is_some() && obj_here == Obj::Wall {				// We have end of the hall					
@@ -564,7 +567,6 @@ impl Level {
 					}
 				}
 			}
-			println!();
 		} 
 		
 		// check if the hall is a valid hall (has a complete wall on one side)
@@ -616,10 +618,13 @@ impl Level {
 
 		self.noboxx_pts.sort_unstable();
 		self.noboxx_pts.dedup();
-		for p in &self.noboxx_pts {
-			print!("{} ",p.to_string());
+		if false {
+			print!("noboxx pts: ");
+			for p in &self.noboxx_pts {
+				print!("{} ",p.to_string());
+			}
+			println!("");
 		}
-		println!(""); 
 		self.place_human();
 	}
 	pub fn do_boxx_pts(&mut self) {
