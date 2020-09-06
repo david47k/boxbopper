@@ -274,12 +274,12 @@ impl PathMap {
 
 		let hpadd3 = human_pos.add(&pushv.mul(3));
 
-		let line0  = [ self.level.get_obj_at_pt(&hpadd2, base_level),
-					   self.level.get_obj_at_pt_checked(&hpadd3, base_level) ];
+		let line0  = [ self.level.get_obj_at_pt_nohuman(&hpadd2, base_level),
+					   self.level.get_obj_at_pt_nohuman_checked(&hpadd3, base_level) ];
 		
 		if line0 == [Obj::Space, Obj::Wall] {
 			let pp1 = hpadd2.add(&pushv.rotl());
-			if base_level.vector_in_bounds(&pp1) && self.level.is_boxx_at_pt(&pp1) {
+			if base_level.vector_in_bounds(&pp1) && self.level.is_boxx_at_pt(&pp1) && self.level.get_obj_at_pt_nohuman(&pp1, base_level) == Obj::Boxx {
 				let pp1a = hpadd3.add(&pushv.rotl());
 				if base_level.get_obj_at_pt_checked(&pp1a) == Obj::Wall {
 					return true;
