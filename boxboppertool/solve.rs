@@ -5,7 +5,7 @@ use boxbopperbase::time::{get_time_ms};
 
 use rayon::prelude::*;
 use std::rc::Rc;
-use std::collections::{BTreeSet,HashSet,BTreeMap,HashMap};
+use std::collections::{BTreeMap};
 
 use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
 
@@ -31,9 +31,6 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 	let mut non_contenders = BTreeMap::<CmpData,u16>::new();
 
 	let mut mapsr = Rc::new(vec![base_map]);
-	//let mut bt = BTreeMap::new();
-	//bt.insert((base_map.level.cmp_data,base_map.path.len()), base_map);
-	//let mut mapsr = Rc::new(bt);
 	
 	let mut have_solution = false;
 	struct BestSolution {
@@ -63,10 +60,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			}
 		});
 
-		// Get cmp_data from mapsr, add it to non-contenders
-		// We couldn't use this, because we are at a certain DEPTH, not a certain number of MOVES...
-		// The solution with LESS MOVES TOTAL may take longer to show up relative to DEPTH
-		// So now we store number of moves!
+		// We have to store number of moves, because higher depth can have less moves
 		if verbosity > 1 { println!("adding {} old maps to non-contenders...", mapsr.len()); }
 		if non_contenders.len() < max_maps * 4 {
 			mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data, m.path.len()); });
@@ -98,9 +92,6 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 		} 
 
-		//println!("creating bt maps...");
-		//let mut maps: BTreeMap<(CmpData,u16),PathMap> = maps.into_iter().map(|m| ((m.level.cmp_data, m.path.len()), m)).collect();
-
 		// Remove from maps anything that is in non_contenders AND our path is equal/longer
 		if verbosity > 1 { println!("deduping using n-c: before {:>7}", maps.len()); }
 		//let mut to_remove = Vec::<usize>::new();
@@ -109,12 +100,10 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			if v.is_some() {
 				if *v.unwrap() <= m.path.len() {
 					m.flag = true;
-					//to_remove.push(i);
 				}
 			}
 		});
 		maps.retain(|m| !m.flag);
-		// to_remove.iter().reverse().for_each(|i| maps.remove(i))
 		if verbosity > 1 { println!("deduping using n-c: after  {:>7}", maps.len()); }
 
 		// Check if we've exhausted the search space

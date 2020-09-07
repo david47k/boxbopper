@@ -3,7 +3,7 @@ TODO:
 
 HIGH PRIORITY
 -------------
-o  tool: solve: fix bug on level 30 ( possibly 43 and 48 ) - we are prioritising depth instead of moves (!)
+o  tool: Fix unsolve so it finds proper (lower) moves using BTreeMap
 o  tool: Better warnings on tool when running out of memory
 o  web: Check css media brackets on chrome
 
