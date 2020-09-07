@@ -5,7 +5,7 @@ use boxbopperbase::time::{get_time_ms};
 
 use rayon::prelude::*;
 use std::rc::Rc;
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet,HashSet,BTreeMap,HashMap};
 
 use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
 
@@ -28,7 +28,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 	let base_map = PathMap::new_from_level(&base_level1);
 	let base_level = base_level1.clear_boxxes_cloned();
 
-	let mut non_contenders = BTreeSet::<CmpData>::new();
+	let mut non_contenders = BTreeMap::<CmpData,u16>::new();
 
 	let mut mapsr = Rc::new(vec![base_map]);
 	
@@ -61,12 +61,27 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 		});
 
 		// Get cmp_data from mapsr, add it to non-contenders
+		// We couldn't use this, because we are at a certain DEPTH, not a certain number of MOVES...
+		// The solution with LESS MOVES TOTAL may take longer to show up relative to DEPTH
+		// So now we store number of moves!
 		if verbosity > 1 { println!("adding {} old maps to non-contenders...", mapsr.len()); }
 		if non_contenders.len() < max_maps * 4 {
-			mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data); });
+			mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data, m.path.len()); });
 		} else {
 			if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }
 		}
+		
+
+		/* if true {
+			// We could buffer for a bit and run dedupe against those
+			if verbosity > 1 { println!("adding {} old maps to lookback...", mapsr.len()); }
+			if lookback.len() < max_maps * 4 {
+				mapsr.iter().for_each(|m| { lookback.push(m.clone()); }); 	// .insert(m);
+			} else {
+				if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }
+			}
+		} */
+
 
 		// Complete the maps, converting from PathMap into PathNodeMap
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
@@ -92,10 +107,16 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 		} 
 
-		// Remove from maps anything that is in non_contenders
+		
+		// Remove from maps anything that is in non_contenders AND our path is equal/longer
 		if verbosity > 1 { println!("deduping from n-c: before {:>7}", maps.len()); }
-		maps.par_iter_mut().for_each(|m| if non_contenders.contains(&m.level.cmp_data) {
-			m.flag = true;
+		maps.par_iter_mut().for_each(|m| {
+			let v = non_contenders.get(&m.level.cmp_data);
+			if v.is_some() {
+				if *v.unwrap() < m.path.len() {
+					m.flag = true;
+				}
+			}
 		});
 		maps.retain(|m| !m.flag);
 		if verbosity > 1 { println!("deduping from n-c: after  {:>7}", maps.len()); }

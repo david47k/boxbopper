@@ -75,7 +75,7 @@ impl PathMap {
 		
 		// check destination point
 		if pnm.map.level.is_boxx_at_pt(&np) {
-			let boxx_pt = &np.add_dir(&km.move_dir);
+			let boxx_pt = np.add_dir(&km.move_dir);
 			let is_clear = !pnm.map.level.is_boxx_at_pt(&boxx_pt);
 			if is_clear {
 				map_b.level.set_boxx_at_pt(&boxx_pt);
@@ -115,10 +115,10 @@ impl PathMap {
 		}
 
 		// place new boxx
-		let pull_to_pt = &km.pn.pt;
+		let pull_to_pt = km.pn.pt;
 		let is_clear = !pnm.map.level.is_boxx_at_pt(&pull_from_pt);
 		if is_clear {
-			map_b.level.set_boxx_at_pt(pull_to_pt);
+			map_b.level.set_boxx_at_pt(&pull_to_pt);
 		} else {
 			panic!("Key pull seems to be moving boxx into something weird!");
 		}
@@ -143,19 +143,18 @@ impl PathMap {
 		while tail_nodes.len() != 0 {			// check if map is complete
 			new_tail_nodes.clear();
 			for tnidx in tail_nodes.iter() {							// for each tail node
-				let tnode = &pnm.nodes[(*tnidx) as usize];
+				let tnode = pnm.nodes[(*tnidx) as usize];
 				let pt = tnode.pt;									
 				for movedir in ALLMOVES.iter() {							// for each possible move
 					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out
 					if !base_level.vector_in_bounds(&npt) { continue; }
 					if pnm.map.level.is_boxx_at_pt(&npt) {
 						// What's past the boxx? We can push into Space and Hole.
-						let bnpt = &pt.add_dir2(&movedir);
-						let nobj = pnm.map.level.get_obj_at_pt_nohuman_checked(bnpt, base_level);
+						let bnpt = pt.add_dir2(&movedir);
+						let nobj = pnm.map.level.get_obj_at_pt_nohuman_checked(&bnpt, base_level);
 						if nobj == Obj::Space || nobj == Obj::Hole {
 							// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
-							// TODO: see if double_Boxx_situation is too slow (after optimising it)
-							if !base_level.in_noboxx_pts(bnpt) && !self.double_boxx_situation(pt,*movedir,base_level) {
+							if !base_level.in_noboxx_pts(&bnpt)  && !self.double_boxx_situation(pt,*movedir,base_level) {
 								let km = KeyMove {
 									pn: tnode.clone(),
 									move_dir: *movedir,
