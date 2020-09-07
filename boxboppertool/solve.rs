@@ -51,7 +51,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 
 		// Check for level complete / having solution
 		if verbosity > 1 { println!("solution check..."); }
-		mapsr.iter().filter(|(m)| m.level.have_win_condition(&base_level)).for_each(|m| {
+		mapsr.iter().filter(|m| m.level.have_win_condition(&base_level)).for_each(|m| {
 			if m.path.len() < max_moves {
 				have_solution = true;
 				max_moves = m.path.len();
@@ -104,7 +104,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 		// Remove from maps anything that is in non_contenders AND our path is equal/longer
 		if verbosity > 1 { println!("deduping using n-c: before {:>7}", maps.len()); }
 		//let mut to_remove = Vec::<usize>::new();
-		maps.iter_mut().for_each(|m| {
+		maps.par_iter_mut().for_each(|m| {
 			let v = non_contenders.get(&m.level.cmp_data);
 			if v.is_some() {
 				if *v.unwrap() <= m.path.len() {

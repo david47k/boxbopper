@@ -14,4 +14,3 @@ o  tool: solve: optional best_depth instead of best_moves
 o  Publish!
 o  Consider adding an undo button
 o  tool: Consider bisolve (where solve and unsolve meet in middle)
-
