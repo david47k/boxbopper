@@ -31,6 +31,9 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 	let mut non_contenders = BTreeMap::<CmpData,u16>::new();
 
 	let mut mapsr = Rc::new(vec![base_map]);
+	//let mut bt = BTreeMap::new();
+	//bt.insert((base_map.level.cmp_data,base_map.path.len()), base_map);
+	//let mut mapsr = Rc::new(bt);
 	
 	let mut have_solution = false;
 	struct BestSolution {
@@ -48,7 +51,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 
 		// Check for level complete / having solution
 		if verbosity > 1 { println!("solution check..."); }
-		mapsr.iter().filter(|m| m.level.have_win_condition(&base_level)).for_each(|m| {
+		mapsr.iter().filter(|(m)| m.level.have_win_condition(&base_level)).for_each(|m| {
 			if m.path.len() < max_moves {
 				have_solution = true;
 				max_moves = m.path.len();
@@ -71,18 +74,6 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }
 		}
 		
-
-		/* if true {
-			// We could buffer for a bit and run dedupe against those
-			if verbosity > 1 { println!("adding {} old maps to lookback...", mapsr.len()); }
-			if lookback.len() < max_maps * 4 {
-				mapsr.iter().for_each(|m| { lookback.push(m.clone()); }); 	// .insert(m);
-			} else {
-				if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }
-			}
-		} */
-
-
 		// Complete the maps, converting from PathMap into PathNodeMap
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
 		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve(&base_level) ).collect(); // collect_into_vec doesn't seem to be any faster
@@ -107,19 +98,24 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 		} 
 
-		
+		//println!("creating bt maps...");
+		//let mut maps: BTreeMap<(CmpData,u16),PathMap> = maps.into_iter().map(|m| ((m.level.cmp_data, m.path.len()), m)).collect();
+
 		// Remove from maps anything that is in non_contenders AND our path is equal/longer
-		if verbosity > 1 { println!("deduping from n-c: before {:>7}", maps.len()); }
-		maps.par_iter_mut().for_each(|m| {
+		if verbosity > 1 { println!("deduping using n-c: before {:>7}", maps.len()); }
+		//let mut to_remove = Vec::<usize>::new();
+		maps.iter_mut().for_each(|m| {
 			let v = non_contenders.get(&m.level.cmp_data);
 			if v.is_some() {
-				if *v.unwrap() < m.path.len() {
+				if *v.unwrap() <= m.path.len() {
 					m.flag = true;
+					//to_remove.push(i);
 				}
 			}
 		});
 		maps.retain(|m| !m.flag);
-		if verbosity > 1 { println!("deduping from n-c: after  {:>7}", maps.len()); }
+		// to_remove.iter().reverse().for_each(|i| maps.remove(i))
+		if verbosity > 1 { println!("deduping using n-c: after  {:>7}", maps.len()); }
 
 		// Check if we've exhausted the search space
 		if maps.len() == 0 {

@@ -433,6 +433,13 @@ impl Level {
 		let s = self.keyvals.get(key).unwrap();
 		s.to_string()
 	}
+	pub fn get_keyval_or(&self, key: &str, ors: &str) -> String {
+		let s = self.keyvals.get(key);
+		if s.is_some() {
+			return s.unwrap().to_string();
+		}
+		ors.to_string()
+	}
 	pub fn set_keyval(&mut self, key: &str, val: &str) {
 		self.keyvals.insert(key.to_string(),val.to_string());
 	}

@@ -203,15 +203,15 @@ impl PathMap {
 		while tail_nodes.len() != 0 {			// check if map is complete
 			new_tail_nodes.clear();
 			for tnidx in tail_nodes.iter() {							// for each tail node
-				let tnode = &pnm.nodes[*tnidx as usize];
+				let tnode = pnm.nodes[*tnidx as usize];
 				let pt = tnode.pt;									
 				for movedir in ALLMOVES.iter() {							// for each possible move
 					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
 					if !base_level.vector_in_bounds(&npt) { continue; }
 					if pnm.map.level.is_boxx_at_pt(&npt) {
 						// What's in our reverse direction? We can pull into Space and Hole.
-						let bnpt = &pt.add_dir(&movedir.reverse());
-						let nobj = pnm.map.level.get_obj_at_pt_nohuman_checked(bnpt, base_level);
+						let bnpt = pt.add_dir(&movedir.reverse());
+						let nobj = pnm.map.level.get_obj_at_pt_nohuman_checked(&bnpt, base_level);
 						if nobj == Obj::Space || nobj == Obj::Hole {
 							// yep, its a keypull, save key move.. 
 							let km = KeyMove {
@@ -313,7 +313,7 @@ impl PathNodeMap {
 		nmaps
 	}
 	pub fn backtrace_moves(&self, pn: &PathNode) -> Vec::<Move> {
-		let mut path = Vec::<Move>::with_capacity(32);
+		let mut path = Vec::<Move>::with_capacity(64);
 		// start at pn and work backwards
 		let mut pnr = pn;
 		loop {

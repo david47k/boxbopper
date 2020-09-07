@@ -298,13 +298,19 @@ fn main() -> std::io::Result<()> {
 		} else {
 			Level::from_builtin(builtin as usize).expect(&format!("Unable to open builtin level {}!", builtin))
 		};
-		
-		println!("{}",level.to_string());
 
 		if width > 127 || height > 127 || width * height > 240 {
 			println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 240.");
 			return Ok(());
 		} 
+
+		if filename.len() > 0 {
+			println!("Solving level \"{}\" (filename {})...",level.get_title_str(), filename);
+		} else {
+			println!("Solving level \"{}\" (builtin level {})...",level.get_title_str(), builtin);
+		}
+		
+		if verbosity > 0 { println!("{}",level.to_string()); }
 
 		let solution = solve_level(&level, max_moves, max_maps, verbosity);
 		match solution {
@@ -321,11 +327,12 @@ fn main() -> std::io::Result<()> {
 			},
 		};
 	} else { // mode = profile
-		// Solve levels 1-20 and check they solved correctly
+		// Solve levels 0 to X and check they solved correctly
 		let mut success = true;
+		let mut warnings = false;
 		let mut solutions = Vec::<Option::<Solution>>::new();
 		let mut stored_times = Vec::<f64>::new();
-		let top_level = 50;
+		let top_level = 20;
 		for level_num in 0..=top_level {
 			let level = Level::from_builtin(level_num).expect(&format!("Unable to open builtin level {}!", builtin));
 			println!("Solving level {}...",level_num);
@@ -335,14 +342,15 @@ fn main() -> std::io::Result<()> {
 				Some(sol) => {
 					if level.get_keyval("depth").parse::<u16>().expect("Builtin depth error") != sol.depth {
 						println!("  Depth mismatch (stored: {}, profiled: {})", level.get_keyval("depth"), sol.depth);
-						success = false;
+						warnings = true;
 					}
 					if level.get_keyval("moves").parse::<u16>().expect("Builtin moves error") != sol.moves {
 						println!("  Moves mismatch (stored: {}, profiled: {})", level.get_keyval("moves"), sol.moves);
-						success = false;
+						warnings = true;
 					}
 					if level.get_keyval("path") != sol.path {
 						println!("  Path differs\n  Stored:   {}\n  Profiled: {}", level.get_keyval("path"), sol.path);
+						warnings = true;
 					}
 					stored_times.push(level.get_keyval("time").parse::<f64>().expect("Builtin level time error"));
 				},
@@ -356,7 +364,8 @@ fn main() -> std::io::Result<()> {
 		}
 		if success {
 			println!();
-			println!("Profile OK.");
+			if !warnings { println!("Profile OK."); }
+			else { println!("Profile OK (with warnings)."); }
 			println!();
 			println!("-------------------------------------");
 			println!(" Level | Stored Time | Profiled Time ");
