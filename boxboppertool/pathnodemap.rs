@@ -8,6 +8,8 @@ use boxbopperbase::{Obj};
 use boxbopperbase::level::{Level,SpLevel};
 use boxbopperbase::vector::{Vector,Move,ALLMOVES,ShrunkPath};
 
+use boxbopperbase::stackstack::{StackStack16};
+
 #[derive(Clone,Copy)]
 pub struct PathNode {
 	pt: Vector,
@@ -17,7 +19,7 @@ pub struct PathNode {
 
 #[derive(Clone,Copy)]
 pub struct KeyMove {
-	pn: PathNode,		// where human is just before pushing boxx
+	pni: u16,		// where human is just before pushing boxx - pathnode index
 	move_dir: Move,		// direction to move to push boxx (or direction we are pulling box in)
 }
 
@@ -36,7 +38,6 @@ pub struct PathMap {
 	pub flag: bool,
 }
 
-
 impl PathMap {
 	pub fn new_from_level(level: &Level) -> PathMap {
 		PathMap {
@@ -48,11 +49,11 @@ impl PathMap {
 	}
 	pub fn to_pnm(&self) -> PathNodeMap {		// this one clones across our data
 		let initial_pn = PathNode {
-			pt: Vector(self.level.cmp_data.human_x.into(), self.level.cmp_data.human_y.into()),
+			pt: Vector(self.level.cmp_data.human_x as i32, self.level.cmp_data.human_y as i32),
 			move_taken: None,
 			prev_node_idx: 0,
 		};
-		let mut nodes = Vec::<PathNode>::with_capacity(32);
+		let mut nodes = Vec::<PathNode>::with_capacity(64);
 		nodes.push(initial_pn);
 		PathNodeMap {
 			map: PathMap {
@@ -71,7 +72,7 @@ impl PathMap {
 		let mut map_b = pnm.map.clone();
 				
 		// new human point
-		let np = km.pn.pt.add_dir(&km.move_dir);
+		let np = pnm.nodes[km.pni as usize].pt.add_dir(&km.move_dir);
 		
 		// check destination point
 		if pnm.map.level.is_boxx_at_pt(&np) {
@@ -91,10 +92,8 @@ impl PathMap {
 
 		map_b.level.set_human_pos(&np);				// move human
 			
-		let bm = pnm.backtrace_moves(&km.pn);
-		for m in bm {
-			map_b.path.push(&m);
-		}
+		let bm = pnm.backtrace_moves(km.pni as usize);
+		map_b.path.append_path(&bm);
 		map_b.path.push(&km.move_dir);
 		
 		map_b
@@ -106,7 +105,7 @@ impl PathMap {
 		map_b.depth = depth;
 				
 		// remove old boxx
-		let pull_from_pt = km.pn.pt.add_dir(&km.move_dir.reverse());
+		let pull_from_pt = pnm.nodes[km.pni as usize].pt.add_dir(&km.move_dir.reverse());
 		let is_boxx = pnm.map.level.is_boxx_at_pt(&pull_from_pt);
 		if is_boxx {
 			map_b.level.clear_boxx_at_pt(&pull_from_pt);
@@ -115,8 +114,8 @@ impl PathMap {
 		}
 
 		// place new boxx
-		let pull_to_pt = km.pn.pt;
-		let is_clear = !pnm.map.level.is_boxx_at_pt(&pull_from_pt);
+		let pull_to_pt = pnm.nodes[km.pni as usize].pt;
+		let is_clear = !pnm.map.level.is_boxx_at_pt(&pull_to_pt);
 		if is_clear {
 			map_b.level.set_boxx_at_pt(&pull_to_pt);
 		} else {
@@ -124,29 +123,27 @@ impl PathMap {
 		}
 		
 		// new human point
-		let np = km.pn.pt.add_dir(&km.move_dir);
+		let np = pnm.nodes[km.pni as usize].pt.add_dir(&km.move_dir);
 		map_b.level.set_human_pos(&np);
 
-		let bm = pnm.backtrace_moves(&km.pn);
-		for m in bm {
-			map_b.path.push(&m);
-		}
+		let bm = pnm.backtrace_moves(km.pni as usize);
+		map_b.path.append_path(&bm);
 		map_b.path.push(&km.move_dir);
 
 		map_b
 	}
 	pub fn complete_map_solve(&self, base_level: &Level) -> PathNodeMap {
 		let mut pnm = self.to_pnm();					// we want complete_map to clone from self
-		let mut tail_nodes = Vec::<u16>::with_capacity(64);
+		let mut tail_nodes = StackStack16::new(); 
+		let mut new_tail_nodes = StackStack16::new(); 	// somewhere to store new tail nodes
 		tail_nodes.push(0);
-		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(64);	// somewhere to store new tail nodes
-		while tail_nodes.len() != 0 {			// check if map is complete
-			new_tail_nodes.clear();
-			for tnidx in tail_nodes.iter() {							// for each tail node
-				let tnode = pnm.nodes[(*tnidx) as usize];
+		while tail_nodes.len() != 0 {					// check if map is complete
+			for idx in 0..tail_nodes.len() {							// for each tail node
+				let tnidx = tail_nodes.stack[idx]; 
+				let tnode = pnm.nodes[tnidx as usize];
 				let pt = tnode.pt;									
-				for movedir in ALLMOVES.iter() {							// for each possible move
-					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out
+				'loop_moves: for movedir in ALLMOVES.iter() {			// for each possible move
+					let npt = pt.add_dir(&movedir);						// what is in this direction? let's find out
 					if !base_level.vector_in_bounds(&npt) { continue; }
 					if pnm.map.level.is_boxx_at_pt(&npt) {
 						// What's past the boxx? We can push into Space and Hole.
@@ -156,56 +153,47 @@ impl PathMap {
 							// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
 							if !base_level.in_noboxx_pts(&bnpt)  && !self.double_boxx_situation(pt,*movedir,base_level) {
 								let km = KeyMove {
-									pn: tnode.clone(),
+									pni: tnidx,
 									move_dir: *movedir,
 								};
 								pnm.key_moves.push(km);
 							}
-						} else if nobj != Obj::Wall && nobj != Obj::BoxxInHole && nobj != Obj::Boxx {
-							panic!("nobj error! {}", nobj.to_char());
-						}
+						} 
 					} else if base_level.get_obj_at_pt(&npt) != Obj::Wall {											
 						// first check this point isn't already in our list!!!						
-						let mut ok = true;
 						for n in pnm.nodes.iter() {
-							if n.pt == npt { ok = false; break; }
+							if n.pt == npt { continue 'loop_moves; }		// TODO OPTIMISE 7.88%
 						}
-						for n in new_tail_nodes.iter() {
-							if n.pt == npt { ok = false; break; }
-						}
-						if !ok { continue; }
 
 						// yep, we can move here, make a new tail node
 						let pn = PathNode {
 							pt: npt.clone(),
 							move_taken: Some(*movedir),
-							prev_node_idx: *tnidx,
+							prev_node_idx: tnidx as u16,
 						};
-						new_tail_nodes.push(pn);
+						new_tail_nodes.push(pnm.nodes.len() as u16);
+						pnm.nodes.push(pn);
 					}
 				}	
 			}
 	
-			// append new tail nodes to nodes and tail nodes
-			tail_nodes.clear();
-			for n in new_tail_nodes.iter() {
-				pnm.nodes.push(*n);
-				tail_nodes.push((pnm.nodes.len()-1) as u16);
-			}
+			// move new_tail_nodes to tail_nodes
+			tail_nodes.clone_from(&new_tail_nodes);
+			new_tail_nodes.clear();
 		}
 		pnm
 	}
 	pub fn complete_map_unsolve(&self, base_level: &Level) -> PathNodeMap {
 		let mut pnm = self.to_pnm();					// we want complete_map to clone from self
-		let mut tail_nodes = Vec::<u16>::with_capacity(64);
-		tail_nodes.push(0);
-		let mut new_tail_nodes = Vec::<PathNode>::with_capacity(64);	// somewhere to store new tail nodes
-		while tail_nodes.len() != 0 {			// check if map is complete
-			new_tail_nodes.clear();
-			for tnidx in tail_nodes.iter() {							// for each tail node
-				let tnode = pnm.nodes[*tnidx as usize];
+		let mut tail_nodes = StackStack16::new(); 
+		let mut new_tail_nodes = StackStack16::new();
+		tail_nodes.push(0);		
+		while tail_nodes.len() != 0 {					// check if map is complete
+			for idx in 0..tail_nodes.len() {
+				let tnidx = tail_nodes.stack[idx];
+				let tnode = pnm.nodes[tnidx as usize];
 				let pt = tnode.pt;									
-				for movedir in ALLMOVES.iter() {							// for each possible move
+				'loop_moves: for movedir in ALLMOVES.iter() {							// for each possible move
 					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
 					if !base_level.vector_in_bounds(&npt) { continue; }
 					if pnm.map.level.is_boxx_at_pt(&npt) {
@@ -215,39 +203,32 @@ impl PathMap {
 						if nobj == Obj::Space || nobj == Obj::Hole {
 							// yep, its a keypull, save key move.. 
 							let km = KeyMove {
-								pn: tnode.clone(),
-								move_dir: movedir.clone().reverse(),
+								pni: tnidx,
+								move_dir: movedir.reverse(),
 							};
 							pnm.key_moves.push(km);
 						}
 					} else if base_level.get_obj_at_pt(&npt) != Obj::Wall {
 						// first check this point isn't already in our list!!!						
-						let mut ok = true;
 						for n in pnm.nodes.iter() {
-							if n.pt == npt { ok = false; break; }
+							if n.pt == npt { continue 'loop_moves; }
 						}
-						for n in new_tail_nodes.iter() {
-							if n.pt == npt { ok = false; break; }
-						}
-						if !ok { continue; }
-
+						
 						// yep, we can move here, make a new tail node
 						let pn = PathNode {
 							pt: npt.clone(),
 							move_taken: Some(*movedir),
-							prev_node_idx: *tnidx,
+							prev_node_idx: tnidx as u16,
 						};
-						new_tail_nodes.push(pn);
+						new_tail_nodes.push(pnm.nodes.len() as u16);
+						pnm.nodes.push(pn);
 					}
 				}	
 			}
 
-			// append new tail nodes to nodes and tail nodes
-			tail_nodes.clear();
-			for n in new_tail_nodes.iter() {
-				pnm.nodes.push(*n);
-				tail_nodes.push((pnm.nodes.len()-1) as u16);
-			}
+			// move new_tail_nodes to tail_nodes
+			tail_nodes.clone_from(&new_tail_nodes);
+			new_tail_nodes.clear();
 		}		
 		pnm
 	}
@@ -312,10 +293,10 @@ impl PathNodeMap {
 		}
 		nmaps
 	}
-	pub fn backtrace_moves(&self, pn: &PathNode) -> Vec::<Move> {
-		let mut path = Vec::<Move>::with_capacity(64);
+	pub fn backtrace_moves(&self, pni: usize) -> Vec::<Move> {		// 5.5, 2.9
+		let mut path = Vec::<Move>::with_capacity(128);
 		// start at pn and work backwards
-		let mut pnr = pn;
+		let mut pnr = &self.nodes[pni];
 		loop {
 			if pnr.move_taken.is_some() {
 				path.push(pnr.move_taken.unwrap());

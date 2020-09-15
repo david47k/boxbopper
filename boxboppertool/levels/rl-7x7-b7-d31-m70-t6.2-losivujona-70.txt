@@ -1,0 +1,22 @@
+#########
+## O* ###
+## ** * #
+#    O  #
+# ***O  #
+##%# O O#
+### # ###
+##   O  #
+#########
+
+title: losivujona-70
+depth: 31
+moves: 70
+path: ULURRRRDDLULULUURDDLDRRRULRUULDLDRURDDDDURRULRUULDLDRURDULLLLLDRRUUURD
+time: 6.23
+seed: 30957
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

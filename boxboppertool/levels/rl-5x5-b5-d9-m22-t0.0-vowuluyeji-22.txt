@@ -1,0 +1,20 @@
+#######
+# #   #
+#&@   #
+#O* # #
+##* # #
+#@ O@##
+#######
+
+title: vowuluyeji-22
+depth: 9
+moves: 22
+path: RRDLRDDLUURUURRDLULDDD
+time: 0.00
+seed: 0
+width: 5
+height: 5
+wall_density: 20
+box_density: 20
+num_boxxes: 5
+

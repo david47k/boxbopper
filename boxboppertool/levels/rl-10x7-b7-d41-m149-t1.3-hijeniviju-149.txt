@@ -1,0 +1,22 @@
+############
+##  O      #
+#O*&###@#  #
+# # #O# * ##
+# # * # * ##
+### #   * O#
+# #@  O# ###
+# #  ## # ##
+############
+
+title: hijeniviju-149
+depth: 41
+moves: 149
+path: URRRRRRDDDDLLLDLLDLUUUUULURRRRRDDDUUULLLLDDDDDRRUULRDRRUUUULLLLDDDRRDRRRRULDLLLULLUUURRRRDDDRDLLDLLLUURRDULLDDRRURRUUUULLLLDDDDURRDRRURRULDLURRUULLLL
+time: 1.27
+seed: 30265
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

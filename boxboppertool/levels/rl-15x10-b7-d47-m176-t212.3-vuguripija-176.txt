@@ -1,0 +1,25 @@
+#################
+##& # #  #      #
+# *### #     #  #
+# O #    #     ##
+##   * ##  O  # #
+#  #**#  #    ###
+##  OO ### ##   #
+# O#*##    O ####
+#        #    # #
+### ##*  ## # *O#
+#  ###    ###  ##
+#################
+
+title: vuguripija-176
+depth: 47
+moves: 176
+path: DDDDDDLDRRRRRRDRULURRRDRRRDRLULULDLUUUURUULLLDLLDLDULLULDDDRRURULLRRURRRURRRDDLUDDDDLLDLLLLUULLUURRRURRRURRURDDLDDDDLLDDDLLURUURRRUUUUULLDLLDLLLLDDRRDDRRRDRULURRRUUUUULLDLLDLLD
+time: 212.26
+seed: 5
+width: 15
+height: 10
+wall_density: 35
+box_density: 5
+num_boxxes: 7
+

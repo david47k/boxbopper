@@ -32,6 +32,8 @@ use sprite::{Sprite,Trans};
 pub mod time;
 use time::{get_time_ms};
 
+pub mod stackstack;
+
 #[cfg(not(target_arch = "wasm32"))]
 pub fn console_log(s: &str) {
 	println!("{}",s);

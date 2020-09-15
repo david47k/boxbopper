@@ -1,0 +1,22 @@
+#########
+#  #   ##
+## O  ###
+#  #    #
+# # O@*##
+# #*#*  #
+#   O* O#
+#  *%@  #
+#########
+
+title: tupidilene-148
+depth: 38
+moves: 148
+path: ULLDRULLUUURURRRDRDDRDDLULLLDLLUUUURURRRDRDDRDLUUULLDRURDDRDDLULUUDDRRULUULULLLDLDDDDRRURRUURDRDDLURULDLLLDLLURRRRRUULLUDLDURRRULULDRRDDDLUDLLDLLURR
+time: 1.12
+seed: 30926
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

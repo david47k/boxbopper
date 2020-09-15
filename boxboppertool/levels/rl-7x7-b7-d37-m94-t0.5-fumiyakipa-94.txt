@@ -1,0 +1,22 @@
+#########
+#      O#
+#@** # O#
+##&#  # #
+# @##*  #
+#     # #
+# @ @   #
+# #  # O#
+#########
+
+title: fumiyakipa-94
+depth: 37
+moves: 94
+path: DLDRRDRRRDRUUUUULULLDDRDULUULLDDDLDDRRRRRDRUUUUDLLDLDRRLLLLLUURDRRLLUUUURRDLULDDURRDRDDURRDDLL
+time: 0.49
+seed: 30608
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

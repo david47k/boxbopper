@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 use boxbopperbase::{Obj};
-use boxbopperbase::level::{Level};
+use boxbopperbase::level::{Level,verify_builtins};
 use boxbopperbase::vector::{Vector,ALLMOVES};
 
 pub mod defs;
@@ -120,15 +120,80 @@ fn random_level_creator(width: u16, height: u16, wall_density: u32, box_density:
 
 	level.do_noboxx_pts();
 	level.do_boxx_pts();
+	level.make_win_data();
 
 	(level, params)
+}
+
+#[derive(Clone)]
+struct SpeedTestData {
+	pub num: u16,
+	pub title: String,
+	pub depth: u16,
+	pub moves: u16,
+	pub path: String,
+	pub time: f64,
+}
+
+#[derive(Clone)]
+struct SpeedTest {
+	pub data: Vec::<SpeedTestData>,
+}
+
+impl SpeedTest {
+	pub fn get_speed_test(&self, num: usize) -> Option::<&SpeedTestData> {
+		return self.data.iter().find(|pd| pd.num == num as u16);
+	}
+	pub fn new() -> SpeedTest {
+		SpeedTest {
+			data: Vec::<SpeedTestData>::new(),
+		}
+	}
+	pub fn from_file(filename: &str) -> SpeedTest {
+		let input = std::fs::read_to_string(filename);
+		let input = match input {
+			Ok(x) => x,
+			_ => panic!("Failed to open Speed Test file: {}", filename),
+		};
+			
+		let p = SpeedTest::from_str(&input);
+		p
+	}
+	pub fn from_str(s: &str) -> SpeedTest {				
+		let mut p = SpeedTest::new();
+		// load into string
+		
+		for txt in s.lines() {
+			let txt = txt.trim();
+			if txt.len() > 0 && txt.chars().nth(0) == Some('#') {
+				continue;
+			}
+			if txt.len() >= 2 {
+				let data: Vec<&str> = txt.split(", ").collect();
+				if data.len() < 6 {
+					println!("Warning: Insufficient columns in read Speed Test row");
+					continue;
+				}
+				let d = SpeedTestData {
+					num: data[0].parse::<u16>().expect("Speed test read failed first column"),
+					title: data[1].to_string(),
+					depth: data[2].parse::<u16>().expect("Speed test read failed third column"),
+					moves: data[3].parse::<u16>().expect("Speed test read failed fourth column"),
+					path: data[4].to_string(),
+					time: data[5].parse::<f64>().expect("Speed test read failed sixth column"),
+				};
+				p.data.push(d);
+			}
+		}
+		p
+	}
 }
 
 
 fn main() -> std::io::Result<()> {
 	let args: Vec::<String> = std::env::args().collect();
 	#[derive(PartialEq)]
-	enum Mode { Help, Solve, Make, Profile };
+	enum Mode { Help, Solve, Make, SpeedTest };
 	let mut mode = Mode::Help;
 	let mut seed: u32 = 0;
 	let mut max_moves: u16 = DEF_MAX_MOVES;
@@ -141,6 +206,8 @@ fn main() -> std::io::Result<()> {
 	let mut filename: String = String::from("");
 	let mut builtin: u32 = 0;
 	let mut verbosity: u32 = DEF_VERBOSITY;
+	let mut speed_test_read: String = String::new();
+	let mut speed_test_write: String = String::new();
 	
 	// process params
 	for (count,arg) in args.into_iter().enumerate() {
@@ -148,9 +215,9 @@ fn main() -> std::io::Result<()> {
 			match arg.as_str() {
 				"solve" => { mode = Mode::Solve; },
 				"make"  => { mode = Mode::Make; },
-				"profile" => { mode = Mode::Profile; verbosity = 0; }
+				"speed_test" => { mode = Mode::SpeedTest; verbosity = 0; }
 				_ => {
-					println!("First argument should be make or solve or profile");
+					println!("First argument should be make or solve or speed_test");
 				}
 			};
 		} else if count >= 2 {
@@ -171,6 +238,8 @@ fn main() -> std::io::Result<()> {
 				"max_moves" => { max_moves = right.parse::<u16>().unwrap(); },
 				"max_depth" => { max_depth = right.parse::<u16>().unwrap(); },
 				"filename"  => { filename = String::from(right); },
+				"speed_test_read"  => { speed_test_read = String::from(right); },
+				"speed_test_write"  => { speed_test_write = String::from(right); },
 				"builtin"   => { builtin = right.parse::<u32>().unwrap(); }
 				"verbosity" => { verbosity = right.parse::<u32>().unwrap(); },
 				_ => {
@@ -189,20 +258,23 @@ fn main() -> std::io::Result<()> {
 	let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0x0d47d47000000000_u64 + seed as u64);
 
 	if mode == Mode::Help {
-		println!("boxboppertool make [vars...]\nboxboppertool solve [vars...]\nboxboppertool profile [vars...]\n");
+		println!("boxboppertool make [vars...]\nboxboppertool solve [vars...]\nboxboppertool speed_test [vars...]\n");
 		println!("vars for make:");
-		println!("  seed=n          rng seed (u32)");
-		println!("  width=n         level width 5-15                    default: {}", DEF_WIDTH);
-		println!("  height=n        level height 5-15                   default: {}", DEF_HEIGHT);
-		println!("  box_density=n   box density 1-99                    default: {}", DEF_BOX_DENSITY);
-		println!("  wall_density=n  wall density 1-99                   default: {}", DEF_WALL_DENSITY);
-		println!("  max_depth=n     maximum depth to try to reach 1+    default: {}", DEF_MAX_DEPTH);
-		println!("vars for both:");
-		println!("  verbosity=n     how much information to provide 0-2 default: {}", DEF_VERBOSITY);
+		println!("  seed=n           rng seed (u32)");
+		println!("  width=n          level width 5-15                     default: {}", DEF_WIDTH);
+		println!("  height=n         level height 5-15                    default: {}", DEF_HEIGHT);
+		println!("  box_density=n    box density 1-99                     default: {}", DEF_BOX_DENSITY);
+		println!("  wall_density=n   wall density 1-99                    default: {}", DEF_WALL_DENSITY);
+		println!("  max_depth=n      maximum depth to try to reach 1+     default: {}", DEF_MAX_DEPTH);
 		println!("vars for solve:");
-		println!("  max_moves=n     maximum number of moves to try 1+   default: {}", DEF_MAX_MOVES);
-		println!("  builtin=n       builtin level to solve");
-		println!("  filename=f      custom level filename to solve");
+		println!("  max_moves=n      maximum number of moves to try 1+    default: {}", DEF_MAX_MOVES);
+		println!("  builtin=n        builtin level to solve");
+		println!("  filename=f       custom level filename to solve");
+		println!("vars for speed_test:");
+		println!("  speed_test_read=f   filename to compare results with");
+		println!("  speed_test_write=f  filename to write results to");
+		println!("vars for all:");
+		println!("  verbosity=n      how much information to provide 0-2  default: {}", DEF_VERBOSITY);
 		println!("");
 	} else if mode == Mode::Make {
 		// create level
@@ -276,14 +348,14 @@ fn main() -> std::io::Result<()> {
 		output_str += &format!("depth: {}\n", solution.depth);
 		output_str += &format!("moves: {}\n", solution.moves);
 		output_str += &format!("path: {}\n", solution.path);
-		output_str += &format!("time: {:.1}\n", (solution.msecs+500_f64)/1000_f64);
+		output_str += &format!("time: {:.2}\n", solution.secs);
 		output_str += &format!("seed: {}\n", seed);
 		output_str += &format!("{}\n", level_params);
 		println!("{}",output_str);
 
 		// save level to disk if it meets threshold
-		if solution.moves as usize > (width-1)*(height-1) {
-			let filename = format!("levels/rl-{}x{}-b{}-d{}-m{}-t{:.1}-{}.txt", unsolved_level.w, unsolved_level.h, unsolved_level.get_box_count(), solution.depth, solution.moves, solution.msecs/1000_f64, unsolved_level.get_title_str());
+		if solution.moves as usize > width*height {
+			let filename = format!("levels/rl-{}x{}-b{}-d{}-m{}-t{:.1}-{}.txt", unsolved_level.w, unsolved_level.h, unsolved_level.get_box_count(), solution.depth, solution.moves, solution.secs, unsolved_level.get_title_str());
 			let mut fout = File::create(&filename).unwrap();
 			let result = fout.write_all(output_str.as_bytes());
 			if !result.is_ok() {
@@ -320,39 +392,58 @@ fn main() -> std::io::Result<()> {
 				output_str += &format!("depth: {}\n", sol.depth);
 				output_str += &format!("moves: {}\n", sol.moves);
 				output_str += &format!("path: {}\n", sol.path);
-				output_str += &format!("time: {:.1}\n", (sol.msecs/1000_f64));
+				output_str += &format!("time: {:.2}\n", (sol.secs));
 				println!("{}", output_str);
 			},
 			None => {
 			},
 		};
-	} else { // mode = profile
+	} else { // mode = speed_test
 		// Solve levels 0 to X and check they solved correctly
 		let mut success = true;
 		let mut warnings = false;
 		let mut solutions = Vec::<Option::<Solution>>::new();
 		let mut stored_times = Vec::<f64>::new();
-		let top_level = 20;
-		for level_num in 0..=top_level {
-			let level = Level::from_builtin(level_num).expect(&format!("Unable to open builtin level {}!", builtin));
-			println!("Solving level {}...",level_num);
-
+		if !verify_builtins() {
+			return Ok(());
+		}
+		let mut p = SpeedTest::new();
+		if speed_test_read.len() > 0 {
+			p = SpeedTest::from_file(&speed_test_read);
+		}
+		let mut save_speed_test_string = String::from("# boxboppertool speed_test\n# num(u16), title(str), depth(u16), moves(u16), path(str), time(f64:s)\n");
+		for level_num in 0..=builtin as usize {
+			let level = Level::from_builtin(level_num).expect(&format!("Unable to open builtin level {}!", level_num));
+			println!("Solving level {} \"{}\"...",level_num,level.get_keyval_or("title","untitled"));
+			
 			let solution = solve_level(&level, max_moves, max_maps, verbosity);
+
 			match &solution {
 				Some(sol) => {
-					if level.get_keyval("depth").parse::<u16>().expect("Builtin depth error") != sol.depth {
-						println!("  Depth mismatch (stored: {}, profiled: {})", level.get_keyval("depth"), sol.depth);
-						warnings = true;
+					if speed_test_read.len() > 0 {
+						if level_num >= p.data.len() {
+							println!("  Level not in read speed_test file");
+							success = false;
+						} else {
+							if p.get_speed_test(level_num).unwrap().title != level.get_keyval_or("title","untitled") {
+								println!("  Title mismatch (prev: {}, this: {})", p.get_speed_test(level_num).unwrap().title, level.get_keyval_or("title","untitled"));
+								warnings = true;
+							}
+							if p.get_speed_test(level_num).unwrap().depth != sol.depth {
+								println!("  Depth mismatch (prev: {}, this: {})", p.get_speed_test(level_num).unwrap().depth, sol.depth);
+								warnings = true;
+							}
+							if p.get_speed_test(level_num).unwrap().moves != sol.moves {
+								println!("  Moves mismatch (prev: {}, this: {})", p.get_speed_test(level_num).unwrap().moves, sol.moves);
+								warnings = true;
+							}
+							if p.get_speed_test(level_num).unwrap().path != sol.path {
+								println!("  Path differs\n  prev: {}\n  this: {}", p.get_speed_test(level_num).unwrap().path, sol.path);
+								warnings = true;
+							}
+						}
 					}
-					if level.get_keyval("moves").parse::<u16>().expect("Builtin moves error") != sol.moves {
-						println!("  Moves mismatch (stored: {}, profiled: {})", level.get_keyval("moves"), sol.moves);
-						warnings = true;
-					}
-					if level.get_keyval("path") != sol.path {
-						println!("  Path differs\n  Stored:   {}\n  Profiled: {}", level.get_keyval("path"), sol.path);
-						warnings = true;
-					}
-					stored_times.push(level.get_keyval("time").parse::<f64>().expect("Builtin level time error"));
+					save_speed_test_string += &format!("{}, {}, {}, {}, {}, {}\n", level_num, level.get_keyval_or("title","untitled"), sol.depth, sol.moves, sol.path, sol.secs);
 				},
 				None => {
 					println!("  Failed to find solution");
@@ -364,27 +455,46 @@ fn main() -> std::io::Result<()> {
 		}
 		if success {
 			println!();
-			if !warnings { println!("Profile OK."); }
-			else { println!("Profile OK (with warnings)."); }
+			if !warnings { println!("Speed Test OK."); }
+			else { println!("Speed Test OK (with warnings)."); }
 			println!();
-			println!("-------------------------------------");
-			println!(" Level | Stored Time | Profiled Time ");
-			println!("-------------------------------------");
+			println!("-------------------------------");
+			println!(" Level | Prev Time | This Time ");
+			println!("-------------------------------");
 			let mut total_time = 0_f64;
 			let mut total_time_s = 0_f64;
-			for level_num in 0..=top_level {
-				let t = solutions[level_num].as_ref().unwrap().msecs / 1000_f64;
+			for level_num in 0..=builtin as usize {
+				let t = solutions[level_num].as_ref().unwrap().secs;
 				total_time += t;
-				total_time_s += stored_times[level_num];
-				println!("   {:>2}    {:>8.3}      {:>8.3}", level_num, stored_times[level_num], t);
+				if speed_test_read.len() > 0 {
+					let pld = p.get_speed_test(level_num);
+					let pt = if pld.is_some() { pld.unwrap().time } else { 0_f64 };
+					total_time_s += pt;
+					println!("  {:>4}   {:>9.3}   {:>9.3}", level_num, pt, t);
+				} else  {
+					println!("  {:>4}   {:>9}   {:>9.3}", level_num, " ", t);
+				}
 			}
-			println!("-------------------------------------");
-			println!(" Total | {:>8.3}    | {:>8.3}", total_time_s, total_time);
-			println!("-------------------------------------");
-			println!(" Improvement: {:>4.1}%", (total_time_s - total_time) / total_time_s * 100_f64);
+			println!("-------------------------------");
+			if speed_test_read.len() > 0 {
+				println!(" Total | {:>9.3} | {:>9.3}", total_time_s, total_time);
+				println!("-------------------------------");
+				println!(" Improvement: {:>4.1}%", (total_time_s - total_time) / total_time_s * 100_f64);
+				} else {
+				println!(" Total | {:>9} | {:>9.3}", " ", total_time);
+				println!("-------------------------------");
+			}
+			if speed_test_write.len() > 0 {
+				let result = std::fs::write(&speed_test_write, save_speed_test_string);
+				if result.is_ok() {
+					println!("Speed Test saved to file {}", speed_test_write);
+				} else {
+					println!("Failed to save Speed Test to file {}", speed_test_write);
+				}
+			}
 		} else {
 			println!();
-			println!("Profile failed.");
+			println!("Speed Test failed.");
 			println!();
 		}
 	}

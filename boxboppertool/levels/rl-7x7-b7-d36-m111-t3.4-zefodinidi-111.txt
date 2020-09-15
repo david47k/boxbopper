@@ -1,0 +1,22 @@
+#########
+#O* OO*&#
+#  # # ##
+# ###   #
+# ## ** #
+#     * #
+#O O@* ##
+#  O #  #
+#########
+
+title: zefodinidi-111
+depth: 36
+moves: 111
+path: LDDRDDLLLLDLLUUUUURRLDLDDDDRRULRRRRRUULDRDLLLLDDRULURURURRDDLDLLLURURDRDLLDLLLUURRDLRRRURRULULDDRDLLRUULDLLLUUU
+time: 3.40
+seed: 30639
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

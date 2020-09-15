@@ -1,0 +1,23 @@
+##########
+# #   &###
+##@*@#*# #
+# # ## * #
+#O*O*    #
+# #  O# ##
+#     O  #
+## #  #  #
+# # ###O##
+##########
+
+title: bokeneriji-151
+depth: 40
+moves: 151
+path: LLLDDDRRDDLLLLUURRDULLDDRRURRULLRRDDRRUULLDLLUUUURRRDDUULLLDDDDRRULRDDRRUULUUULLLDDDRRDDRRUURULDDDLLDLULLLUURRDULLDDRRRRUURLLLDRULLRUUURRRDDRDDDDUUULLL
+time: 0.42
+seed: 30491
+width: 8
+height: 8
+wall_density: 35
+box_density: 12
+num_boxxes: 7
+

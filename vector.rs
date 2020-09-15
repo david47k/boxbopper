@@ -3,6 +3,8 @@
 use wasm_bindgen::prelude::*;
 use js_sys::Array;
 
+use crate::stackstack::{StackStack8};
+
 // A point and a direction can both be implemented as a Vector
 
 #[wasm_bindgen]
@@ -10,22 +12,22 @@ use js_sys::Array;
 pub struct Vector (pub i32, pub i32);
 
 #[derive(Clone, Copy, PartialEq, Ord, PartialOrd, Eq)]
-pub struct VectorSm (pub i8, pub i8);
+pub struct VectorSm ( pub i8, pub i8 );
 impl VectorSm {
 	pub fn fromv(v: &Vector) -> Self {
-		Self(v.0 as i8, v.1 as i8)
+		Self ( v.0 as i8, v.1 as i8 )
 	}
 	pub fn intov(&self) -> Vector {
 		Vector(self.0 as i32, self.1 as i32)
 	}
 	pub fn new(x: i8, y: i8) -> Self {
-		Self(x,y)
+		Self (x,y)
 	}
 	pub fn add(&self, dir: &Self) -> Self {
-		Self(self.0 + dir.0, self.1 + dir.1)
+		Self (self.0 + dir.0, self.1 + dir.1)
 	}
 	pub fn double(&self) -> Self {
-		Self(self.0 * 2, self.1 * 2)
+		Self (self.0 * 2, self.1 * 2)
 	}
 	pub fn mul(&self, n: i8) -> Self {
 		Self(self.0 * n, self.1 * n)
@@ -66,6 +68,7 @@ impl VectorSm {
 	}
 }
 
+
 #[wasm_bindgen]
 impl Vector {
 	#[wasm_bindgen(constructor)]
@@ -101,12 +104,14 @@ impl Vector {
 // non-js
 impl Vector {
 	pub fn add_dir(&self, dir: &Move) -> Self {
-		match dir {
+		let d = *dir as i32; //1, 2, 4, 8
+		Self(self.0+((d==1) as i32)-((d==3) as i32),self.1-((d==0) as i32)+((d==2) as i32))
+/*		match dir {
 			Move::Up    => Self( self.0,   self.1-1 ),
 			Move::Right => Self( self.0+1, self.1   ),
 			Move::Down  => Self( self.0,   self.1+1 ),
 			Move::Left  => Self( self.0-1, self.1   ),
-		}		
+		}		*/
 	}
 	pub fn add_dir2(&self, dir: &Move) -> Self {
 		match dir {
@@ -166,6 +171,18 @@ impl Move {
 			3 => Some(Move::Left),
 			_ => None,
 		}
+	}	
+	pub fn from_u32_unchecked(n: u32) -> Move {
+		if n==0 { Move::Up }
+		else if n==1 { Move::Right }
+		else if n==2 { Move::Down }
+		else { Move::Left }
+	}
+	pub fn from_u8_unchecked(n: u8) -> Move {
+		if n==0 { Move::Up }
+		else if n==1 { Move::Right }
+		else if n==2 { Move::Down }
+		else { Move::Left }
 	}
 	pub fn from_u8(n: u8) -> Option<Move> {
 		match n {
@@ -188,78 +205,149 @@ impl Move {
 
 pub const ALLMOVES: [Move; 4] = [ Move::Up, Move::Right, Move::Down, Move::Left ];
 
+
 #[derive(Clone)]
 pub struct ShrunkPath {
 	count: u16,
-	data: Vec::<u8>,
+	data: Vec::<u32>,
 }
 
 impl ShrunkPath {
 	pub fn new() -> Self {
 		Self {
 			count: 0,
-			data: Vec::<u8>::with_capacity(8),
+			data: Vec::<u32>::new(),
+		}
+	}
+	pub fn with_capacity(c: usize) -> Self {
+		Self {
+			count: 0,
+			data: Vec::<u32>::with_capacity(c/16+1),
 		}
 	}
 	pub fn len(&self) -> u16 {
 		self.count
 	}
 	pub fn from_path(path: &Vec::<Move>) -> Self {
-		let mut data = Vec::<u8>::with_capacity(path.len()/4+1);
-		for block in 0..path.len()/4 {
-			let mut x: u8 = path[block*4+0] as u8;
-			x <<= 2;
-			x |= path[block*4+1] as u8;
-			x <<= 2;
-			x |= path[block*4+2] as u8;
-			x <<= 2;
-			x |= path[block*4+3] as u8;
-			data.push(x);
+		let mut data = Vec::<u32>::new();
+		let mut x: u32 = 0;
+		for i in 0..path.len() {
+			if i % 16 == 0 && i != 0 {
+				data.push(x);
+				x=0;
+			}
+			x |= (path[i] as u32) << (2*(i%16));
 		}
-		let base = path.len()/4*4;
-		let mut x: u8 = 0;
-		for i in base..path.len()%4 {
-			if i != 0 { x <<= 2; }
-			x |= path[base + i] as u8;
-		}
-		data.push(x);
+		if path.len() > 0 { data.push(x); }
 
 		Self {
 			count: path.len() as u16,
 			data: data,
 		}
 	}
+	pub fn push(&mut self, move1: &Move) {
+		if self.count%16==0 { 
+			// append new block
+			self.data.push(*move1 as u32);
+		} else {
+			// modify existing block
+			let idx = self.count as usize/16;
+			let mut x = self.data[idx];
+			x |= (*move1 as u32) << (2*(self.count%16));
+			self.data[idx] = x;
+		}
+		self.count += 1;		
+	}
+	pub fn get_u(&self, i: usize) -> u32 {
+		if i >= self.count as usize { panic!("ShrunkPath::get index is too high"); }
+		return (self.data[i/16] >> (2*(i%16))) & 0x03;
+	}
+	pub fn set_u(&mut self, i: usize, val: u32) {
+		if i >= self.count as usize { panic!("ShrunkPath::set index is too high"); }
+		let bidx = 2*(i%16);
+		let mask: u32 = ! ( 0x03 << bidx );
+		let maskdata = self.data[i/16] & mask;
+		let newdata = maskdata | (val << bidx);
+		self.data[i/16] = newdata;
+	}
+	pub fn append_path(&mut self, path: &Vec::<Move>) {
+		for move1 in path {
+			if self.count%16==0 { 
+				// append new block
+				self.data.push(*move1 as u32);
+			} else {
+				// modify existing block
+				let idx = self.count as usize/16;
+				let mut x = self.data[idx];
+				x |= (*move1 as u32) << (2*(self.count%16));
+				self.data[idx] = x;
+			}
+			self.count += 1;
+		}
+	}	
+	pub fn append_path_ss8(&mut self, ss: &StackStack8) {
+		for i in 0..ss.next {
+			self.push(&Move::from_u8_unchecked(ss.stack[i]));
+		}
+	}
+	pub fn _append_path_sp(&mut self, npath: &ShrunkPath) {	// BUGGY !!!!!
+		// for each block to append
+		// split block at alignment point into two blocks
+		// 0xBBAAAAAA			length of B is self.length%16, length of A is 15-(self.length%16)
+		// 0xAAAAAA00           A gets shifted left appropriate amount
+		// 0x000000BB           B gets shifted right appropriate amount
+		// 0xAAAAdddd			A gets placed on existing data
+		// 0x0000BBBB			A new block gets added for B
+		// repeat
+		// set our count		self.count += path.count
+		if npath.count == 0 { return; }
+		for ni in 0..=(npath.count/16) as usize {
+			if ni == (npath.count/16) as usize && npath.count%16 == 0 { 
+				return 
+			};
+			let b_len = self.count%16;		// 0 to 15 i.e. might be all zeros if empty
+			let a_len = 16-b_len;			// 16 to 1 i.e. always exists, may take up entire u32
+			let b_shr = 32-(2*b_len); 		// will shr between 2 (len=15) and 32 (len=0)
+			let a_shl = 32-(2*a_len); 		// will shl between 30 (len=2) and 0  (len=16)
+			let block_a = npath.data[ni] << a_shl;
+			let block_b = npath.data[ni] >> b_shr;
+			if self.count % 16 == 0 { // perfect alignment, append new block, i.e. b_len will have length zero!
+				self.data.push(block_a);
+			} else {
+				self.data[self.count as usize/16] |= block_a;
+				self.data.push(block_b);
+			}
+			self.count += if ni == (npath.count as usize/16) { npath.count%16 } else { 16 };
+		}
+		
+	}
 	pub fn to_path(&self) -> Vec::<Move> {
 		let mut path = Vec::<Move>::with_capacity(self.count as usize);
-		for block in 0..(self.count/4) as usize {
-			path.push( Move::from_u8(self.data[block] >> 6 & 0x03).unwrap() );
-			path.push( Move::from_u8(self.data[block] >> 4 & 0x03).unwrap() );
-			path.push( Move::from_u8(self.data[block] >> 2 & 0x03).unwrap() );
-			path.push( Move::from_u8(self.data[block] & 0x03).unwrap() );
-		}
-		if self.count%4 != 0 {
-			let r = self.count%4;			// this will give number of 1,2,3 
-			let base = (self.count/4) as usize;
-			for i in 0..r {
-				let n = r - i - 1;
-				path.push( Move::from_u8(self.data[base] >> (n*2) & 0x03).unwrap() );
-			}
+		for i in 0..self.count as usize {
+			let block = self.data[i/16];
+			let shr = block >> (2*(i%16));
+			path.push( Move::from_u32( shr & 0x03 ).unwrap() );
 		}
 
 		path
 	}
-	pub fn push(&mut self, move1: &Move) {
-		if self.count%4==0 { 
-			// append new block
-			self.data.push(*move1 as u8);
-		} else {
-			// modify existing block
-			let mut x = self.data[(self.count/4) as usize];
-			x <<= 2;
-			x |= *move1 as u8;
-			self.data[(self.count/4) as usize] = x;
-		}
-		self.count += 1;
+	pub fn pop(&mut self) -> Move {
+		if self.count == 0 { panic!("stack underflow in ShrunkPath::pop"); }
+		self.count -= 1;
+		let i = self.count as usize;
+		let block = self.data[i/16];
+		let shr = block >> (2*(i%16));
+		return Move::from_u32( shr & 0x03 ).unwrap();
+	}
+	pub fn reverse(&mut self) {
+		if self.count < 2 { return; }
+		for i in 0..(self.count as usize / 2) {
+			let revi = self.count as usize - i - 1;
+			let iv = self.get_u(i);
+			let rv = self.get_u(revi);
+			self.set_u(i, rv);
+			self.set_u(revi, iv);
+		}		
 	}
 	pub fn to_string(&self) -> String {
 		let path = self.to_path();

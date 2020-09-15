@@ -1,0 +1,22 @@
+#########
+#O   O# #
+#**#O#O #
+#& * #O##
+##*#O* ##
+#    #* #
+#  # #  #
+#  # * O#
+#########
+
+title: johohuyezi-121
+depth: 32
+moves: 121
+path: RDDRRDDRRUUUUDDDDLLUUURLDDDRRUUULLUUULLDDRLUURRDDDRRDDDLLUUUUUDLLLURURRDDDDLLLDDRULURRLUURRDDUUUULLDLDRRLDDRRUUDRRDDDLLUU
+time: 0.03
+seed: 30898
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

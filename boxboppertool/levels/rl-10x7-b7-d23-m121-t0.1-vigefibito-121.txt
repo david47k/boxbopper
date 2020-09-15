@@ -1,0 +1,22 @@
+############
+##    #@# ##
+#@  # * O  #
+## ### **# #
+##    #*   #
+###O*&# # O#
+#  # OO   ##
+# ###### # #
+############
+
+title: vigefibito-121
+depth: 23
+moves: 121
+path: ULLLUUURRRDRRRDULLDRULLULLDLDDRRRDDRRRRUURUULLLDDRRLLUURDURRDDLDDLLLLULULLUUURRRDRDRDDUURURRDDLDDLLLRRRUULULLURDDDURRDDLL
+time: 0.06
+seed: 30167
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

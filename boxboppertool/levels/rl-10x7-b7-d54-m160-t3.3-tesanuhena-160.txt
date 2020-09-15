@@ -1,0 +1,22 @@
+############
+##   #   ###
+# O## *  OO#
+#  ## * ####
+#O*   * ## #
+# *# # O#  #
+#**O #O##  #
+#& #   ##  #
+############
+
+title: tesanuhena-160
+depth: 54
+moves: 160
+path: URLUURUULDRDDLDDRUUURRDDLRUULLDLDDRURRUULLULDDURRRDDDRRUURUULDLLDDLLULUURDRRRRURDUUULDLDRDLLDDDRRUUUUDLLDDLLULUURDRRDDLLDLUUDRRRUULLDLDRUURRRUURRRRLLLDDDURULURR
+time: 3.34
+seed: 30229
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

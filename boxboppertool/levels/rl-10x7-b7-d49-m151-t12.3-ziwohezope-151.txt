@@ -1,0 +1,22 @@
+############
+#  #########
+#O     * # #
+#  O#*@*  ##
+##*O#  * ###
+#  #  #O*&##
+# O   #  ###
+#O ##  #####
+############
+
+title: ziwohezope-151
+depth: 49
+moves: 151
+path: LUUULLLLLDLLUURDLDRURRRRRRDDLURULLLDRULLLDLDDLDDRURRURURUULLLDLDDUULUURDLDRURRRRDDLURULLLRRDDDDLLLUUULUURDRRRRRRDDLURDDDLUURUULLDLDRUURRDLDUULLLLLDDDLD
+time: 12.25
+seed: 30395
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

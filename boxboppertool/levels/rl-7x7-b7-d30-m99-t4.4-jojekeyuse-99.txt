@@ -1,0 +1,22 @@
+#########
+##      #
+# * O*###
+#O  O   #
+# #* #  #
+# #O *@ #
+#  #*#O #
+#  O*&# #
+#########
+
+title: jojekeyuse-99
+depth: 30
+moves: 99
+path: LUUUULLLURDRRRRRDDDLUURULLLDDRLUULLUURRDDLLURDRRRDDLLLUULUURRRDULLLDDRDDRRRUULLDLDRRLUURUULDULLDRDD
+time: 4.36
+seed: 30565
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

@@ -1,0 +1,22 @@
+############
+#   O# #   #
+##  ##  # ##
+##*O*    ###
+## *##*O  ##
+#O@ ## ### #
+# O *   *&##
+#O# #   # ##
+############
+
+title: bukojehusa-126
+depth: 47
+moves: 126
+path: LLDLLULLUUUULURDDDLURDDDLULDURRUULDURUULDDRDDDLLURDRUUULDRDLUUUURDDRRRDRRULLLLLDLDDRRRDRRULUUDDLLLULUURUULDDDURRRRURDLDDDLLLUU
+time: 1.58
+seed: 30173
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

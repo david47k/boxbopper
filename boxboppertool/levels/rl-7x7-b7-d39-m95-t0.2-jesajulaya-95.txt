@@ -1,0 +1,22 @@
+#########
+#  O * O#
+#  #   ##
+#  *O*  #
+##O*O# *#
+# #O## O#
+## &* * #
+## #   ##
+#########
+
+title: jesajulaya-95
+depth: 39
+moves: 95
+path: RDRRUUUULULDLDLUUDRRRRRDLDDDLLURDRUUURULDDDRULUULLLDLULUURDDRRUURRDDDDRDLUUURDLDDDLLURDRUUURULL
+time: 0.16
+seed: 30554
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

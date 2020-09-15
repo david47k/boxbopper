@@ -1,0 +1,22 @@
+#########
+# #  #&##
+# ##O#@ #
+##  * O #
+##*  # O#
+#  ****##
+#      O#
+## ##O O#
+#########
+
+title: tarerafere-79
+depth: 38
+moves: 79
+path: DRDDLDDLLULUURDDLDRRRUURUULDDDLDLUUURRURDLDDLDLLLLURRRDRDRUUUULLLLDDLDRRRURDRUU
+time: 3.25
+seed: 30872
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

@@ -14,3 +14,4 @@ o  tool: solve: optional best_depth instead of best_moves
 o  Publish!
 o  Consider adding an undo button
 o  tool: Consider bisolve (where solve and unsolve meet in middle)
+o  tool: Consider fixed-size stack arrays for some things (if proven faster than VEC) struct WhateverStack { data: type[], usize endptr }

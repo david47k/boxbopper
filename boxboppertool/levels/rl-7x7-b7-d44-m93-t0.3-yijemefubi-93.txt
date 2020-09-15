@@ -1,0 +1,22 @@
+#########
+#  #  @##
+### OO O#
+#    **##
+# * #   #
+## *O#  #
+##  *%* #
+#   ##O #
+#########
+
+title: yijemefubi-93
+depth: 44
+moves: 93
+path: LLULULURRDUURRRDDRDDLUULULULDLDDRDDLUUULURRRURRDDLURULRDDDDLLLDLUUULURRRLDLDDRRRRUULULLDDLDRR
+time: 0.30
+seed: 30945
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

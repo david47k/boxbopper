@@ -1,0 +1,22 @@
+#########
+####@O  #
+# #   ###
+# **# *&#
+#O#  * ##
+#O#  ## #
+# * O@O #
+#   # ###
+#########
+
+title: vafiromaro-101
+depth: 30
+moves: 101
+path: LDLUULLDDRDDRLLDLLURRRUULDUUURRDRDLLRUULLDDRDDLDLLUUUURLDDDDRRULDLUUDRRRUULDRDLLRUURRUULLDDDRDLDLLURR
+time: 0.01
+seed: 30964
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

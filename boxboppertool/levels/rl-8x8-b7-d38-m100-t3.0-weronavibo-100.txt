@@ -1,0 +1,23 @@
+##########
+# O *   O#
+### * #  #
+#   * ## #
+# #   ## #
+## #**@###
+##  O *&O#
+# OO  ####
+## ##  # #
+##########
+
+title: weronavibo-100
+depth: 38
+moves: 100
+path: LLLRUULLUUURRDDLDLUUDRRUULLDDRDDRDDLUUDDLLURDRRUULDRDLLURURUULDDUULUURDDUURRRLLDDDDLDRDLURRRLLUUULDD
+time: 3.01
+seed: 30429
+width: 8
+height: 8
+wall_density: 35
+box_density: 12
+num_boxxes: 7
+

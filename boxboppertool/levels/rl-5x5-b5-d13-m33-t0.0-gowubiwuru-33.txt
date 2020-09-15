@@ -1,0 +1,20 @@
+#######
+##&## #
+#O*OOO#
+#     #
+#***@ #
+#     #
+#######
+
+title: gowubiwuru-33
+depth: 13
+moves: 33
+path: DLDRRURRDDDLLURUDDRUUDDLLLLUUDRRU
+time: 0.01
+seed: 2
+width: 5
+height: 5
+wall_density: 20
+box_density: 20
+num_boxxes: 5
+

@@ -1,0 +1,22 @@
+############
+# O*      ##
+#   ## *  ##
+#O    #O # #
+# # # * #  #
+# # O #   ##
+### *@@ * ##
+# ## &# O ##
+############
+
+title: nupamidafu-108
+depth: 46
+moves: 108
+path: LUDRUULDLUUULUURRRRRDDDDRRDDLLUURDLLLDLULUUURRDDUULLLUURDLDRDDDRRUUULLRRDDDRRURRDLLUULRURURULLDULLLLDDLRRRDD
+time: 49.18
+seed: 30318
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

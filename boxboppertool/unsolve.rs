@@ -6,7 +6,7 @@ use boxbopperbase::vector::{Move,ShrunkPath};
 
 use rayon::prelude::*;
 use std::rc::Rc;
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 
 use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
 
@@ -45,6 +45,7 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 	let base_map = PathMap::new_from_level(&base_level1);
 	let base_level = base_level1.clear_boxxes_cloned();
 
+
 	// A map is complete when the last box is pushed into place. So when unsolving, we need to start with the human
 	// in the appropriate spot(s) they'd be after pushing the last box.
 	// To do this, we unsolve once to find the appropriate spot(s), then re-solve to place the human and box in the final state.
@@ -66,8 +67,10 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 	}
 	let mut mapsr = Rc::new(mapsr);
 
-	let mut non_contenders = BTreeSet::<CmpData>::new();
+	let mut non_contenders = BTreeMap::<CmpData,u16>::new();
 	let mut contenders = Vec::<PathMap>::new();	
+	let mut contenders_2 = Vec::<PathMap>::new();
+	let mut max_max_counter = 0;
 
 	for count in 0..=(max_depth+1) {
 		println!("--- Depth {:>2} ---", count);
@@ -87,67 +90,97 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 		dedupe_equal_levels(&mut maps);
 		if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 
-		// mapsr --> contenders --> non-contenders	
 
-		// keep top 20 mapsr, rest to non-contenders, but that means we gotta sort mapsr by depth/path length
-		if verbosity > 1 { println!("sorting old maps"); }
-		Rc::get_mut(&mut mapsr).unwrap().par_sort_unstable_by(|a,b| a.depth.partial_cmp(&b.depth).unwrap());
-		let split_idx = if mapsr.len() > 20 { mapsr.len() - 20 } else { mapsr.len() };
-		let mut top_20 = Rc::get_mut(&mut mapsr).unwrap().split_off(split_idx);
-		// send rest of mapsr to non_contenders
+		// shuffle mapsr->contenders->contenders_2->non_contenders
+		if verbosity > 1 { println!("keep top contenders..."); }
 		if non_contenders.len() < max_maps * 4 {
-			mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data); });
+			contenders_2.iter().for_each(|m| { 
+				let pre = non_contenders.get(&m.level.cmp_data);
+				if (pre.is_some() && *pre.unwrap() > m.path.len()) || pre.is_none() {
+					non_contenders.insert(m.level.cmp_data, m.path.len()); 
+				}
+			});
 		} else {
 			if verbosity > 0 { println!("--- Hit maximum old maps, not adding any more ---"); }
-		}
+		} 
+		contenders_2 = contenders;
+		contenders = mapsr.to_vec();
+		
 		// don't need mapsr anymore
-		std::mem::drop(mapsr);
+		//std::mem::drop(mapsr);
 
-		if verbosity > 1 { println!("keep top 20 contenders..."); }
-
-		// save top20 to contenders
-		contenders.append(&mut top_20);
-
-		// keep top 20 contenders
-		if contenders.len() > 20 {
-			// save excess contenders to non-contenders
-			let keep = contenders.split_off(contenders.len()-20);
-			if non_contenders.len() < max_maps * 4 {
-				contenders.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data); });
-			} else {
-				if verbosity > 0 { println!("--- Hit maximum old maps, not adding any more ---"); }
+		// Remove from maps anything that is in c2 AND we already found a shorter path
+		if verbosity > 1 { println!("deduping using c2: before {:>7}", maps.len()); }
+		maps.par_iter_mut().for_each(|m| {
+			let v = contenders_2.binary_search_by(|c2m| c2m.level.cmp_data.partial_cmp(&m.level.cmp_data).unwrap());
+			if v.is_ok() {
+				if contenders_2[v.unwrap()].path.len() <= m.path.len() {
+					m.flag = true;
+				}
 			}
-			contenders = keep;					// copy keep back
-		}
-
-		// remove from maps, anyhthing that is in non_contenders
-		if verbosity > 1 { println!("deduping from n-c: before {:>7}", maps.len()); }
-		maps.par_iter_mut().for_each(|m| if non_contenders.contains(&m.level.cmp_data) { m.flag = true; }); 
+		});
 		maps.retain(|m| !m.flag);
-		if verbosity > 1 { println!("deduping from n-c: after  {:>7}", maps.len()); }
+		if verbosity > 1 { println!("deduping using c2: after  {:>7}", maps.len()); }
+
+		// Remove from maps anything that is in c AND we already found a shorter path
+		if verbosity > 1 { println!("deduping using c: before {:>7}", maps.len()); }
+		maps.par_iter_mut().for_each(|m| {
+			let v = contenders.binary_search_by(|cm| cm.level.cmp_data.partial_cmp(&m.level.cmp_data).unwrap());
+			if v.is_ok() {
+				if contenders[v.unwrap()].path.len() <= m.path.len() {
+					m.flag = true;
+				}
+			}
+		});
+		maps.retain(|m| !m.flag);
+		if verbosity > 1 { println!("deduping using c2: after  {:>7}", maps.len()); }		
+		
+		// Remove from maps anything that is in non_contenders AND we already found a shorter path
+		if verbosity > 1 { println!("deduping using n-c: before {:>7}", maps.len()); }
+		maps.par_iter_mut().for_each(|m| {
+			let v = non_contenders.get(&m.level.cmp_data);
+			if v.is_some() {
+				if *v.unwrap() <= m.path.len() {
+					m.flag = true;
+				}
+			}
+		});
+		maps.retain(|m| !m.flag);
+		if verbosity > 1 { println!("deduping using n-c: after  {:>7}", maps.len()); }
 
 		// check if we've run out of options, if we have, then contenders is what we have
 		if maps.len() == 0 {
-			if verbosity > 0 { println!("-- Out of options (1) (no further moves possible) --"); }
+			if verbosity > 0 { println!("-- No further moves possible --"); }
+			if contenders.len() < 10 {
+				contenders.append(&mut contenders_2);
+			}
 			break;
 		}		
 
 		// check if we've hit max depth, in which case we have maps / contenders
 		if count > max_depth {
-			// check if we've run out of options
-			if verbosity > 0 { println!("-- Out of options (3) (hit depth limit) --"); }
+			if verbosity > 0 { println!("-- Hit depth limit --"); }
 			contenders.append(&mut maps);
+			if contenders.len() < 10 {
+				contenders.append(&mut contenders_2);
+			}
 			break;
 		}
 
 		// check if we have waaaaaaaaaaay too many maps
 		if maps.len() > max_maps/8 {
-			// These are all at same depth so we can just randomly reduce it
-			println!("--- Hit maximum unsolve maps {} ---",max_maps/8); 
+			if max_max_counter == 3 { // We've hit the limit too many times, it'll be a pain to solve
+				println!("--- Hit maximum unsolve maps limit (4), finishing ---"); 
+				
+				contenders = maps;
+				break;
+			}
+			println!("--- Hit maximum unsolve maps {}, reducing ---",max_maps/8); 
 			while maps.len() > max_maps/8 {
 				let mut i = 0;
-				maps.retain(|_m| { i+=1; return i%2==1; } );
+				maps.retain(|_m| { i+=1; return i%2==1; } );	// These are all at same depth so we can just randomly reduce it
 			}
+			max_max_counter += 1;
 		}
 
 		mapsr = Rc::new(maps);
@@ -161,10 +194,16 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 
 	if verbosity > 0 { print!("Contenders size {} -> ",contenders.len()); }
 
-	// re-sort by depth -- maximise depth, otherwise equal
-	contenders.par_sort_unstable_by(|a,b| a.depth.partial_cmp(&b.depth).unwrap() );
+	// re-sort by depth -- maximise depth, maximise moves
+	contenders.par_sort_unstable_by(|a,b| {
+		let o = b.depth.partial_cmp(&a.depth).unwrap();
+		if o == std::cmp::Ordering::Equal {
+			return b.path.len().partial_cmp(&a.path.len()).unwrap();
+		}
+		o
+	});
 
-	let truncsize = 5;
+	let truncsize = 10;
 	contenders.truncate(truncsize);
 	if verbosity > 0 { 
 		println!("{}",contenders.len()); 
@@ -195,7 +234,6 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 		level.set_keyval("moves", &moves.to_string());
 		level.set_keyval("depth", &c.depth.to_string());
 		level.set_keyval("path", &moves_to_string(&path));
-		level.place_human();
 		levels.push(level);
 	}
 	

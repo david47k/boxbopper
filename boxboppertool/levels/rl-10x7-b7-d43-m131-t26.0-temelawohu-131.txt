@@ -1,0 +1,22 @@
+############
+###    O ###
+## #*#  # O#
+# ## # # # #
+# #  # # #*#
+##O*    O  #
+## #*@ @  ##
+##&*O    # #
+############
+
+title: temelawohu-131
+depth: 43
+moves: 131
+path: UURRRRRLDDRRULULUUUULLDDDLDLDDRRRRUUUUUDDDRDRRULLDLUDDLLLLUURRRLLLDDRRURULRDRRULDLLUUUUURRDDDDRDLURRRRUUDDLDLDLLLRUUUUUULLDDDDLRRRR
+time: 25.98
+seed: 30028
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

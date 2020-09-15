@@ -1,0 +1,22 @@
+############
+#  ## #    #
+# @ #    ###
+#     *O# ##
+#   #*#   O#
+# *   @ ##O#
+##   #* @& #
+# O ##     #
+############
+
+title: winafivowa-98
+depth: 33
+moves: 98
+path: DLLUULLLRRRDDLURRRDRUUDLLLUUUULLDRURDDDLDRRRDRULLLUUULLLLDLDDRUULURRRRURDDDLDRUUULLLLDDRRUDLLUURRR
+time: 88.14
+seed: 30082
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

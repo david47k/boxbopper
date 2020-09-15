@@ -17,7 +17,7 @@ extern crate rand_chacha;
 pub struct Solution {
 	pub moves: u16,
 	pub depth: u16,
-	pub msecs: f64,
+	pub secs: f64,
 	pub path: String
 }
 
@@ -73,7 +73,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve(&base_level) ).collect(); // collect_into_vec doesn't seem to be any faster
 
 		// Free up memory used by the vec in mapsr
-		std::mem::drop(mapsr);
+		// std::mem::drop(mapsr); // 2.76, eof 4.79 -> 0, 5.7: commenting out the drop improves speed 1.5% according to VS, but is less memory-friendly
 
 		// Apply key moves
 		if verbosity > 1 { println!("collecting kms..."); }
@@ -94,7 +94,6 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 
 		// Remove from maps anything that is in non_contenders AND our path is equal/longer
 		if verbosity > 1 { println!("deduping using n-c: before {:>7}", maps.len()); }
-		//let mut to_remove = Vec::<usize>::new();
 		maps.par_iter_mut().for_each(|m| {
 			let v = non_contenders.get(&m.level.cmp_data);
 			if v.is_some() {
@@ -130,7 +129,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			println!("Solution in {} moves: {}",max_moves, sol.s);
 		}
 		return Some(Solution {
-			msecs: get_time_ms() - msecs0,
+			secs: (get_time_ms() - msecs0) / 1000_f64,
 			moves: max_moves,
 			depth: sol.depth,
 			path: sol.s.to_string(),

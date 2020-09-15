@@ -1,0 +1,22 @@
+#########
+# # O*  #
+#      ##
+#O#  #  #
+#*%*#   #
+# * #   #
+#  ## # #
+#   #O###
+#########
+
+title: kopevovoya-71
+depth: 22
+moves: 71
+path: DLDDRUURUURUULDRRRULDLLLLDDDRRUUDDLLUUURRDDDLDDLUUUDRRUUURRURDDDRDLULDD
+time: 0.16
+seed: 0
+width: 7
+height: 7
+wall_density: 20
+box_density: 10
+num_boxxes: 4
+

@@ -1,0 +1,22 @@
+#########
+### # #O#
+#  O  O #
+##   ## #
+#O *O*  #
+# # #** #
+# *@O *&#
+##      #
+#########
+
+title: tehizifabu-94
+depth: 35
+moves: 94
+path: LLRRUUUULLLDDRRDRUUULLLDLLDRRRDRRDDLLLLUUUUDLLDDRDRUUURRDRRULLLLLUURRRLDDLUDDDDRRULRURRDLLURUL
+time: 41.96
+seed: 30748
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

@@ -1,0 +1,23 @@
+##########
+#O   # # #
+# O*O * ##
+#O## *#  #
+# #   #  #
+#  *@##  #
+#   O  *&#
+## #*# # #
+# O   # ##
+##########
+
+title: tedotipada-173
+depth: 43
+moves: 173
+path: LLLLUUDLLDDDRRUULRDDLLUURUURDDLLLUUUURURRDDDLDDRRRRUUUULLRRDDDDLLLLUURDLDLLUUUURURRDLRDDLDLDLUUDRRURUURRRDDDDLLLLUURRUDLLDDRRRRUUUULLDDLDLDRULLLDRDDRRUULULDDUURURURURRDDDDLL
+time: 2.34
+seed: 30473
+width: 8
+height: 8
+wall_density: 35
+box_density: 12
+num_boxxes: 7
+

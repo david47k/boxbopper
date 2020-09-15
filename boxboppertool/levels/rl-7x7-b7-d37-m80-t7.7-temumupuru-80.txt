@@ -1,0 +1,22 @@
+#########
+## #&#  #
+#   * O##
+## #O  O#
+#O#  O  #
+#*@*** O#
+#    *  #
+#   ## ##
+#########
+
+title: temumupuru-80
+depth: 37
+moves: 80
+path: DRRDDDDLLLDLLURRRRUULLDRDLDLLUURRDRUDLDLULURRURRRUULLDRDRDRUDDLLUDLLDLURURUDRRUU
+time: 7.75
+seed: 30932
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

@@ -11,6 +11,30 @@ use crate::vector::{Vector,VectorSm};
 use super::Obj;
 use crate::builtins::BUILTIN_LEVELS;
 
+pub fn verify_builtins() -> bool {
+	// check that num matches index
+	let mut ok = true;
+	for i in 0..BUILTIN_LEVELS.len() {
+		let level = Level::from_builtin(i);
+		if level.is_none() {
+			println!("Level index {} is invalid", i);
+			ok = false;
+			continue;
+		}
+		let level = level.unwrap();
+		if level.contains_key("num") {
+			let n = level.get_keyval("num").parse::<u16>().unwrap();
+			if n as usize != i {
+				println!("Level index {} has mismatched num {}", i, n);
+				ok = false;
+			}
+		} else {
+			println!("Warning: Level index {} has no num:", i);
+		}
+	}
+	ok
+}
+
 #[derive(Copy,Clone,PartialEq,PartialOrd,Ord,Eq,Hash)]
 pub struct CmpData {
 	pub human_x: i8,
@@ -119,6 +143,7 @@ impl SpLevel {
 		}
 		
 		level.human_pos = Vector(self.cmp_data.human_x as i32, self.cmp_data.human_y as i32);
+		level.cleared_of_human = false;
 		level
 	}	
 	pub fn get_obj_at_pt(&self, pt: &Vector, base_level: &Level) -> Obj {
@@ -141,7 +166,6 @@ impl SpLevel {
 		}
 	}
 	pub fn get_obj_at_pt_nohuman(&self, pt: &Vector, base_level: &Level) -> Obj {
-		// THIS IS A SLOW FUNCTION...
 		let cmp_data = &self.cmp_data;
 		let idx_bits: usize = pt.0 as usize + pt.1 as usize * self.w as usize;
 		let is_boxx = (cmp_data.blocks[idx_bits/64] & (0x8000_0000_0000_0000 >> (idx_bits%64))) != 0;
@@ -187,15 +211,17 @@ impl SpLevel {
 		Vector(self.cmp_data.human_x as i32, self.cmp_data.human_y as i32)
 	}
 	pub fn get_obj_at_pt_checked(&self, pt: &Vector, base_level: &Level) -> Obj {
-		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= self.h as i32 {
+		//if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= self.h as i32 {			// slower version
+		if ( pt.0 | pt.1 | (self.w as i32 - pt.0 - 1) | (self.h as i32 - pt.1 - 1)  ) < 0 {		// faster version
 			Obj::Wall
 		} else {
 			self.get_obj_at_pt(pt, base_level)
 		} 
 	} 
 	pub fn get_obj_at_pt_nohuman_checked(&self, pt: &Vector, base_level: &Level) -> Obj {
-		if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= self.h as i32 {
-			Obj::Wall
+		//if pt.0 < 0 || pt.0 >= self.w as i32 || pt.1 < 0 || pt.1 >= self.h as i32 {			// slower version
+		if ( pt.0 | pt.1 | (self.w as i32 - pt.0 - 1) | (self.h as i32 - pt.1 - 1)  ) < 0 {		// faster version
+				Obj::Wall
 		} else {
 			self.get_obj_at_pt_nohuman(pt, base_level)
 		} 
@@ -426,7 +452,7 @@ impl Level {
 	pub fn get_title_str(&self) -> String {
 		return self.keyvals.get(&"title".to_string()).unwrap_or(&"untitled".to_string()).to_string();
 	}
-	pub fn contains_key(&self, key: &String) -> bool {
+	pub fn contains_key(&self, key: &str) -> bool {
 		self.keyvals.contains_key(key)
 	}
 	pub fn get_keyval(&self, key: &str) -> String {
@@ -732,8 +758,11 @@ impl Level {
 	pub fn get_hole_pts(&self) -> &Vec<Vector> {
 		&self.hole_pts
 	}
-	pub fn vector_in_bounds(&self, v: &Vector) -> bool {
+	pub fn vector_in_bounds_orig(&self, v: &Vector) -> bool {
 		v.0 >= 0 && v.0 < (self.w as i32) && v.1 >= 0 && v.1 < (self.h as i32)
+	}
+	pub fn vector_in_bounds(&self, v: &Vector) -> bool {
+		( v.0 | v.1 | (self.w as i32 - v.0 - 1) | (self.h as i32 - v.1 - 1)  ) >= 0
 	}
 	pub fn vector_in_bounds8(&self, v: &VectorSm) -> bool {
 		v.0 >= 0 && v.0 < (self.w as i8) && v.1 >= 0 && v.1 < (self.h as i8)
@@ -764,7 +793,7 @@ impl Level {
 	pub fn make_win_data(&mut self) {
 		// we need to cache this part, map out where the holes are
 		let mut blocks: [u64; 4] = [0_u64; 4];
-		let mut data: u64 = 0; // zero out human location
+		let mut data: u64 = 0; 
 		let mut bits_used: usize = 0;
 		let mut block = 0;
 		for o in self.data.iter() {

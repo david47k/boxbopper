@@ -1,0 +1,19 @@
+######
+##&###
+# *  #
+#  *O#
+# @ O#
+######
+
+title: nejusadoma-13
+depth: 5
+moves: 13
+path: DLDDRRLLUURDR
+time: 0.01
+seed: 2
+width: 4
+height: 4
+wall_density: 20
+box_density: 20
+num_boxxes: 3
+

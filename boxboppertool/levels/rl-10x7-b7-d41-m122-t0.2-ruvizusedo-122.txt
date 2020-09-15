@@ -1,0 +1,22 @@
+############
+## #O ### O#
+# O  O O *&#
+# *# * #*# #
+##   *#    #
+###*   #####
+##   ##   @#
+#  #O # ## #
+############
+
+title: ruvizusedo-122
+depth: 41
+moves: 122
+path: LLLLLULDDDLLULURRLDDRRUURRRRRRDDLLUDRRUULLLLLLDDLLUURRRRRRRLDDRRUULLLLDLULLLDDRRUDLLUURRRDLDDDLURUUULLDDRDRUURURLLLRDDDRUU
+time: 0.25
+seed: 30115
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

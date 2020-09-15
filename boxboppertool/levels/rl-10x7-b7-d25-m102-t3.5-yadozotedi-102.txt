@@ -1,0 +1,22 @@
+############
+#  #    ## #
+##   #   ###
+# *#    * ##
+#O  ## *O ##
+#O# O*O#*  #
+#  @ *# &O #
+#   #   #  #
+############
+
+title: yadozotedi-102
+depth: 25
+moves: 102
+path: RUUULULULLLDLLDLDDDRRUULUURRDRRDDLLRRURRURDDRDDLULLDLLULLLDLURRRRDRRURUURDULLLDLRUUURRDLULDDULLULLDDRD
+time: 3.46
+seed: 30055
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

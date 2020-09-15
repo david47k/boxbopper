@@ -1,0 +1,22 @@
+#########
+# ##O # #
+#%* O # #
+# **** ##
+###  #O #
+#   *#  #
+##O*  O #
+#  O    #
+#########
+
+title: piporuhepe-146
+depth: 46
+moves: 146
+path: RRDDRDDLDRUUULUURDLDDRDDRURUUULLDDUURRDDDLDLLURRLUULDURUULDULLDRRURDRRDRDDDLULLULUURUURDLLLRDDDRDDLUUUULURDRUDDLDDRRRRUULULRDRDDLUDDLLULUURUDDLDRR
+time: 13.31
+seed: 30724
+width: 7
+height: 7
+wall_density: 32
+box_density: 15
+num_boxxes: 7
+

@@ -1,0 +1,22 @@
+#########
+#O    O #
+##  # # #
+#  #  # #
+# @  *O #
+# ***  @#
+# O # @&#
+#  ######
+#########
+
+title: feneviyive-130
+depth: 34
+moves: 130
+path: UULLUUULLDLDLDDDRRURRLLDLLURUUURURRDDDDLLRRURRDLLLRUULDURUULLDLDDRRURUURRDDDLDLUUUDDLLLUURURRDDDLLLLDDRRUDLUURRRDLLULDURRURUULLLDD
+time: 0.71
+seed: 30596
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+

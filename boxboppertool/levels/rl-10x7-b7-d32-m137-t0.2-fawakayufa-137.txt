@@ -1,0 +1,22 @@
+############
+#    O *O  #
+#   ###*O###
+# ##  #%*  #
+#    # #   #
+#   O## #* #
+# * #  # *O#
+### *O     #
+############
+
+title: fawakayufa-137
+depth: 32
+moves: 137
+path: RUULDRDDRRULRDDDDLLURDRULUULUULULLLLDLLDDRRDDDRRRRRLLLLLUULLDRUULUURRURRRRDRDDRDDLDLLLLLULUULUUURRRLDLLDDRDRDDRRRRRURRDLLLLRRURUURDUULDLU
+time: 0.21
+seed: 30388
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

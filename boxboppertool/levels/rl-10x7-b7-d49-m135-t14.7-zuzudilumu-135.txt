@@ -1,0 +1,22 @@
+############
+# & # # #  #
+##** # #  O#
+#  #OO # * #
+#  O  O*  ##
+## *# ** ###
+##  # #O  ##
+#  #  #   O#
+############
+
+title: zuzudilumu-135
+depth: 49
+moves: 135
+path: DDLDRRRURRDRDRDDLURUURURUULDLDDRULURDDLDDLDRUUULLULLDRRRDRDDLUURULLULLDRDRRULDLULUULULDDLDRRRRDRRULULRDRRRUULDRDLDULDDDRRULULLLULLLDDRU
+time: 14.74
+seed: 30202
+width: 10
+height: 7
+wall_density: 35
+box_density: 10
+num_boxxes: 7
+

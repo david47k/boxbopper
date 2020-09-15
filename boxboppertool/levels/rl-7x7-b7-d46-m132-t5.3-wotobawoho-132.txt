@@ -1,0 +1,22 @@
+#########
+# O#    #
+## &*  ##
+#  # #  #
+#*@  #O##
+#  #*   #
+# *@O*# #
+#O O  # #
+#########
+
+title: wotobawoho-132
+depth: 46
+moves: 132
+path: LDLDRDDRDRRUDLLURUULRDDLLLURUUURRDDDUUUURRDDDDLRUUULLDDLLDDRDRRULLRUULLDLDDRURRUULLUURRDDDUUUURRDDDDLDLUULLUURRRURDDULLDDDULLULDDDRU
+time: 5.34
+seed: 30520
+width: 7
+height: 7
+wall_density: 35
+box_density: 15
+num_boxxes: 7
+
