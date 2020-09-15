@@ -385,8 +385,8 @@ impl Level {
 			println!("Dimensions: {} x {}", w, h);
 			panic!("Width and Height must be at least 1!");
 		}
-		if w > 127 || h > 127 || w * h > 240 {
-			println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 240.");
+		if w > 127 || h > 127 || w * h > 256 {
+			println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 256.");
 			println!("Dimensions: {} x {}", w, h);
 			panic!("Level dimensions too big");
 		} 		

@@ -250,8 +250,8 @@ fn main() -> std::io::Result<()> {
 		}
 	}
 
-	if width > 127 || height > 127 || width * height > 240 {
-		println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 240.");
+	if width > 127 || height > 127 || width * height > 256 {
+		println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 256.");
 		return Ok(());
 	} 
 
@@ -371,8 +371,8 @@ fn main() -> std::io::Result<()> {
 			Level::from_builtin(builtin as usize).expect(&format!("Unable to open builtin level {}!", builtin))
 		};
 
-		if width > 127 || height > 127 || width * height > 240 {
-			println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 240.");
+		if width > 127 || height > 127 || width * height > 256 {
+			println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 256.");
 			return Ok(());
 		} 
 
