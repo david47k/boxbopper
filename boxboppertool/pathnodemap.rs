@@ -8,7 +8,7 @@ use boxbopperbase::{Obj};
 use boxbopperbase::level::{Level,SpLevel};
 use boxbopperbase::vector::{Vector,Move,ALLMOVES,ShrunkPath};
 
-use boxbopperbase::stackstack::{StackStack16};
+use boxbopperbase::stackstack::{StackStack16,StackStack8};
 
 #[derive(Clone,Copy)]
 pub struct PathNode {
@@ -19,7 +19,7 @@ pub struct PathNode {
 
 #[derive(Clone,Copy)]
 pub struct KeyMove {
-	pni: u16,		// where human is just before pushing boxx - pathnode index
+	pni: u16,			// where human is just before pushing boxx - pathnode index
 	move_dir: Move,		// direction to move to push boxx (or direction we are pulling box in)
 }
 
@@ -27,7 +27,6 @@ pub struct KeyMove {
 pub struct PathNodeMap {
 	pub nodes: Vec::<PathNode>,
 	pub key_moves: Vec::<KeyMove>,	
-	pub map: PathMap,
 }
 
 #[derive(Clone)]
@@ -53,31 +52,23 @@ impl PathMap {
 			move_taken: None,
 			prev_node_idx: 0,
 		};
-		let mut nodes = Vec::<PathNode>::with_capacity(64);
+		let mut nodes = Vec::<PathNode>::with_capacity(256/(std::mem::size_of::<PathNode>()));
 		nodes.push(initial_pn);
 		PathNodeMap {
-			map: PathMap {
-				level: self.level.clone(),
-				path: self.path.clone(),
-				depth: 0,
-				flag: false,
-			},
 			nodes: nodes,
-			key_moves: Vec::<KeyMove>::with_capacity(32),
+			key_moves: Vec::<KeyMove>::with_capacity(128/(std::mem::size_of::<KeyMove>())),
 		}
 	}	
-	pub fn new_by_applying_key_push(pnm: &PathNodeMap, km: &KeyMove) -> PathMap { 	// after we complete a map, we need to take a key move and start again
-		// do we read from pnm.map, or from map_b??? which is faster?
-		
-		let mut map_b = pnm.map.clone();
+	pub fn new_by_applying_key_push(pnm: &PathNodeMap, pm: &PathMap, km: &KeyMove) -> PathMap { 	// after we complete a map, we need to take a key move and start again	
+		let mut map_b = pm.clone();
 				
 		// new human point
 		let np = pnm.nodes[km.pni as usize].pt.add_dir(&km.move_dir);
 		
 		// check destination point
-		if pnm.map.level.is_boxx_at_pt(&np) {
+		if map_b.level.is_boxx_at_pt(&np) {
 			let boxx_pt = np.add_dir(&km.move_dir);
-			let is_clear = !pnm.map.level.is_boxx_at_pt(&boxx_pt);
+			let is_clear = !map_b.level.is_boxx_at_pt(&boxx_pt);
 			if is_clear {
 				map_b.level.set_boxx_at_pt(&boxx_pt);
 			} else {
@@ -91,22 +82,19 @@ impl PathMap {
 		}
 
 		map_b.level.set_human_pos(&np);				// move human
-			
-		let bm = pnm.backtrace_moves(km.pni as usize);
-		map_b.path.append_path(&bm);
+		
+		pnm.backtrace_moves(km.pni as usize, &mut map_b.path);
 		map_b.path.push(&km.move_dir);
 		
 		map_b
 	}
-	pub fn new_by_applying_key_pull(pnm: &PathNodeMap, km: &KeyMove, depth: u16) -> PathMap { 	// after we complete a map, we need to take a key move and start again
-		// do we read from pnm.map, or from map_b??? which is faster?
-
-		let mut map_b = pnm.map.clone();
+	pub fn new_by_applying_key_pull(pnm: &PathNodeMap, pm: &PathMap, km: &KeyMove, depth: u16) -> PathMap { 	// after we complete a map, we need to take a key move and start again
+		let mut map_b = pm.clone();
 		map_b.depth = depth;
 				
 		// remove old boxx
 		let pull_from_pt = pnm.nodes[km.pni as usize].pt.add_dir(&km.move_dir.reverse());
-		let is_boxx = pnm.map.level.is_boxx_at_pt(&pull_from_pt);
+		let is_boxx = map_b.level.is_boxx_at_pt(&pull_from_pt);
 		if is_boxx {
 			map_b.level.clear_boxx_at_pt(&pull_from_pt);
 		} else {
@@ -115,7 +103,7 @@ impl PathMap {
 
 		// place new boxx
 		let pull_to_pt = pnm.nodes[km.pni as usize].pt;
-		let is_clear = !pnm.map.level.is_boxx_at_pt(&pull_to_pt);
+		let is_clear = !map_b.level.is_boxx_at_pt(&pull_to_pt);
 		if is_clear {
 			map_b.level.set_boxx_at_pt(&pull_to_pt);
 		} else {
@@ -126,8 +114,7 @@ impl PathMap {
 		let np = pnm.nodes[km.pni as usize].pt.add_dir(&km.move_dir);
 		map_b.level.set_human_pos(&np);
 
-		let bm = pnm.backtrace_moves(km.pni as usize);
-		map_b.path.append_path(&bm);
+		pnm.backtrace_moves(km.pni as usize, &mut map_b.path);
 		map_b.path.push(&km.move_dir);
 
 		map_b
@@ -145,10 +132,10 @@ impl PathMap {
 				'loop_moves: for movedir in ALLMOVES.iter() {			// for each possible move
 					let npt = pt.add_dir(&movedir);						// what is in this direction? let's find out
 					if !base_level.vector_in_bounds(&npt) { continue; }
-					if pnm.map.level.is_boxx_at_pt(&npt) {
+					if self.level.is_boxx_at_pt(&npt) {
 						// What's past the boxx? We can push into Space and Hole.
 						let bnpt = pt.add_dir2(&movedir);
-						let nobj = pnm.map.level.get_obj_at_pt_nohuman_checked(&bnpt, base_level);
+						let nobj = self.level.get_obj_at_pt_nohuman_checked(&bnpt, base_level);
 						if nobj == Obj::Space || nobj == Obj::Hole {
 							// yep, its a keymove, save key move.. but before we do, make sure it isn't a double boxx situation or in our noboxx list
 							if !base_level.in_noboxx_pts(&bnpt)  && !self.double_boxx_situation(pt,*movedir,base_level) {
@@ -161,8 +148,8 @@ impl PathMap {
 						} 
 					} else if base_level.get_obj_at_pt(&npt) != Obj::Wall {											
 						// first check this point isn't already in our list!!!						
-						for n in pnm.nodes.iter() {
-							if n.pt == npt { continue 'loop_moves; }		// TODO OPTIMISE 7.88%
+						for n in &pnm.nodes {
+							if n.pt == npt { continue 'loop_moves; }		// This is a hot spot 9.88%
 						}
 
 						// yep, we can move here, make a new tail node
@@ -196,10 +183,10 @@ impl PathMap {
 				'loop_moves: for movedir in ALLMOVES.iter() {							// for each possible move
 					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
 					if !base_level.vector_in_bounds(&npt) { continue; }
-					if pnm.map.level.is_boxx_at_pt(&npt) {
+					if self.level.is_boxx_at_pt(&npt) {
 						// What's in our reverse direction? We can pull into Space and Hole.
 						let bnpt = pt.add_dir(&movedir.reverse());
-						let nobj = pnm.map.level.get_obj_at_pt_nohuman_checked(&bnpt, base_level);
+						let nobj = self.level.get_obj_at_pt_nohuman_checked(&bnpt, base_level);
 						if nobj == Obj::Space || nobj == Obj::Hole {
 							// yep, its a keypull, save key move.. 
 							let km = KeyMove {
@@ -279,30 +266,30 @@ impl PathMap {
 }
 
 impl PathNodeMap {
-	pub fn apply_key_pushes(&self) -> Vec<PathMap> {			// avoid using these as they are slow
+	pub fn apply_key_pushes(&self, base_path_map: &PathMap) -> Vec<PathMap> {			// avoid using these as they are slow
 		let mut nmaps = Vec::<PathMap>::with_capacity(self.key_moves.len());
 		for km in &self.key_moves {	
-			nmaps.push(PathMap::new_by_applying_key_push(self, &km));
+			nmaps.push(PathMap::new_by_applying_key_push(self, base_path_map, &km));
 		}
 		nmaps
 	}
-	pub fn apply_key_pulls(&self) -> Vec<PathMap> {				// avoid using these as they are slow
+	pub fn apply_key_pulls(&self, base_path_map: &PathMap) -> Vec<PathMap> {				// avoid using these as they are slow
 		let mut nmaps = Vec::<PathMap>::with_capacity(self.key_moves.len());
 		for km in &self.key_moves {	
-			nmaps.push(PathMap::new_by_applying_key_pull(self, &km, 0));
+			nmaps.push(PathMap::new_by_applying_key_pull(self, base_path_map, &km, 0));
 		}
 		nmaps
 	}
-	pub fn backtrace_moves(&self, pni: usize) -> Vec::<Move> {		// 5.5, 2.9
-		let mut path = Vec::<Move>::with_capacity(128);
+	pub fn backtrace_moves(&self, pni: usize, spath: &mut ShrunkPath) {		// 5.5, 2.9
+		let mut path = StackStack8::new();
 		// start at pn and work backwards
 		let mut pnr = &self.nodes[pni];
 		loop {
 			if pnr.move_taken.is_some() {
-				path.push(pnr.move_taken.unwrap());
+				path.push(pnr.move_taken.unwrap() as u8);
 				if pnr.prev_node_idx == 0 {
 					let m = &self.nodes[0].move_taken;
-					if m.is_some() { path.push(m.unwrap()); }
+					if m.is_some() { path.push(m.unwrap() as u8); }
 					break;
 				}
 				pnr = &self.nodes[pnr.prev_node_idx as usize];
@@ -310,8 +297,11 @@ impl PathNodeMap {
 				break;
 			}
 		}
-		path.reverse();
-		path
+		
+		for i in 1..=path.next {
+			let rev = path.next - i;
+			spath.push_u8(path.stack[rev]);	//3.88%
+		}
 	}
 }
 

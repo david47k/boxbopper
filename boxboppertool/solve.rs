@@ -27,10 +27,11 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 	let base_level1 = base_level_in.clear_human_cloned();
 	let base_map = PathMap::new_from_level(&base_level1);
 	let base_level = base_level1.clear_boxxes_cloned();
-
 	let mut non_contenders = BTreeMap::<CmpData,u16>::new();
 
-	let mut mapsr = Rc::new(vec![base_map]);
+	let mut bvec = Vec::new();
+	bvec.push(base_map);
+	let mut mapsr = Rc::new(bvec);
 	
 	let mut have_solution = false;
 	struct BestSolution {
@@ -38,9 +39,8 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 		depth: u16,
 	};
 	let mut best_solution = BestSolution { s: String::new(), depth: 0 };
-
 	let mut depth: u16 = 0;
-
+	
 	let msecs0 = get_time_ms();
 
 	while depth < max_moves {
@@ -63,23 +63,24 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 		// We have to store number of moves, because higher depth can have less moves
 		if verbosity > 1 { println!("adding {} old maps to non-contenders...", mapsr.len()); }
 		if non_contenders.len() < max_maps * 4 {
-			mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data, m.path.len()); });
+			//mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data, m.path.len()); });
+			non_contenders.par_extend(mapsr.par_iter().map(|m| (m.level.cmp_data, m.path.len()) ));
 		} else {
 			if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }
 		}
 		
 		// Complete the maps, converting from PathMap into PathNodeMap
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
-		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_solve(&base_level) ).collect(); // collect_into_vec doesn't seem to be any faster
+		let maps: Vec<(PathNodeMap,&PathMap)> = mapsr.par_iter().map(|m| (m.complete_map_solve(&base_level),m) ).collect(); // collect_into_vec doesn't seem to be any faster
 
 		// Free up memory used by the vec in mapsr
 		// std::mem::drop(mapsr); // 2.76, eof 4.79 -> 0, 5.7: commenting out the drop improves speed 1.5% according to VS, but is less memory-friendly
 
 		// Apply key moves
 		if verbosity > 1 { println!("collecting kms..."); }
-		let todo_list: Vec<(&PathNodeMap,&KeyMove)> = maps.iter().flat_map(|m| m.key_moves.iter().map(|mv| (m,mv)).collect::<Vec::<(&PathNodeMap,&KeyMove)>>() ).collect();
+		let todo_list: Vec<(&PathNodeMap,&PathMap,&KeyMove)> = maps.iter().flat_map(|(pnm,pm)| pnm.key_moves.iter().map(|mv| (pnm,*pm,mv)).collect::<Vec::<(&PathNodeMap,&PathMap,&KeyMove)>>() ).collect();
 		if verbosity > 1 { println!("applying kms..."); }
-		let mut maps: Vec<PathMap> = todo_list.par_iter().map(|(m,mv)| PathMap::new_by_applying_key_push(m,mv)).collect();
+		let mut maps: Vec<PathMap> = todo_list.par_iter().map(|(pnm,pm,km)| PathMap::new_by_applying_key_push(pnm,pm,km)).collect();
 
 		// Filter out the long paths
 		if verbosity > 1 { println!("pruning long paths..."); }

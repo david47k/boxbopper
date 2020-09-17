@@ -6,3 +6,5 @@ www/node_modules
 boxbopperconsole/target
 boxboppertool/target
 boxboppersolver_old
+boxboppertool/.vs
+

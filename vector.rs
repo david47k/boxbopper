@@ -258,6 +258,20 @@ impl ShrunkPath {
 		}
 		self.count += 1;		
 	}
+	pub fn push_u8(&mut self, move1: u8) {
+		let move1 = move1 as u32;
+		if self.count%16==0 { 
+			// append new block
+			self.data.push(move1);
+		} else {
+			// modify existing block
+			let idx = self.count as usize/16;
+			let mut x = self.data[idx];
+			x |= (move1) << (2*(self.count%16));
+			self.data[idx] = x;
+		}
+		self.count += 1;		
+	}
 	pub fn get_u(&self, i: usize) -> u32 {
 		if i >= self.count as usize { panic!("ShrunkPath::get index is too high"); }
 		return (self.data[i/16] >> (2*(i%16))) & 0x03;

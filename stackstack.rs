@@ -81,7 +81,7 @@ impl StackStack8 {
 	pub fn new() -> StackStack8 {
 		StackStack8 {
 			next: 0,
-			stack: [0; STACKSTACK8_MAX],
+			stack: unsafe { std::mem::MaybeUninit::uninit().assume_init() },
 		}
 	}
 	pub fn push(&mut self, d: u8) {
@@ -99,5 +99,14 @@ impl StackStack8 {
 	}
 	pub fn clear(&mut self) {
 		self.next = 0;
+	}
+	pub fn reverse(&mut self) {
+		let mut top = self.next - 1;
+		for i in 0..self.next/2 {
+			let swapper = self.stack[i];
+			self.stack[i] = self.stack[top];
+			self.stack[top] = swapper;
+			top -= 1;
+		}
 	}
 }

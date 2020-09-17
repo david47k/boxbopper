@@ -51,10 +51,11 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 	// To do this, we unsolve once to find the appropriate spot(s), then re-solve to place the human and box in the final state.
 
 	if verbosity > 1 { println!("finding final maps..."); }
-	let mapsr: Vec<PathNodeMap> = vec![base_map].iter().map(|m| m.complete_map_unsolve(&base_level) ).collect();
-	let mapsr: Vec<PathMap> = mapsr.iter().flat_map(|map| map.apply_key_pulls() ).collect();
-	let mapsr: Vec<PathNodeMap> = mapsr.iter().map(|m| m.complete_map_solve(&base_level) ).collect();
-	let mapsr: Vec<PathMap> = mapsr.iter().flat_map(|map| map.apply_key_pushes() ).collect();
+	let vbm = vec![base_map];
+	let mapsr: Vec<(PathNodeMap,&PathMap)> = vbm.iter().map(|m| (m.complete_map_unsolve(&base_level),m) ).collect();
+	let mapsr: Vec<PathMap> = mapsr.iter().flat_map(|(pnm,pm)| pnm.apply_key_pulls(pm) ).collect();
+	let mapsr: Vec<(PathNodeMap,&PathMap)> = mapsr.iter().map(|m| (m.complete_map_solve(&base_level),m) ).collect();
+	let mapsr: Vec<PathMap> = mapsr.iter().flat_map(|(map,m)| map.apply_key_pushes(&m) ).collect();
 	let mut mapsr: Vec<PathMap> = mapsr.iter().filter(|m| m.level.have_win_condition(&base_level) ).cloned().collect();
 	mapsr.iter_mut().for_each(|mut map| { 			// reset the move count
 		map.path = ShrunkPath::new(); 
@@ -77,13 +78,13 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 		
 		// complete the maps (finding keymoves as it goes)
 		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
-		let maps: Vec<PathNodeMap> = mapsr.par_iter().map(|m| m.complete_map_unsolve(&base_level) ).collect();
+		let maps: Vec<(PathNodeMap,&PathMap)> = mapsr.par_iter().map(|m| (m.complete_map_unsolve(&base_level),m) ).collect();
 
 		// apply key moves
 		if verbosity > 1 { println!("collecting kms..."); }
-		let todo_list: Vec<(&PathNodeMap,&KeyMove)> = maps.iter().flat_map(|m| m.key_moves.iter().map(|mv| (m,mv)).collect::<Vec::<(&PathNodeMap,&KeyMove)>>() ).collect();
+		let todo_list: Vec<(&PathNodeMap,&PathMap,&KeyMove)> = maps.iter().flat_map(|(pnm,pm)| pnm.key_moves.iter().map(|km| (pnm,*pm,km)).collect::<Vec::<(&PathNodeMap,&PathMap,&KeyMove)>>() ).collect();
 		if verbosity > 1 { println!("applying kms..."); }
-		let mut maps: Vec<PathMap> = todo_list.par_iter().map(|(m,mv)| PathMap::new_by_applying_key_pull(m,mv,count+1)).collect();
+		let mut maps: Vec<PathMap> = todo_list.par_iter().map(|(pnm,pm,km)| PathMap::new_by_applying_key_pull(pnm,pm,km,count+1)).collect();
 		
 		// sort and deduplicate
 		if verbosity > 1 { println!("deduping: before {:>7}", maps.len()); }
