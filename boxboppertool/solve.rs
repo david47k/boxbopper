@@ -69,22 +69,32 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }
 		}
 		
-		// Complete the maps, converting from PathMap into PathNodeMap
-		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
-		let maps: Vec<(PathNodeMap,&PathMap)> = mapsr.par_iter().map(|m| (m.complete_map_solve(&base_level),m) ).collect(); // collect_into_vec doesn't seem to be any faster
+		if verbosity > 1 { println!("performing next key moves..."); }
+		
+		// break into four parts
+		let size = mapsr.len()/4;
+		let mut mapsr1 = Rc::get_mut(&mut mapsr).unwrap();
+		let mut mapsr2 = mapsr1.split_off(size);			// 1/4 into r1, 3/4 into r2
+		let mut mapsr3 = mapsr2.split_off(size);			// 1/4 into r2, 2/4 into r3
+		let mut mapsr4 = mapsr3.split_off(size);			// 1/4 into r3, 1/4 into r4
+		let mut nmaps1 = Vec::<PathMap>::with_capacity(size);
+		let mut nmaps2 = Vec::<PathMap>::with_capacity(size);
+		let mut nmaps3 = Vec::<PathMap>::with_capacity(size);
+		let mut nmaps4 = Vec::<PathMap>::with_capacity(size);
 
-		// Free up memory used by the vec in mapsr
-		// std::mem::drop(mapsr); // 2.76, eof 4.79 -> 0, 5.7: commenting out the drop improves speed 1.5% according to VS, but is less memory-friendly
+		fn do_stuff(maps_read: &Vec::<PathMap>, mut maps_write: &mut Vec::<PathMap>, base_level: &Level, max_moves: u16) {
+			maps_read.iter().for_each(|m| m.complete_solve_2(&base_level, &mut maps_write));		// perform next step
+			maps_write.retain(|m| m.path.len() < max_moves);										// filter out long moves
+		}
 
-		// Apply key moves
-		if verbosity > 1 { println!("collecting kms..."); }
-		let todo_list: Vec<(&PathNodeMap,&PathMap,&KeyMove)> = maps.iter().flat_map(|(pnm,pm)| pnm.key_moves.iter().map(|mv| (pnm,*pm,mv)).collect::<Vec::<(&PathNodeMap,&PathMap,&KeyMove)>>() ).collect();
-		if verbosity > 1 { println!("applying kms..."); }
-		let mut maps: Vec<PathMap> = todo_list.par_iter().map(|(pnm,pm,km)| PathMap::new_by_applying_key_push(pnm,pm,km)).collect();
+		rayon::join(|| rayon::join(|| do_stuff(&mapsr1, &mut nmaps1, &base_level, max_moves), || do_stuff(&mapsr2, &mut nmaps2, &base_level, max_moves) ),
+					|| rayon::join(|| do_stuff(&mapsr3, &mut nmaps3, &base_level, max_moves), || do_stuff(&mapsr4, &mut nmaps4, &base_level, max_moves) ) );
 
-		// Filter out the long paths
-		if verbosity > 1 { println!("pruning long paths..."); }
-		maps.retain(|m| m.path.len() < max_moves);
+		// join back together
+		let mut maps = nmaps1;
+		maps.append(&mut nmaps2);
+		maps.append(&mut nmaps3);
+		maps.append(&mut nmaps4);
 
 		// Sort and deduplicate
 		if depth >= 2 { 
@@ -95,6 +105,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 
 		// Remove from maps anything that is in non_contenders AND our path is equal/longer
 		if verbosity > 1 { println!("deduping using n-c: before {:>7}", maps.len()); }
+		let size = maps.len()/4;
 		maps.par_iter_mut().for_each(|m| {
 			let v = non_contenders.get(&m.level.cmp_data);
 			if v.is_some() {
