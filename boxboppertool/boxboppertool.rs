@@ -23,7 +23,6 @@ extern crate rand_chacha;
 
 use rand::{Rng, SeedableRng};
 
-
 fn is_pullable(level: &Level, pos: &Vector) -> bool {
 	// check all four directions, and see if we can pull in that direction
 	// i.e. one of the four directions must have non-wall,non-wall. 
@@ -193,7 +192,7 @@ impl SpeedTest {
 fn main() -> std::io::Result<()> {
 	let args: Vec::<String> = std::env::args().collect();
 	#[derive(PartialEq)]
-	enum Mode { Help, Solve, Make, SpeedTest };
+	enum Mode { Help, Solve, Make, SpeedTest }
 	let mut mode = Mode::Help;
 	let mut seed: u32 = 0;
 	let mut max_moves: u16 = DEF_MAX_MOVES;
@@ -202,12 +201,14 @@ fn main() -> std::io::Result<()> {
 	let mut height: usize = DEF_HEIGHT;
 	let mut box_density: u32 = DEF_BOX_DENSITY;
 	let mut wall_density: u32 = DEF_WALL_DENSITY;
-	let max_maps: usize = DEF_MAX_MAPS;
+	let mut max_maps: usize = DEF_MAX_MAPS;
 	let mut filename: String = String::from("");
 	let mut builtin: u32 = 0;
 	let mut verbosity: u32 = DEF_VERBOSITY;
 	let mut speed_test_read: String = String::new();
 	let mut speed_test_write: String = String::new();
+	let mut max_level: usize = DEF_MAX_LEVEL;
+	let mut num_threads: usize = 0;
 	
 	// process params
 	for (count,arg) in args.into_iter().enumerate() {
@@ -241,7 +242,10 @@ fn main() -> std::io::Result<()> {
 				"speed_test_read"  => { speed_test_read = String::from(right); },
 				"speed_test_write"  => { speed_test_write = String::from(right); },
 				"builtin"   => { builtin = right.parse::<u32>().unwrap(); }
+				"max_level"   => { max_level = right.parse::<usize>().unwrap(); }
 				"verbosity" => { verbosity = right.parse::<u32>().unwrap(); },
+				"threads" => { num_threads = right.parse::<usize>().unwrap(); },
+				"max_maps" => { max_maps = right.parse::<usize>().unwrap(); },
 				_ => {
 					println!("Unrecognised variable {}", left);
 					mode = Mode::Help;
@@ -255,26 +259,37 @@ fn main() -> std::io::Result<()> {
 		return Ok(());
 	} 
 
+	if num_threads == 0 {
+		num_threads = num_cpus::get();
+	}
+
 	let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(0x0d47d47000000000_u64 + seed as u64);
 
 	if mode == Mode::Help {
+		println!("boxboppertool by David Atkinson 2020-2021\nthis program makes and solves boxbopper (sokoban-like) levels\n");
 		println!("boxboppertool make [vars...]\nboxboppertool solve [vars...]\nboxboppertool speed_test [vars...]\n");
 		println!("vars for make:");
 		println!("  seed=n           rng seed (u32)");
-		println!("  width=n          level width 5-15                     default: {}", DEF_WIDTH);
-		println!("  height=n         level height 5-15                    default: {}", DEF_HEIGHT);
-		println!("  box_density=n    box density 1-99                     default: {}", DEF_BOX_DENSITY);
-		println!("  wall_density=n   wall density 1-99                    default: {}", DEF_WALL_DENSITY);
-		println!("  max_depth=n      maximum depth to try to reach 1+     default: {}", DEF_MAX_DEPTH);
+		println!("  width=n          level width 5-15                              default: {}", DEF_WIDTH);
+		println!("  height=n         level height 5-15                             default: {}", DEF_HEIGHT);
+		println!("  box_density=n    box density 1-99                              default: {}", DEF_BOX_DENSITY);
+		println!("  wall_density=n   wall density 1-99                             default: {}", DEF_WALL_DENSITY);
+		println!("  max_depth=n      maximum depth to try to reach 1+              default: {}", DEF_MAX_DEPTH);
 		println!("vars for solve:");
-		println!("  max_moves=n      maximum number of moves to try 1+    default: {}", DEF_MAX_MOVES);
+		println!("  max_moves=n      maximum number of moves to try 1+             default: {}", DEF_MAX_MOVES);
 		println!("  builtin=n        builtin level to solve");
 		println!("  filename=f       custom level filename to solve");
 		println!("vars for speed_test:");
+		println!("  max_level=n         maximum level to test up to                default: {}", DEF_MAX_LEVEL);
 		println!("  speed_test_read=f   filename to compare results with");
 		println!("  speed_test_write=f  filename to write results to");
 		println!("vars for all:");
-		println!("  verbosity=n      how much information to provide 0-2  default: {}", DEF_VERBOSITY);
+		println!("  verbosity=n      how much information to provide 0-2           default: {}", DEF_VERBOSITY);
+		println!("  threads=n        how many cpu threads to use 0=auto            default: 0");
+		println!("  max_maps=n       max maps to have in memory                    default: {}", DEF_MAX_MAPS);
+		println!("");
+		println!("lower max_maps to reduce memory usage (but it may not solve)");
+		println!("lower max_moves to improve performance (but it will not solve if more moves are required)");
 		println!("");
 	} else if mode == Mode::Make {
 		// create level
@@ -285,14 +300,14 @@ fn main() -> std::io::Result<()> {
 			println!("==== Unsolving level ===="); 
 			println!("{}", &random_level.to_string());
 		}
-		let unsolved_levels = unsolve_level(&random_level, max_depth, max_maps, &mut rng, verbosity);
+		let unsolved_levels = unsolve_level(&random_level, max_depth, max_maps, &mut rng, verbosity, num_threads);
 
 		let mut best_idx = None;
 		let mut solutions = Vec::<Option<Solution>>::new();
 		for x in 0..unsolved_levels.len() {
 			println!("==== Solving variation {} of {} ====", x, unsolved_levels.len()-1);
 			println!("{}", &unsolved_levels[x].to_string());
-			let solution = solve_level(&unsolved_levels[x], unsolved_levels[x].get_keyval("moves").parse::<u16>().expect("number->string->number failure!")+2, max_maps, verbosity); // probably don't need the +2
+			let solution = solve_level(&unsolved_levels[x], unsolved_levels[x].get_keyval("moves").parse::<u16>().expect("number->string->number failure!")+2, max_maps, verbosity, num_threads); // probably don't need the +2
 			solutions.push(solution.clone());
 			match solution {
 				Some(solution) => {
@@ -384,7 +399,7 @@ fn main() -> std::io::Result<()> {
 		
 		if verbosity > 0 { println!("{}",level.to_string()); }
 
-		let solution = solve_level(&level, max_moves, max_maps, verbosity);
+		let solution = solve_level(&level, max_moves, max_maps, verbosity, num_threads);
 		match solution {
 			Some(sol) => {
 				let mut output_str = "".to_string();
@@ -403,7 +418,6 @@ fn main() -> std::io::Result<()> {
 		let mut success = true;
 		let mut warnings = false;
 		let mut solutions = Vec::<Option::<Solution>>::new();
-		let mut stored_times = Vec::<f64>::new();
 		if !verify_builtins() {
 			return Ok(());
 		}
@@ -412,11 +426,11 @@ fn main() -> std::io::Result<()> {
 			p = SpeedTest::from_file(&speed_test_read);
 		}
 		let mut save_speed_test_string = String::from("# boxboppertool speed_test\n# num(u16), title(str), depth(u16), moves(u16), path(str), time(f64:s)\n");
-		for level_num in 0..=builtin as usize {
+		for level_num in 0..=max_level {
 			let level = Level::from_builtin(level_num).expect(&format!("Unable to open builtin level {}!", level_num));
 			println!("Solving level {} \"{}\"...",level_num,level.get_keyval_or("title","untitled"));
 			
-			let solution = solve_level(&level, max_moves, max_maps, verbosity);
+			let solution = solve_level(&level, max_moves, max_maps, verbosity, num_threads);
 
 			match &solution {
 				Some(sol) => {
@@ -447,7 +461,6 @@ fn main() -> std::io::Result<()> {
 				},
 				None => {
 					println!("  Failed to find solution");
-					stored_times.push(0_f64);
 					success = false;
 				}
 			}
@@ -463,7 +476,7 @@ fn main() -> std::io::Result<()> {
 			println!("-------------------------------");
 			let mut total_time = 0_f64;
 			let mut total_time_s = 0_f64;
-			for level_num in 0..=builtin as usize {
+			for level_num in 0..=max_level as usize {
 				let t = solutions[level_num].as_ref().unwrap().secs;
 				total_time += t;
 				if speed_test_read.len() > 0 {

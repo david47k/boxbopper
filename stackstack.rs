@@ -1,5 +1,39 @@
 // stackstack.rs: a stack on the stack, used to speed up inner loops by avoiding memory allocation
 
+const STACKSTACK64_MAX: usize = 8;
+
+#[derive(Copy,Clone)]
+pub struct StackStack64 {
+	pub next: usize,
+	pub stack: [u64; STACKSTACK64_MAX],
+}
+
+impl StackStack64 {
+	pub fn new() -> StackStack64 {
+		StackStack64 {
+			next: 0,
+			//stack: [0; STACKSTACK64_MAX],
+			stack: unsafe { std::mem::MaybeUninit::uninit().assume_init() },
+		}
+	}
+	pub fn push(&mut self, d: u64) {
+        if self.next == STACKSTACK64_MAX { panic!("StackStack64 overflow"); }
+        self.stack[self.next] = d;
+		self.next += 1;
+	}
+	pub fn pop(&mut self) -> u64 {
+        if self.next == 0 { panic!("StackStack64 underflow"); }
+		self.next -= 1;
+		self.stack[self.next]
+	}
+	pub fn len(&self) -> usize {
+		self.next
+	}
+	pub fn clear(&mut self) {
+		self.next = 0;
+	}
+}
+
 const STACKSTACK32_MAX: usize = 64;
 
 #[derive(Copy,Clone)]
@@ -12,7 +46,8 @@ impl StackStack32 {
 	pub fn new() -> StackStack32 {
 		StackStack32 {
 			next: 0,
-			stack: [0; STACKSTACK32_MAX],
+			//stack: [0; STACKSTACK32_MAX],
+			stack: unsafe { std::mem::MaybeUninit::uninit().assume_init() },
 		}
 	}
 	pub fn push(&mut self, d: u32) {

@@ -1,4 +1,5 @@
 // Box Bopper: Sokoban clone in rust
+// Copyright David Atkinson 2020-2021
 
 
 // wasm boilerplate

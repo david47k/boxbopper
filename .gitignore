@@ -7,4 +7,7 @@ boxbopperconsole/target
 boxboppertool/target
 boxboppersolver_old
 boxboppertool/.vs
-
+boxboppertool/.vs/
+boxboppertool/.vs/slnx.sqlite
+boxboppertool/.vs/boxboppertool/v16/.suo
+boxbopperconsole/target/.rustc_info.json

@@ -6,11 +6,163 @@ use boxbopperbase::time::{get_time_ms};
 use rayon::prelude::*;
 use std::rc::Rc;
 use std::collections::{BTreeMap};
-
-use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
+use std::cmp::Ordering;
+use itertools::Itertools;
+use crate::pathnodemap::{PathMap};
 
 extern crate rand;
 extern crate rand_chacha;
+
+use bevy_tasks::{TaskPool,TaskPoolBuilder};
+
+pub fn task_splitter(pool: &TaskPool, spl_into: usize, from: &Vec::<PathMap>, func: impl Fn(&[PathMap], &mut Vec::<PathMap>) + Send + Copy + Sync) -> Vec::<PathMap> {
+	// break up vecs
+	let from_a = vec_slicer(from, spl_into);
+	let mut to_a = vec_new_split_store(from.len() / spl_into + 1, spl_into);
+
+	pool.scope(|s| {
+		for i in 0..spl_into {
+			unsafe { // actually safe, as we don't use overlapping indices
+				let from_sm: &[PathMap] = *(from_a.get_unchecked(i) as *const _);
+				let to_sm = &mut *(to_a.get_unchecked_mut(i) as *mut _);
+				s.spawn( async move {
+					func(&from_sm, to_sm);
+				})
+			}
+		}
+	});
+
+	let maps = vec_unslice(to_a);
+	maps
+}
+
+pub fn task_splitter_mut(pool: &TaskPool, spl_into: usize, mut maps: Vec::<PathMap>, func: impl Fn(&mut [PathMap]) + Send + Copy + Sync) -> Vec::<PathMap> {
+	// break up vecs
+	let mut maps_a = vec_slicer_mut(&mut maps, spl_into);
+
+	pool.scope(|s| {
+		for i in 0..spl_into {
+			unsafe { // actually safe, as we don't use overlapping indices
+				let maps_sm: &mut &mut [PathMap] = &mut *(maps_a.get_unchecked_mut(i) as *mut _);
+				s.spawn( async move {
+					func(maps_sm);
+				})
+			}
+		}
+	});
+
+	// no unslice required, as we used mutable references :)
+	maps
+}
+
+// Faster than rayon::par_sort_unstable
+pub fn task_splitter_sort(pool: &TaskPool, spl_into: usize, mut maps: Vec::<PathMap>) -> Vec::<PathMap> {
+	// break up vecs
+	let mut maps_a = vec_slicer_mut(&mut maps, spl_into);
+
+	pool.scope(|s| {
+		for i in 0..spl_into {
+			unsafe { // actually safe, as we don't use overlapping indices
+				let maps_sm: &mut &mut [PathMap] = &mut *(maps_a.get_unchecked_mut(i) as *mut _);
+				s.spawn( async move {
+					maps_sm.sort_unstable_by(|a: &PathMap, b: &PathMap| {
+						let ord = a.level.cmp_data.partial_cmp(&b.level.cmp_data).unwrap();
+						if ord == Ordering::Equal {
+							if a.path.len() < b.path.len() {
+								return Ordering::Less;
+							}
+							if a.path.len() > b.path.len() {
+								return Ordering::Greater;
+							}
+						}
+						ord
+					})
+				})
+			}
+		}
+	});
+
+	fn pm_cmp_lt (a: & &mut PathMap, b: & &mut PathMap) -> bool {
+		let ord = a.level.cmp_data.partial_cmp(&b.level.cmp_data).unwrap();
+		if ord == Ordering::Equal {
+			if a.path.len() < b.path.len() {
+				return true;
+			}
+			return false;
+		}
+		return ord == Ordering::Less;
+	}
+
+	let mut maps: Vec::<PathMap> = maps_a.into_iter().map(|x| x).kmerge_by(pm_cmp_lt).map(|x| x.to_owned()).collect();
+	maps.dedup_by(|a,b| a.level.cmp_data == b.level.cmp_data); // it keeps the first match for each level (sorted to be smallest moves)
+	maps
+}
+
+// borrows the provided vec, and provides a vec of slices as output
+pub fn vec_slicer(from: &Vec::<PathMap>, spl_into: usize) -> Vec::<&[PathMap]> {
+	let size = from.len() / spl_into;
+	let mut out: Vec::<&[PathMap]>;
+	out = Vec::<&[PathMap]>::with_capacity(spl_into);
+	if from.len() < spl_into { 
+		out.push( &from[..] );
+		for _i in 1..spl_into  {
+			out.push( &from[0..0] );
+		}
+	} else {
+		let mut count = 0;
+		for _i in 1..spl_into  {
+			out.push( &from[count..(count+size)] );
+			count += size;
+		}
+		out.push( &from[count..] );
+	}
+	out
+}
+
+// borrows the provided vec, and provides a vec of mutable slices as output
+pub fn vec_slicer_mut(from: &mut Vec::<PathMap>, spl_into: usize) -> Vec::<&mut [PathMap]> {
+	// assert(spl_into > 0);
+	let size = from.len() / spl_into;
+	let mut out: Vec::<&mut [PathMap]> = Vec::<&mut [PathMap]>::with_capacity(spl_into);
+	unsafe { // actually safe, as we don't use overlapping indices
+		if from.len() < spl_into { 
+			let from_sm: &mut [PathMap] = &mut *(from.get_unchecked_mut(..) as *mut _);
+			out.push( from_sm );
+			for _i in 1..spl_into  {
+				let from_sm: &mut [PathMap] = &mut *(from.get_unchecked_mut(0..0) as *mut _);
+				out.push( from_sm );
+			}
+		} else {
+			let mut count = 0;
+			for _i in 1..spl_into  {
+				let from_sm: &mut [PathMap] = &mut *(from.get_unchecked_mut(count..(count+size)) as *mut _);
+				out.push( from_sm );
+				count += size;
+			}
+			out.push( &mut from[count..] );
+		}
+	}
+	out
+}
+
+pub fn vec_new_split_store(size: usize, spl_into: usize) -> Vec::<Vec::<PathMap>> {
+	let mut out = Vec::<Vec::<PathMap>>::with_capacity(spl_into);
+	for _i in 0..spl_into  {
+		out.push( Vec::<PathMap>::with_capacity(size) );
+	}
+	out
+}
+
+pub fn vec_unslice(mut from: Vec::<Vec::<PathMap>>) -> Vec::<PathMap> {
+	for i in 1..from.len() {
+		unsafe {
+			// actually safe because we aren't accessing two identical indicies (it'll always be 0 and 1+)
+			let src = &mut *(from.get_unchecked_mut(i) as *mut _);
+			from[0].append(src);
+		}
+	}
+	return from.swap_remove(0);
+}
 
 
 #[derive(Clone)]
@@ -22,7 +174,7 @@ pub struct Solution {
 }
 
 
-pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: usize, verbosity: u32) -> Option<Solution> {
+pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: usize, verbosity: u32, num_threads: usize) -> Option<Solution> {
 	let mut max_moves = max_moves_requested+1;
 	let base_level1 = base_level_in.clear_human_cloned();
 	let base_map = PathMap::new_from_level(&base_level1);
@@ -33,11 +185,16 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 	bvec.push(base_map);
 	let mut mapsr = Rc::new(bvec);
 	
+	let pool = TaskPoolBuilder::new()
+	.thread_name("Box Bopper Tool Thread Pool".to_string())
+	.num_threads(num_threads)
+	.build();
+
 	let mut have_solution = false;
 	struct BestSolution {
 		s: String,
 		depth: u16,
-	};
+	}
 	let mut best_solution = BestSolution { s: String::new(), depth: 0 };
 	let mut depth: u16 = 0;
 	
@@ -63,54 +220,35 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 		// We have to store number of moves, because higher depth can have less moves
 		if verbosity > 1 { println!("adding {} old maps to non-contenders...", mapsr.len()); }
 		if non_contenders.len() < max_maps * 4 {
-			//mapsr.iter().for_each(|m| { non_contenders.insert(m.level.cmp_data, m.path.len()); });
+			//mapsr.par_iter().for_each(|m| { non_contenders.insert(m.level.cmp_data, m.path.len()); });
 			non_contenders.par_extend(mapsr.par_iter().map(|m| (m.level.cmp_data, m.path.len()) ));
 		} else {
 			if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }
 		}
-		
+
+		// Perform next key moves
 		if verbosity > 1 { println!("performing next key moves..."); }
-		
-		// break into four parts
-		let size = mapsr.len()/4;
-		let mut mapsr1 = Rc::get_mut(&mut mapsr).unwrap();
-		let mut mapsr2 = mapsr1.split_off(size);			// 1/4 into r1, 3/4 into r2
-		let mut mapsr3 = mapsr2.split_off(size);			// 1/4 into r2, 2/4 into r3
-		let mut mapsr4 = mapsr3.split_off(size);			// 1/4 into r3, 1/4 into r4
-		let mut nmaps1 = Vec::<PathMap>::with_capacity(size);
-		let mut nmaps2 = Vec::<PathMap>::with_capacity(size);
-		let mut nmaps3 = Vec::<PathMap>::with_capacity(size);
-		let mut nmaps4 = Vec::<PathMap>::with_capacity(size);
-
-		fn do_stuff(maps_read: &Vec::<PathMap>, mut maps_write: &mut Vec::<PathMap>, base_level: &Level, max_moves: u16) {
-			maps_read.iter().for_each(|m| m.complete_solve_2(&base_level, &mut maps_write));		// perform next step
+		let mut maps = task_splitter(&pool, num_threads, &mapsr, |maps_read: &[PathMap], mut maps_write: &mut Vec::<PathMap>| {
+			maps_read.iter().for_each(|m| m.complete_solve_2(&base_level, &mut maps_write));		// perform next key moves
 			maps_write.retain(|m| m.path.len() < max_moves);										// filter out long moves
-		}
-
-		rayon::join(|| rayon::join(|| do_stuff(&mapsr1, &mut nmaps1, &base_level, max_moves), || do_stuff(&mapsr2, &mut nmaps2, &base_level, max_moves) ),
-					|| rayon::join(|| do_stuff(&mapsr3, &mut nmaps3, &base_level, max_moves), || do_stuff(&mapsr4, &mut nmaps4, &base_level, max_moves) ) );
-
-		// join back together
-		let mut maps = nmaps1;
-		maps.append(&mut nmaps2);
-		maps.append(&mut nmaps3);
-		maps.append(&mut nmaps4);
+		});
 
 		// Sort and deduplicate
 		if depth >= 2 { 
 			if verbosity > 1 { println!("deduping: before {:>7}", maps.len()); }
-			dedupe_equal_levels(&mut maps);
+			maps = task_splitter_sort(&pool, num_threads, maps);
 			if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 		} 
 
 		// Remove from maps anything that is in non_contenders AND our path is equal/longer
-		if verbosity > 1 { println!("deduping using n-c: before {:>7}", maps.len()); }
-		let size = maps.len()/4;
-		maps.par_iter_mut().for_each(|m| {
-			let v = non_contenders.get(&m.level.cmp_data);
-			if v.is_some() {
-				if *v.unwrap() <= m.path.len() {
-					m.flag = true;
+		if verbosity > 1 { println!("deduping using n-c: before {:>7}", maps.len()); }		
+		maps = task_splitter_mut(&pool, num_threads, maps, |maps: &mut [PathMap]| {
+			for m in maps {
+				let v = non_contenders.get(&m.level.cmp_data);
+				if v.is_some() {
+					if *v.unwrap() <= m.path.len() {
+						m.flag = true;
+					}
 				}
 			}
 		});

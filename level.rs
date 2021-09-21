@@ -577,7 +577,7 @@ impl Level {
 			x: isize,
 			y: isize,
 			end_x: isize,
-		};
+		}
 
 		let mut start_x: Option<isize> = None;
 		let mut halls = Vec::<HallInfoH>::new();
@@ -616,7 +616,7 @@ impl Level {
 			x: isize,
 			y: isize,
 			end_y: isize,
-		};
+		}
 		let mut start_y: Option<isize> = None;
 		let mut halls = Vec::<HallInfoV>::new();
 
@@ -822,3 +822,4 @@ impl Level {
 	}
 }
 
+//unsafe impl Send for Level {};

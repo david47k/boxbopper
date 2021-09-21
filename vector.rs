@@ -3,7 +3,7 @@
 use wasm_bindgen::prelude::*;
 use js_sys::Array;
 
-use crate::stackstack::{StackStack8};
+use crate::stackstack::{StackStack8,StackStack64};
 
 // A point and a direction can both be implemented as a Vector
 
@@ -212,30 +212,34 @@ impl Move {
 pub const ALLMOVES: [Move; 4] = [ Move::Up, Move::Right, Move::Down, Move::Left ];
 
 
+
 #[derive(Clone)]
 pub struct ShrunkPath {
 	count: u16,
-	data: Vec::<u64>,
+	data: StackStack64,
 }
 
 impl ShrunkPath {
 	pub fn new() -> Self {
 		Self {
 			count: 0,
-			data: Vec::<u64>::new(),
+			data: StackStack64::new(),
 		}
 	}
-	pub fn with_capacity(c: usize) -> Self {
+	pub fn with_capacity(_c: usize) -> Self {
 		Self {
 			count: 0,
-			data: Vec::<u64>::with_capacity(c/32+1),
+			data: StackStack64::new(), //Vec::<u64>::with_capacity(c/32+1),
 		}
+	}
+	pub fn clear(&mut self) {
+		self.count = 0;
 	}
 	pub fn len(&self) -> u16 {
 		self.count
 	}
 	pub fn from_path(path: &Vec::<Move>) -> Self {
-		let mut data = Vec::<u64>::new();
+		let mut data = StackStack64::new();
 		let mut x: u64 = 0;
 		for i in 0..path.len() {
 			if i % 32 == 0 && i != 0 {
@@ -258,9 +262,9 @@ impl ShrunkPath {
 		} else {
 			// modify existing block
 			let idx = self.count as usize/32;
-			let mut x = self.data[idx];
+			let mut x = self.data.stack[idx];
 			x |= (*move1 as u64) << (2*(self.count%32));
-			self.data[idx] = x;
+			self.data.stack[idx] = x;
 		}
 		self.count += 1;		
 	}
@@ -272,23 +276,23 @@ impl ShrunkPath {
 		} else {
 			// modify existing block
 			let idx = self.count as usize/32;
-			let mut x = self.data[idx];
+			let mut x = self.data.stack[idx];
 			x |= (move1) << (2*(self.count%32));
-			self.data[idx] = x;
+			self.data.stack[idx] = x;
 		}
 		self.count += 1;		
 	}
 	pub fn get_u(&self, i: usize) -> u64 {
 		if i >= self.count as usize { panic!("ShrunkPath::get index is too high"); }
-		return (self.data[i/32] >> (2*(i%32))) & 0x03;
+		return (self.data.stack[i/32] >> (2*(i%32))) & 0x03;
 	}
 	pub fn set_u(&mut self, i: usize, val: u64) {
 		if i >= self.count as usize { panic!("ShrunkPath::set index is too high"); }
 		let bidx = 2*(i%32);
 		let mask: u64 = ! ( 0x03 << bidx );
-		let maskdata = self.data[i/32] & mask;
+		let maskdata = self.data.stack[i/32] & mask;
 		let newdata = maskdata | (val << bidx);
-		self.data[i/32] = newdata;
+		self.data.stack[i/32] = newdata;
 	}
 	pub fn append_path(&mut self, path: &Vec::<Move>) {
 		for move1 in path {
@@ -298,9 +302,9 @@ impl ShrunkPath {
 			} else {
 				// modify existing block
 				let idx = self.count as usize/32;
-				let mut x = self.data[idx];
+				let mut x = self.data.stack[idx];
 				x |= (*move1 as u64) << (2*(self.count%32));
-				self.data[idx] = x;
+				self.data.stack[idx] = x;
 			}
 			self.count += 1;
 		}
@@ -329,12 +333,12 @@ impl ShrunkPath {
 			let a_len = 16-b_len;			// 16 to 1 i.e. always exists, may take up entire u32
 			let b_shr = 32-(2*b_len); 		// will shr between 2 (len=15) and 32 (len=0)
 			let a_shl = 32-(2*a_len); 		// will shl between 30 (len=2) and 0  (len=16)
-			let block_a = npath.data[ni] << a_shl;
-			let block_b = npath.data[ni] >> b_shr;
+			let block_a = npath.data.stack[ni] << a_shl;
+			let block_b = npath.data.stack[ni] >> b_shr;
 			if self.count % 16 == 0 { // perfect alignment, append new block, i.e. b_len will have length zero!
 				self.data.push(block_a);
 			} else {
-				self.data[self.count as usize/16] |= block_a;
+				self.data.stack[self.count as usize/16] |= block_a;
 				self.data.push(block_b);
 			}
 			self.count += if ni == (npath.count as usize/16) { npath.count%16 } else { 16 };
@@ -344,7 +348,7 @@ impl ShrunkPath {
 	pub fn to_path(&self) -> Vec::<Move> {
 		let mut path = Vec::<Move>::with_capacity(self.count as usize);
 		for i in 0..self.count as usize {
-			let block = self.data[i/32];
+			let block = self.data.stack[i/32];
 			let shr = block >> (2*(i%32));
 			path.push( Move::from_u64_unchecked( shr & 0x03 ) );
 		}
@@ -355,7 +359,7 @@ impl ShrunkPath {
 		if self.count == 0 { panic!("stack underflow in ShrunkPath::pop"); }
 		self.count -= 1;
 		let i = self.count as usize;
-		let block = self.data[i/32];
+		let block = self.data.stack[i/32];
 		let shr = block >> (2*(i%32));
 		return Move::from_u64_unchecked( shr & 0x03 );
 	}

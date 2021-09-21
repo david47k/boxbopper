@@ -1,13 +1,9 @@
 // PathNode, PathMap, PathNodeMap and family
 // Used for creating and solving levels
 
-use std::cmp::Ordering;
-use rayon::prelude::*;
-
 use boxbopperbase::{Obj};
-use boxbopperbase::level::{Level,SpLevel};
+use boxbopperbase::level::{Level,SpLevel,CmpData};
 use boxbopperbase::vector::{Vector,Move,ALLMOVES,ShrunkPath};
-
 use boxbopperbase::stackstack::{StackStack16,StackStack8};
 
 #[derive(Clone,Copy)]
@@ -37,7 +33,20 @@ pub struct PathMap {
 	pub flag: bool,
 }
 
+
 impl PathMap {
+	pub fn new() -> PathMap {
+		PathMap {
+			level: SpLevel {
+				w: 0,
+				h: 0,
+				cmp_data: CmpData::new(),
+			},
+			path: ShrunkPath::new(),
+			depth: 0,
+			flag: false,
+		}
+	}
 	pub fn new_from_level(level: &Level) -> PathMap {
 		PathMap {
 			level: SpLevel::from_level(level),
@@ -118,6 +127,62 @@ impl PathMap {
 		}
 		// pnm -> new_by_applying_key_push(pnm, pm, km)
 	}
+	pub fn complete_unsolve_2(&self, base_level: &Level, maps_out: &mut Vec::<PathMap>, depth: u16) {
+		let initial_pn = PathNode {
+			pt: Vector(self.level.cmp_data.human_x as i32, self.level.cmp_data.human_y as i32),
+			move_taken: None,
+			prev_node_idx: 0,
+		};
+		let mut nodes = Vec::<PathNode>::with_capacity(256/(std::mem::size_of::<PathNode>()));
+		nodes.push(initial_pn);
+		
+		let mut tail_nodes = StackStack16::new(); 
+		let mut new_tail_nodes = StackStack16::new();
+		tail_nodes.push(0);		
+		while tail_nodes.len() != 0 {					// check if map is complete
+			for idx in 0..tail_nodes.len() {
+				let tnidx = tail_nodes.stack[idx];
+				let tnode = nodes[tnidx as usize];
+				let pt = tnode.pt;									
+				'loop_moves: for movedir in ALLMOVES.iter() {							// for each possible move
+					let npt = pt.add_dir(&movedir);							// what is in this direction? let's find out	
+					if !base_level.vector_in_bounds(&npt) { continue; }
+					if self.level.is_boxx_at_pt(&npt) {
+						// What's in our reverse direction? We can pull into Space and Hole.
+						let bnpt = pt.add_dir(&movedir.reverse());
+						let nobj = self.level.get_obj_at_pt_nohuman_checked(&bnpt, base_level);
+						if nobj == Obj::Space || nobj == Obj::Hole {
+							// yep, its a keypull, save key move.. 
+							let km = KeyMove {
+								pni: tnidx,
+								move_dir: movedir.reverse(),
+							};
+							//pnm.key_moves.push(km);
+							maps_out.push(self.apply_key_pull_2(&nodes,&km, depth));
+						}
+					} else if base_level.get_obj_at_pt(&npt) != Obj::Wall {
+						// first check this point isn't already in our list!!!						
+						for n in nodes.iter() {
+							if n.pt == npt { continue 'loop_moves; }
+						}
+						
+						// yep, we can move here, make a new tail node
+						let pn = PathNode {
+							pt: npt.clone(),
+							move_taken: Some(*movedir),
+							prev_node_idx: tnidx as u16,
+						};
+						new_tail_nodes.push(nodes.len() as u16);
+						nodes.push(pn);
+					}
+				}	
+			}
+
+			// move new_tail_nodes to tail_nodes
+			tail_nodes.clone_from(&new_tail_nodes);
+			new_tail_nodes.clear();
+		}		
+	}
 	pub fn apply_key_push_2(&self, nodes: &Vec::<PathNode>, km: &KeyMove) -> PathMap { 	// after we complete a map, we need to take a key move and start again	
 		let mut map_b = self.clone();
 				
@@ -145,6 +210,37 @@ impl PathMap {
 		backtrace_moves2(nodes, km.pni as usize, &mut map_b.path);
 		map_b.path.push(&km.move_dir);
 		
+		map_b
+	}
+	pub fn apply_key_pull_2(&self, nodes: &Vec::<PathNode>, km: &KeyMove, depth: u16) -> PathMap { 	// after we complete a map, we need to take a key move and start again
+		let mut map_b = self.clone();
+		map_b.depth = depth;
+				
+		// remove old boxx
+		let pull_from_pt = nodes[km.pni as usize].pt.add_dir(&km.move_dir.reverse());
+		let is_boxx = map_b.level.is_boxx_at_pt(&pull_from_pt);
+		if is_boxx {
+			map_b.level.clear_boxx_at_pt(&pull_from_pt);
+		} else {
+			panic!("Key pull doesn't seem to be moving a boxx!");
+		}
+
+		// place new boxx
+		let pull_to_pt = nodes[km.pni as usize].pt;
+		let is_clear = !map_b.level.is_boxx_at_pt(&pull_to_pt);
+		if is_clear {
+			map_b.level.set_boxx_at_pt(&pull_to_pt);
+		} else {
+			panic!("Key pull seems to be moving boxx into something weird!");
+		}
+		
+		// new human point
+		let np = nodes[km.pni as usize].pt.add_dir(&km.move_dir);
+		map_b.level.set_human_pos(&np);
+
+		backtrace_moves2(nodes, km.pni as usize, &mut map_b.path);
+		map_b.path.push(&km.move_dir);
+
 		map_b
 	}	
 	pub fn new_by_applying_key_push(pnm: &PathNodeMap, pm: &PathMap, km: &KeyMove) -> PathMap { 	// after we complete a map, we need to take a key move and start again	
@@ -419,18 +515,3 @@ pub fn backtrace_moves2(nodes: &Vec::<PathNode>, pni: usize, spath: &mut ShrunkP
 }
 
 
-pub fn dedupe_equal_levels(maps: &mut Vec::<PathMap>) {
-	maps.par_sort_unstable_by(|a,b| {
-		let ord = a.level.cmp_data.partial_cmp(&b.level.cmp_data).unwrap();
-		if ord == Ordering::Equal {
-			if a.path.len() < b.path.len() {
-				return Ordering::Less;
-			}
-			if a.path.len() > b.path.len() {
-				return Ordering::Greater;
-			}
-		}
-		ord			
-	});
-	maps.dedup_by(|a,b| a.level.cmp_data == b.level.cmp_data); // it keeps the first match for each level (sorted to be smallest moves)
-}

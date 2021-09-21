@@ -2,18 +2,22 @@
 
 use boxbopperbase::{moves_to_string};
 use boxbopperbase::level::{Level,CmpData};
-use boxbopperbase::vector::{Move,ShrunkPath};
+use boxbopperbase::vector::{Move};
 
 use rayon::prelude::*;
 use std::rc::Rc;
 use std::collections::BTreeMap;
 
-use crate::pathnodemap::{PathNodeMap,PathMap,KeyMove,dedupe_equal_levels};
+use crate::solve::{task_splitter,task_splitter_mut,task_splitter_sort};
+
+use crate::pathnodemap::{PathMap};
 
 extern crate rand;
 extern crate rand_chacha;
 
 use rand::{Rng};
+
+use bevy_tasks::{TaskPoolBuilder};
 
 
 pub fn select_unique_n_from(count: usize, len: usize, rng: &mut rand_chacha::ChaCha8Rng) -> Vec::<usize> {
@@ -40,11 +44,15 @@ pub fn select_unique_n_from(count: usize, len: usize, rng: &mut rand_chacha::Cha
 }
 
 
-pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32) -> Vec::<Level> {
+pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32, num_threads: usize) -> Vec::<Level> {
 	let base_level1 = base_level_in.clear_human_cloned();
 	let base_map = PathMap::new_from_level(&base_level1);
 	let base_level = base_level1.clear_boxxes_cloned();
 
+	let pool = TaskPoolBuilder::new()
+	.thread_name("Box Bopper Tool Thread Pool".to_string())
+	.num_threads(num_threads)
+	.build();
 
 	// A map is complete when the last box is pushed into place. So when unsolving, we need to start with the human
 	// in the appropriate spot(s) they'd be after pushing the last box.
@@ -52,13 +60,13 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 
 	if verbosity > 1 { println!("finding final maps..."); }
 	let vbm = vec![base_map];
-	let mapsr: Vec<(PathNodeMap,&PathMap)> = vbm.iter().map(|m| (m.complete_map_unsolve(&base_level),m) ).collect();
-	let mapsr: Vec<PathMap> = mapsr.iter().flat_map(|(pnm,pm)| pnm.apply_key_pulls(pm) ).collect();
-	let mapsr: Vec<(PathNodeMap,&PathMap)> = mapsr.iter().map(|m| (m.complete_map_solve(&base_level),m) ).collect();
-	let mapsr: Vec<PathMap> = mapsr.iter().flat_map(|(map,m)| map.apply_key_pushes(&m) ).collect();
-	let mut mapsr: Vec<PathMap> = mapsr.iter().filter(|m| m.level.have_win_condition(&base_level) ).cloned().collect();
-	mapsr.iter_mut().for_each(|mut map| { 			// reset the move count
-		map.path = ShrunkPath::new(); 
+	let mut maps1 = Vec::<PathMap>::new();
+	vbm.iter().for_each(|m| m.complete_unsolve_2(&base_level, &mut maps1, 0));
+	let mut maps2 = Vec::<PathMap>::new();
+	maps1.iter().for_each(|m| m.complete_solve_2(&base_level, &mut maps2));
+	let mut mapsr: Vec<PathMap> = maps2.iter().filter(|m| m.level.have_win_condition(&base_level) ).cloned().collect();
+	mapsr.iter_mut().for_each(|map| { 			// reset the move count
+		map.path.clear(); 
 	});
 	if verbosity > 1 { 
 		println!("final maps found: {}", mapsr.len()); 
@@ -76,21 +84,17 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 	for count in 0..=(max_depth+1) {
 		println!("--- Depth {:>2} ---", count);
 		
-		// complete the maps (finding keymoves as it goes)
-		if verbosity > 1 { println!("completing  {:>7} maps", mapsr.len()); }
-		let maps: Vec<(PathNodeMap,&PathMap)> = mapsr.par_iter().map(|m| (m.complete_map_unsolve(&base_level),m) ).collect();
+		// Perform next key moves
+		if verbosity > 1 { println!("performing next key moves..."); }
+		let mut maps = task_splitter(&pool, num_threads, &mapsr, |maps_read: &[PathMap], mut maps_write: &mut Vec::<PathMap>| {
+			maps_read.iter().for_each(|m| m.complete_unsolve_2(&base_level, &mut maps_write, count));		// perform next key moves
+			//maps_write.retain(|m| m.path.len() < max_moves);										// filter out long moves
+		});
 
-		// apply key moves
-		if verbosity > 1 { println!("collecting kms..."); }
-		let todo_list: Vec<(&PathNodeMap,&PathMap,&KeyMove)> = maps.iter().flat_map(|(pnm,pm)| pnm.key_moves.iter().map(|km| (pnm,*pm,km)).collect::<Vec::<(&PathNodeMap,&PathMap,&KeyMove)>>() ).collect();
-		if verbosity > 1 { println!("applying kms..."); }
-		let mut maps: Vec<PathMap> = todo_list.par_iter().map(|(pnm,pm,km)| PathMap::new_by_applying_key_pull(pnm,pm,km,count+1)).collect();
-		
-		// sort and deduplicate
+		// Sort and deduplicate
 		if verbosity > 1 { println!("deduping: before {:>7}", maps.len()); }
-		dedupe_equal_levels(&mut maps);
+		maps = task_splitter_sort(&pool, num_threads, maps);
 		if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
-
 
 		// shuffle mapsr->contenders->contenders_2->non_contenders
 		if verbosity > 1 { println!("keep top contenders..."); }
@@ -112,6 +116,17 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 
 		// Remove from maps anything that is in c2 AND we already found a shorter path
 		if verbosity > 1 { println!("deduping using c2: before {:>7}", maps.len()); }
+		/* task_splitter_mut(&pool, num_threads, maps, |ms| {
+			for m in ms {
+				let v = contenders_2.binary_search_by(|c2m| c2m.level.cmp_data.partial_cmp(&m.level.cmp_data).unwrap());
+				if v.is_ok() {
+					if contenders_2[v.unwrap()].path.len() <= m.path.len() {
+						m.flag = true;
+					}
+				}
+			}
+		}); */
+
 		maps.par_iter_mut().for_each(|m| {
 			let v = contenders_2.binary_search_by(|c2m| c2m.level.cmp_data.partial_cmp(&m.level.cmp_data).unwrap());
 			if v.is_ok() {
