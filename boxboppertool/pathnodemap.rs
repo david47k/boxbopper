@@ -1,3 +1,5 @@
+// boxboppertool Copyright 2020-2021 David Atkinson
+//
 // PathNode, PathMap, PathNodeMap and family
 // Used for creating and solving levels
 

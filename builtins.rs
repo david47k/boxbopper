@@ -1,3 +1,8 @@
+// Box Bopper: Sokoban clone in rust
+// Copyright David Atkinson 2020-2021
+//
+// builtins.rs: This file contains levels that will be built in to the game
+
 pub const BUILTIN_LEVELS: [&str; 79] = [
 
 r"##########

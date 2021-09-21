@@ -1,3 +1,6 @@
+// Box Bopper: Sokoban clone in rust
+// Copyright David Atkinson 2020-2021
+//
 // level.rs: store level data and perform basic operations
 
 use wasm_bindgen::prelude::*;

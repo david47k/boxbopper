@@ -1,4 +1,7 @@
-// Box Bopper: Sokoban clone in rust - console version
+// Box Bopper: Sokoban clone in rust
+// Copyright David Atkinson 2020-2021
+//
+// boxbopperconsole.rs: console game player
 
 use std::io;
 use std::io::BufRead;

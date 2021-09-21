@@ -1,3 +1,5 @@
+// boxboppertool Copyright 2020-2021 David Atkinson
+//
 // solve.rs: solve a sokoban-style level
 
 use boxbopperbase::level::{Level,CmpData};

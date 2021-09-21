@@ -1,5 +1,8 @@
 
-// generic functions that are useful
+// Box Bopper: Sokoban clone in rust
+// Copyright David Atkinson 2020-2021
+//
+// dgens.rs: generic functions that are useful
 
 // this looks like it's just a.all(|x| x==b)
 pub fn contains_only<T>(a: &[T], b: &T) -> bool where T: Eq {

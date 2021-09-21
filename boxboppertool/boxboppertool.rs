@@ -1,4 +1,6 @@
-// Box Bopper Tool: Sokoban clone level creator and solver
+// boxboppertool Copyright 2020-2021 David Atkinson
+//
+// Box Bopper Tool: Sokoban-clone level creator and solver
 
 use std::fs::File;
 use std::io::prelude::*;

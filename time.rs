@@ -1,4 +1,7 @@
-// time for boxbopper
+// Box Bopper: Sokoban clone in rust
+// Copyright David Atkinson 2020-2021
+//
+// time.rs: basic get_time_ms for boxbopper
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime,UNIX_EPOCH};

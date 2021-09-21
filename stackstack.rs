@@ -1,3 +1,6 @@
+// Box Bopper: Sokoban clone in rust
+// Copyright David Atkinson 2020-2021
+//
 // stackstack.rs: a stack on the stack, used to speed up inner loops by avoiding memory allocation
 
 const STACKSTACK64_MAX: usize = 8;

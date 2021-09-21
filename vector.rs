@@ -1,4 +1,7 @@
-// Includes Vector and Move
+// Box Bopper: Sokoban clone in rust
+// Copyright David Atkinson 2020-2021
+//
+// vector.rs: has vector for points / moves / directions and paths
 
 use wasm_bindgen::prelude::*;
 use js_sys::Array;

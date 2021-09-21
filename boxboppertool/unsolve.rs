@@ -1,3 +1,5 @@
+// boxboppertool Copyright 2020-2021 David Atkinson
+//
 // unsolve.rs: unsolve (create) a sokoban-style level
 
 use boxbopperbase::{moves_to_string};
