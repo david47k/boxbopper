@@ -128,7 +128,6 @@ impl Game {			// non-js
 		}			
 		
 		let	_move = self.move_queue.pop().unwrap();
-		console_log("move popped from queue");
 
 		// check it is a valid option
 		if !self.get_move_options().contains(&_move) {
@@ -275,8 +274,9 @@ impl Game {
 
 	
 	pub fn display(&self) {
-		println!("--------------------------------------------------------------------------------");
+		println!("------------------------------------------------------------------------------");
 		println!("{} moves: {}", self.num_moves, moves_to_string(&self.move_history));
+		println!("------------------------------------------------------------------------------");
 		println!();
 		println!("{}", self.level.to_string());
 		println!();

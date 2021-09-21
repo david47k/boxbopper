@@ -3,6 +3,7 @@
 //
 // boxbopperconsole.rs: console game player
 
+use std::io::prelude::*;
 use std::io;
 use std::io::BufRead;
 
@@ -49,6 +50,9 @@ fn main() -> Result<(),String> {
 		}
 	}
 
+	if verbosity > 0 {
+		println!("boxbopperconsole Copyright 2020-2021 David Atkinson");
+	}
 	
 	let mut state = if filename.len() > 0 {
 		Game::new_from_level(&Level::from_file(&filename).expect("Unable to open specified file"), 0)
@@ -64,11 +68,12 @@ fn main() -> Result<(),String> {
 			state.process_moves();
 		}
 		
-		&state.display();
+		println!("\n\n");
+		state.display();
 		
 		if state.have_win_condition() {
-			println!(r"\  /\  / | |\ |");
-			println!(r" \/  \/  | | \|");
+			println!(r"    \  /\  / | |\ |");
+			println!(r"     \/  \/  | | \|");
 			if current_level < BUILTIN_LEVELS.len() as u32 {
 				current_level += 1;
 			} else {			
@@ -76,28 +81,29 @@ fn main() -> Result<(),String> {
 				break;
 			};
 			state = Game::new(current_level);
+			println!("\n");
+			println!("==============================================================================");
 			println!("Level {}", current_level);
-			&state.display();
+			state.display();
 		}
 		
-		print!("Options: q` ");
+		print!("Options: Q`");
 		let opts = &state.get_move_options();
 		for x in opts {
 			print!("{}", x.to_string());
 		}
-		println!(" > ");
-		
-		//let c = get_user_input()[0..1].parse::<char>().unwrap();
+		print!(" > ");
+		io::stdout().flush().ok().expect("Could not flush stdout");
 		
 		get_user_input().chars().for_each( |c| match c {
 			'q' | 'Q' => quit = true,
 			'`' => state = Game::new(current_level),
-			'n' =>  { if current_level < BUILTIN_LEVELS.len() as u32 {
+			'n' | 'N' =>  { if current_level < BUILTIN_LEVELS.len() as u32 {
 						current_level += 1;
 						state = Game::new(current_level);
 						println!("Level {}", current_level);
 					}},
-			'p' => { if current_level > 0 {
+			'p' | 'P' => { if current_level > 0 {
 						current_level -= 1;
 						state = Game::new(current_level);
 						println!("Level {}", current_level);

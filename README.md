@@ -11,7 +11,8 @@ It includes:
 
 ### Building
 
-Use `rust build` in the `boxbopperconsole` directory to build the console game.
+Use `cargo build --release` in the `boxbopperconsole` directory to build the console game.  
+(You may first need to run `cargo build --release` in the root directory to build the `boxbopperbase` library.)
 
 ### Usage
 
@@ -38,7 +39,7 @@ Press `R` to reset, `N` for next level, `P` for previous level, or click the app
 # boxboppertool
 
 ### Building
-Use `rust build` in the `boxboppertool` directory to build the (console) tool.
+Use `cargo build --release` in the `boxboppertool` directory to build the (console) tool.
 
 ### Usage
 ```
