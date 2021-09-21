@@ -5,13 +5,7 @@ A sokoban-style game in rust.
 It includes:
 - a web game (rust/wasm/javascript)
 - a console game
-- a tool that will create and solve levels (multithreaded and has some optimisations)
-
-# boxbopperbase (library)
-
-### Building
-
-Use `rust build` in the root directory to build the library.
+- a tool that will create and solve levels (multithreaded and optimised, using an exhaustive search)
 
 # boxbopperconsole (game)
 
