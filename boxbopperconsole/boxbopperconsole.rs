@@ -23,11 +23,47 @@ pub fn get_user_input() -> String {
 
 const DEF_VERBOSITY: u32 = 1;
 
+// Wall, Space, Boxx, Hole, Human, HumanInHole, BoxxInHole
+//◽■□🗿◽■□▣█░▒▓◦☐☒☓⬛⬜⬚⬝⬞
+
+const CHARMAPS: [[&str; 7]; 2] = [ ["#", " ", "*", "O", "&", "%", "@"],
+                                   ["▒", " ", "■", "□", "😀", "🗿", "▣"] ];
+
+pub fn display_game(game: &Game, charmap: usize) {
+	println!("------------------------------------------------------------------------------");
+	println!("{} moves: {}", game.get_num_moves(), game.get_moves_string());
+	println!("------------------------------------------------------------------------------");
+	println!();
+	let base_str = game.get_level_string();
+	if charmap == 0 {
+		println!("{}", base_str);
+	} else {
+		let mut alt_str: String = String::from("");
+		for c in base_str.chars() {
+			let cs = String::from(c);
+			let alt = match c {
+				'#' => CHARMAPS[1][0],
+				' ' => CHARMAPS[1][1],
+				'*' => CHARMAPS[1][2],
+				'O' => CHARMAPS[1][3],
+				'&' => CHARMAPS[1][4],
+				'%' => CHARMAPS[1][5],
+				'@' => CHARMAPS[1][6],
+				_   => &cs,
+			};	
+			alt_str += alt;
+		}
+		println!("{}", alt_str);
+	}
+	println!();
+}
+
 fn main() -> Result<(),String> {
 	let args: Vec::<String> = std::env::args().collect();
 	let mut filename: String = String::from("");
 	let mut builtin: u32 = 0;
 	let mut verbosity: u32 = DEF_VERBOSITY;
+	let mut charmap: usize = 0;
 	
 	// process params
 	for (count,arg) in args.into_iter().enumerate() {
@@ -43,6 +79,7 @@ fn main() -> Result<(),String> {
 				"filename"  => { filename = String::from(right); },
 				"builtin"   => { builtin = right.parse::<u32>().unwrap(); }
 				"verbosity" => { verbosity = right.parse::<u32>().unwrap(); },
+				"charmap"   => { charmap = right.parse::<usize>().unwrap(); },
 				_ => {
 					println!("Unrecognised variable {}", left);
 				}
@@ -69,7 +106,7 @@ fn main() -> Result<(),String> {
 		}
 		
 		println!("\n\n");
-		state.display();
+		display_game(&state, charmap);
 		
 		if state.have_win_condition() {
 			println!(r"    \  /\  / | |\ |");
@@ -84,7 +121,7 @@ fn main() -> Result<(),String> {
 			println!("\n");
 			println!("==============================================================================");
 			println!("Level {}", current_level);
-			state.display();
+			display_game(&state, charmap);
 		}
 		
 		print!("Options: Q`");

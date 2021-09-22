@@ -271,17 +271,19 @@ impl Game {
 	pub fn get_move_history(&self) -> Array {
 		self.move_history.clone().into_iter().map(|m| JsValue::from(m as u32)).collect()
 	}	
-
-	
-	pub fn display(&self) {
-		println!("------------------------------------------------------------------------------");
-		println!("{} moves: {}", self.num_moves, moves_to_string(&self.move_history));
-		println!("------------------------------------------------------------------------------");
-		println!();
-		println!("{}", self.level.to_string());
-		println!();
+		
+	pub fn get_num_moves(&self) -> u32 {
+		self.num_moves
 	}
-	
+
+	pub fn get_moves_string(&self) -> String {
+		moves_to_string(&self.move_history)
+	}
+
+	pub fn get_level_string(&self) -> String {
+		self.level.to_string()
+	}
+
 	pub fn get_object_at_point(&self, point: &Vector) -> Obj {
 		// bounds check point
 		if point.to_usize().0 >= self.level.w as usize || point.to_usize().1 >= self.level.h as usize {
