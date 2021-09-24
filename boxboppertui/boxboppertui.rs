@@ -4,6 +4,7 @@
 // boxboppertui.rs: console game player
 // TODO: Lots of TODOs below!
 // TODO: Add highscore
+// TODO: Make walls brown
 
 use std::io;
 use std::io::{BufRead,Write};
@@ -30,7 +31,8 @@ use tui::text::{Span,Spans};
 // ♒♊🔘🔲🔳🔴🔵📀💿🟠🟡🟢🟣🟤🟥🟦🟧🟨🟩🟪🟫🧿🧍👷🙂🙃😀😃😄🤔🗿
 // We use str here (instead of char) because unicode characters can be multi-width or multi-code
 // Wall, Space, Boxx, Hole, Human, HumanInHole, BoxxInHole
-const EMOJI_OBJS: [&str; 7] = ["░░", "  ", "❎", "🔳", "😀", "🤔", "✅"];
+const TEXT_OBJS: [[&str; 7]; 2] = [ ["#", " ", "*", "O", "&", "%", "@" ],
+									["░░", "  ", "❎", "🔳", "😀", "🤔", "✅"] ];
 
 pub fn basic_ui_get_user_input() -> String {
 	let mut line = String::new();
@@ -52,6 +54,7 @@ pub fn basic_ui_display_game(game: &Game, use_emoji: bool) {
 
 fn get_level_string(game: &Game, use_emoji: bool) -> String {
 	let base_str = game.get_level_string();
+	
 	if !use_emoji {
 		String::from(base_str)
 	} else {
@@ -64,18 +67,39 @@ fn level_str_to_emoji_str(base_str: &String) -> String {
 	for c in base_str.chars() {
 		let cs = String::from(c);
 		let alt = match c {
-			'#' => EMOJI_OBJS[0],
-			' ' => EMOJI_OBJS[1],
-			'*' => EMOJI_OBJS[2],
-			'O' => EMOJI_OBJS[3],
-			'&' => EMOJI_OBJS[4],
-			'%' => EMOJI_OBJS[5],
-			'@' => EMOJI_OBJS[6],
+			'#' => TEXT_OBJS[0][0],
+			' ' => TEXT_OBJS[0][1],
+			'*' => TEXT_OBJS[0][2],
+			'O' => TEXT_OBJS[0][3],
+			'&' => TEXT_OBJS[0][4],
+			'%' => TEXT_OBJS[0][5],
+			'@' => TEXT_OBJS[0][6],
 			_   => &cs,
 		};	
 		alt_str += alt;
 	}
 	alt_str
+}
+
+fn level_str_to_vecs(base_str: &String, use_emoji: bool) -> Vec<Spans> {
+	let mut vecs: Vec<Spans> = vec![];
+	let mut line: Vec<Span> = vec![];
+	let ue = use_emoji as usize;
+	for c in base_str.chars() {
+		match c {
+			'#' => line.push(Span::styled(TEXT_OBJS[ue][0], Style::default().fg(Color::Red))),
+			' ' => line.push(Span::styled(TEXT_OBJS[ue][1], Style::default())),
+			'*' => line.push(Span::styled(TEXT_OBJS[ue][2], Style::default().fg(Color::Green))),
+			'O' => line.push(Span::styled(TEXT_OBJS[ue][3], Style::default())),
+			'&' => line.push(Span::styled(TEXT_OBJS[ue][4], Style::default().fg(Color::LightYellow))),
+			'%' => line.push(Span::styled(TEXT_OBJS[ue][5], Style::default().fg(Color::LightYellow))),
+			'@' => line.push(Span::styled(TEXT_OBJS[ue][6], Style::default().fg(Color::LightGreen))),
+			//'\n' | '\r' => { vecs.push(Spans::from(line.clone())); line.clear(); },
+			_   => { vecs.push(Spans::from(line.clone())); line.clear(); },
+		};
+	}
+	vecs.push(Spans::from(line.clone()));
+	return vecs.iter().map(|v| { Spans::from(v.clone()) } ).collect();
 }
 
 // OK will return bool (true=keep going), Err will return string
@@ -169,7 +193,9 @@ fn tui_inner(state: &mut Game, current_level: &mut u32, use_emoji: bool) -> Resu
 
 		rect.render_widget(menu_widget, chunks[2]);
 
-		let game_widget = Paragraph::new(get_level_string(state, use_emoji)) 
+		let base_str = state.get_level_string();
+		let game_text_vecs = level_str_to_vecs(&base_str, use_emoji);
+		let game_widget = Paragraph::new(game_text_vecs) 
 			.alignment(Alignment::Center)
 			.block(
 				Block::default().style(Style::default().fg(Color::White)),
