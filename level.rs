@@ -810,7 +810,9 @@ impl Level {
 			bits_used += 1;
 		}
 		// align last block
-		data = data << (64-bits_used);
+		if bits_used % 64 != 0 {
+			data = data << (64 - (bits_used % 64));
+		}
 		blocks[block] = data;
 		self.win_data = blocks;
 		if false {
