@@ -1689,7 +1689,7 @@ r"#################
 #################
 
 title: winner
-width: 17
+width: 15
 height: 11
 num_boxxes: 23
 ",
