@@ -23,11 +23,14 @@ pub fn get_user_input() -> String {
 
 const DEF_VERBOSITY: u32 = 1;
 
-// Wall, Space, Boxx, Hole, Human, HumanInHole, BoxxInHole
-//◽■□🗿◽■□▣█░▒▓◦☐☒☓⬛⬜⬚⬝⬞
+//■□▣░▒▓█☐☒☓◦⬝⬞⁅⁆※ↀ⊏⊐⊗⊞⊠⊡╳⬚
+// ✅❎❌⏹⬛⬜
+// ♒♊🔘🔲🔳🔴🔵📀💿🟠🟡🟢🟣🟤🟥🟦🟧🟨🟩🟪🟫🧿🧍👷🙂🙃😀😃😄🤔🗿
 
+// We use str here (instead of char) because unicode characters can take up more than one char (due to e.g. combining diacritics)
+// Wall, Space, Boxx, Hole, Human, HumanInHole, BoxxInHole
 const CHARMAPS: [[&str; 7]; 2] = [ ["#", " ", "*", "O", "&", "%", "@"],
-                                   ["▒", " ", "■", "□", "😀", "🗿", "▣"] ];
+                                   ["░░", "  ", "❎", "🔳", "😀", "🤔", "✅"] ];
 
 pub fn display_game(game: &Game, charmap: usize) {
 	println!("------------------------------------------------------------------------------");
@@ -111,7 +114,7 @@ fn main() -> Result<(),String> {
 		if state.have_win_condition() {
 			println!(r"    \  /\  / | |\ |");
 			println!(r"     \/  \/  | | \|");
-			if current_level < BUILTIN_LEVELS.len() as u32 {
+			if current_level < BUILTIN_LEVELS.len() as u32 - 1 {
 				current_level += 1;
 			} else {			
 				println!("All levels complete!");
