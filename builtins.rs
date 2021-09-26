@@ -1,4 +1,4 @@
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban-like game
 // Copyright David Atkinson 2020-2021
 //
 // builtins.rs: This file contains levels that will be built in to the game

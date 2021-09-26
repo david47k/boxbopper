@@ -1,4 +1,4 @@
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban-like game
 // Copyright David Atkinson 2020-2021
 //
 // level.rs: store level data and perform basic operations
@@ -19,10 +19,13 @@ pub fn verify_builtins() -> bool {
 	let mut ok = true;
 	for i in 0..BUILTIN_LEVELS.len() {
 		let level = Level::from_builtin(i);
-		if level.is_none() {
-			println!("Level index {} is invalid", i);
-			ok = false;
-			continue;
+		match level {
+			Ok(_) => {},
+			Err(s) => {
+				println!("Level index {} is invalid: {}", i, s);
+				ok = false;
+				continue;
+			},
 		}
 		let level = level.unwrap();
 		if level.contains_key("num") {
@@ -32,7 +35,7 @@ pub fn verify_builtins() -> bool {
 				ok = false;
 			}
 		} else {
-			println!("Warning: Level index {} has no num:", i);
+			println!("Warning: Level index {} has no num.", i);
 		}
 	}
 	ok
@@ -71,7 +74,9 @@ impl CmpData {
 			bits_used += 1;
 		}
 		// align last block
-		data <<= 64-bits_used;
+		if bits_used % 64 != 0 {
+			data = data << (64 - (bits_used % 64));
+		}
 		cmp_data.blocks[block] = data;
 		
 		if false {
@@ -239,15 +244,12 @@ impl SpLevel {
 #[wasm_bindgen]
 impl Level {
 	#[wasm_bindgen]
-	pub fn from_builtin(number: usize) -> Option<Level> {
-		// locate string
-		if number >= BUILTIN_LEVELS.len() {
-			return None;
-		}
-		
-		let level = BUILTIN_LEVELS[number];
-		let level = Level::from_str(level);
-		level
+	pub fn from_builtin_js(number: usize) -> Result<Level, JsValue> {
+		let level = Level::from_builtin(number);
+		return match level {
+			Ok(l) => Ok(l),
+			Err(s) => Err(JsValue::from_str(s)),
+		};
 	}
 	pub fn get_obj_at_pt(&self, pt: &Vector) -> Obj {
 		self.data[(pt.0 as usize) + (pt.1 as usize) * (self.w as usize)]
@@ -326,14 +328,25 @@ impl Level {
 
 // non-js
 impl Level {
-	pub fn from_str(level_str: &str) -> Option<Level> {
+	pub fn from_builtin(number: usize) -> Result<Level, &'static str> {
+		// locate string
+		if number >= BUILTIN_LEVELS.len() {
+			return Err("Level number too high");
+		}
+		
+		let level = BUILTIN_LEVELS[number];
+		Level::from_str(level)
+	}
+	pub fn from_str(level_str: &str) -> Result<Level, &str> {
 		let mut count: usize = 0;
 		let mut h: u16 = 0;
 		let mut w: u16 = 0;
 		let mut data = Vec::<Obj>::with_capacity(128);
-		let mut human_pos: Vector = Vector(-1,-1);
+		let mut human_pos: Option<Vector> = None;
 		let mut keyvals = HashMap::new();
 		let mut kvmode = false;
+		let mut num_boxxes = 0;
+		let mut num_holes = 0;
 	
 		for line in level_str.lines() {		
 			let txt = line;
@@ -347,7 +360,17 @@ impl Level {
 				for (i,c) in txt.char_indices() {		// chars() is iterator
 					if c == '&' || c == '%' {
 						// found human_pos
-						human_pos = Vector(i.try_into().unwrap(),h.try_into().unwrap());
+						if human_pos.is_none() {
+							human_pos = Some(Vector(i.try_into().unwrap(),h.try_into().unwrap()));
+						} else {
+							return Err("More than one human found!");
+						}
+					}
+					if c == 'O' || c == '%' || c == '@' {
+						num_holes += 1;
+					}
+					if c == '*' || c == '@' {
+						num_boxxes += 1;
 					}
 					data.push( Obj::from_char(&c) );
 				}
@@ -382,24 +405,33 @@ impl Level {
 		let data = tdata;		
 		w -= 2;
 		h -= 2;
-		let human_pos = human_pos.add(&Vector(-1,-1));
+		if human_pos.is_none() {
+			return Err("Human not found in level!");
+		}
+		let	human_pos = human_pos.unwrap().add(&Vector(-1,-1));
 
 		if w < 1 || h < 1 {
-			println!("Dimensions: {} x {}", w, h);
-			panic!("Width and Height must be at least 1!");
+			//println!("Dimensions: {} x {}", w, h);
+			return Err("Width and Height must be at least 1!");
 		}
 		if w > 127 || h > 127 || w * h > 256 {
-			println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 256.");
-			println!("Dimensions: {} x {}", w, h);
-			panic!("Level dimensions too big");
+			//println!("Dimensions: {} x {}", w, h);
+			return Err("Level too big! Maximum width 127. Maximum height 127. Maximum width * height 256.");
 		} 		
 
-		if human_pos.0 == -1 || human_pos.1 == -1 {
-			panic!("Human not found in level");
+		// Check for unequal boxes / holes
+		if num_boxxes != num_holes {
+			return Err("Num boxes is not equal to num holes!");
 		}
-		
-		// println!("Human at: {}, {}", human_pos.0, human_pos.1);
-		
+
+		if num_boxxes < 1 {
+			return Err("Must be at least one box!");
+		}
+
+		if num_boxxes > 24 {		// This is an arbitrary limit, but currently too many boxes uses too many resources
+			return Err("Too many boxes! (Maximum 24)");
+		}
+
 		let mut level = Level {
 			keyvals: keyvals,
 			w: w,
@@ -416,18 +448,20 @@ impl Level {
 		level.make_win_data();
 		level.do_noboxx_pts();
 		level.do_boxx_pts();
-		return Some(level);
+		return Ok(level);
 	}
-	pub fn from_file(filename: &str) -> Option<Level> {
+	pub fn from_file(filename: &str) -> Result<Level, String> {
 		let input = std::fs::read_to_string(filename);
 		let input = match input {
 			Ok(x) => x,
-			_ => panic!("Failed to open level file: {}", filename),
+			_ => return Err("Failed to open level file.".to_string()),
 		};
 			
 		let level = Level::from_str(&input);
-		level
-
+		return match level {
+			Ok(l) => Ok(l),
+			Err(s) => Err(s.to_string()),
+		};
 	}
 	pub fn from_parts(title: String, w: u16, h: u16, human_pos: Vector, data: Vec::<Obj>) -> Level {
 		let mut level = Level {

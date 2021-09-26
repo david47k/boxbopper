@@ -228,6 +228,7 @@ fn main() -> std::io::Result<()> {
 			if eq_idx.is_none() {
 				println!("No equals symbol found in var");
 				mode = Mode::Help;
+				continue;
 			}
 			let eq_idx = eq_idx.unwrap();
 			let left = &arg[0..eq_idx];
@@ -382,11 +383,25 @@ fn main() -> std::io::Result<()> {
 		}
 	} else if mode == Mode::Solve {
 		// load level
-		let level = if filename.len() > 0 {
-			Level::from_file(&filename).expect("Unable to open specified file")
+		// TODO: Fix from_file and from_builtin so they have same return type so the code is neater
+		let level: Level;
+		if filename.len() > 0 {
+			match Level::from_file(&filename) {
+				Ok(l) => level = l,
+				Err(s) => {
+					println!("Error: Unable to open level file: {}", s);
+					return Ok(());
+				},
+			}
 		} else {
-			Level::from_builtin(builtin as usize).expect(&format!("Unable to open builtin level {}!", builtin))
-		};
+			match Level::from_builtin(builtin as usize) {
+				Ok(l) => level = l,
+				Err(s) => {
+					println!("Error: Unable to open builtin level {}: {}", builtin, s);
+					return Ok(());
+				},
+			}
+		}
 
 		if width > 127 || height > 127 || width * height > 256 {
 			println!("ERROR: Maximum width is 127. Maximum height is 127. Maximum width * height is 256.");
@@ -421,6 +436,7 @@ fn main() -> std::io::Result<()> {
 		let mut warnings = false;
 		let mut solutions = Vec::<Option::<Solution>>::new();
 		if !verify_builtins() {
+			println!("Error: Failed to verify builtin levels.");
 			return Ok(());
 		}
 		let mut p = SpeedTest::new();

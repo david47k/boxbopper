@@ -1,6 +1,5 @@
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban-like game
 // Copyright David Atkinson 2020-2021
-
 
 // wasm boilerplate
 mod utils;
@@ -44,7 +43,6 @@ pub fn console_log(s: &str) {
 pub fn console_log(s: &str) {
 	console::log(&Array::from(&JsValue::from(s)));
 }
-
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq)]

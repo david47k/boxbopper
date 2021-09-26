@@ -1,7 +1,7 @@
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban-like game
 // Copyright David Atkinson 2020-2021
 //
-// Sprite animation / management for boxbopper
+// sprite.rs: Sprite animation / management for boxbopper
 
 use wasm_bindgen::prelude::*;
 

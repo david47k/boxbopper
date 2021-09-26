@@ -1,9 +1,15 @@
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban-like game
 // Copyright David Atkinson 2020-2021
 //
 // stackstack.rs: a stack on the stack, used to speed up inner loops by avoiding memory allocation
+//
+// default multiplier is 1 (512 bits or path of 256) but it'll overflow with levels which can have long paths
 
-const STACKSTACK64_MAX: usize = 8;
+const STACKSTACKMUL: usize = 1;
+const STACKSTACK8_MAX: usize = 64 * STACKSTACKMUL;
+const STACKSTACK16_MAX: usize = 64;
+const STACKSTACK32_MAX: usize = 64;
+const STACKSTACK64_MAX: usize = 8 * STACKSTACKMUL;
 
 #[derive(Copy,Clone)]
 pub struct StackStack64 {
@@ -37,8 +43,6 @@ impl StackStack64 {
 	}
 }
 
-const STACKSTACK32_MAX: usize = 64;
-
 #[derive(Copy,Clone)]
 pub struct StackStack32 {
 	pub next: usize,
@@ -70,8 +74,6 @@ impl StackStack32 {
 		self.next = 0;
 	}
 }
-
-const STACKSTACK16_MAX: usize = 64;
 
 #[derive(Copy,Clone)]
 pub struct StackStack16 {
@@ -105,10 +107,6 @@ impl StackStack16 {
 	}
 }
 
-// We can implement Clone clone_from for StackStack16, and get the raw ptr to copy the minimal number of bytes
-
-const STACKSTACK8_MAX: usize = 64;
-
 #[derive(Copy,Clone)]
 pub struct StackStack8 {
 	pub next: usize,
@@ -123,7 +121,7 @@ impl StackStack8 {
 		}
 	}
 	pub fn push(&mut self, d: u8) {
-		if self.next == STACKSTACK8_MAX { panic!("StackStack8 overflow"); }
+		if self.next == STACKSTACK8_MAX { panic!("StackStack8 overflow. Path > 256?"); }
 		self.stack[self.next] = d;
 		self.next += 1;
 	}

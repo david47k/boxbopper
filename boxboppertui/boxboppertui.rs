@@ -1,13 +1,11 @@
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban-like game
 // Copyright David Atkinson 2020-2021
 //
-// boxboppertui.rs: console game player
-// TODO: Lots of TODOs below!
+// boxboppertui.rs: console (text-user-interface) game player
 // TODO: Add highscore
-// TODO: Make walls brown
 
 use std::io;
-use std::io::{BufRead,Write};
+use std::io::{BufRead, Write};
 
 use std::time::Duration;
 
@@ -23,13 +21,13 @@ use tui::Terminal;
 use tui::backend::{CrosstermBackend};
 use tui::widgets::{Block, Borders, Paragraph, BorderType};
 use tui::layout::{Layout, Constraint, Direction, Alignment};
-use tui::style::{Color, Style};
-use tui::text::{Span,Spans};
+use tui::style::{Color, Style, Modifier};
+use tui::text::{Span, Spans};
 
 //■□▣░▒▓█☐☒☓◦⬝⬞⁅⁆※ↀ⊏⊐⊗⊞⊠⊡╳⬚
 // ✅❎❌⏹⬛⬜
 // ♒♊🔘🔲🔳🔴🔵📀💿🟠🟡🟢🟣🟤🟥🟦🟧🟨🟩🟪🟫🧿🧍👷🙂🙃😀😃😄🤔🗿
-// We use str here (instead of char) because unicode characters can be multi-width or multi-code
+// We use str here (instead of char) to allow for multi-width and multi-code
 // Wall, Space, Boxx, Hole, Human, HumanInHole, BoxxInHole
 const TEXT_OBJS: [[&str; 7]; 2] = [ ["#", " ", "*", "O", "&", "%", "@" ],
 									["░░", "  ", "❎", "🔳", "😀", "🤔", "✅"] ];
@@ -111,11 +109,14 @@ fn tui_inner(state: &mut Game, current_level: &mut u32, use_emoji: bool) -> Resu
 		Err(_) => return Err("Failed to open terminal.".to_string()),
 	};
 
+	// Draw the screen
 	let r = terminal.draw(|rect| {
 		let size = rect.size();
+
+		// Split screen in to three chunks, vertically.
 		let chunks = Layout::default()
 			.direction(Direction::Vertical)
-			.margin(2)
+			.margin(0)							// Bug workaround: margin of 1 results in weird borders on resize down
 			.constraints(
 				[
 					Constraint::Length(3),
@@ -125,62 +126,82 @@ fn tui_inner(state: &mut Game, current_level: &mut u32, use_emoji: bool) -> Resu
 				.as_ref(),
 			).split(size);
 		
+		// Format various top strings
 		let current_level_str = format!("{:2}", current_level);
 		let num_moves_str = format!("{:3}", state.get_num_moves());
 
-		// TODO: Format get_moves_string() so that it shows the most recent moves,
-		// or goes multiline, 
-		// when there are too many to display on screen
+		// Format the moves list string: 
+		// If the moves list is longer than the width allocated, show only the most recent moves
+		let moves_chars_avail = size.width as usize - 2 - 9 - 11 - 1;
+		let ms = state.get_moves_string();
+		let (_, moves_str) = if ms.len() > moves_chars_avail {
+			ms.split_at(ms.len() - moves_chars_avail)
+		} else {
+			("", ms.as_str())
+		};
 
-		let level_text = vec![ Spans::from(vec![
+		// Create the top text
+		let top_text = vec![ 
 				Span::raw("Level: "),
 				Span::styled(current_level_str, Style::default().fg(Color::LightMagenta)),
 				Span::raw(" Moves: "),
 				Span::styled(num_moves_str, Style::default().fg(Color::LightMagenta)),
 				Span::raw(" "),
-				Span::styled(state.get_moves_string(), Style::default().fg(Color::Blue)),
-			]) ];
+				Span::styled(moves_str, Style::default().fg(Color::Blue)),
+			];
 		
-		let top_widget = Paragraph::new(level_text)
+		// Create the top widget
+		let top_widget = Paragraph::new( vec![Spans::from(top_text)] )
 			.style(Style::default().fg(Color::LightCyan))
 			.block(
 				Block::default()
 					.borders(Borders::ALL)
 					.style(Style::default().fg(Color::White))
-					.title("BoxBopper by David Atkinson")
+					.title("BoxBopper")
 					.border_type(BorderType::Plain),
 			);
 
+		// Render the top widget
 		rect.render_widget(top_widget, chunks[0]);
 
-		// TODO: Highlight the first letter of the commands
+		// Create the menu text
+		// Underline the key for each command
+		let mut menu_text = vec![
+			Span::styled("Q", Style::default().add_modifier(Modifier::UNDERLINED)),
+			Span::raw("uit   "),
+			Span::styled("`", Style::default().add_modifier(Modifier::UNDERLINED)),
+			Span::raw("reset   "),
+			Span::styled("N", Style::default().add_modifier(Modifier::UNDERLINED)),
+			Span::raw("ext level   "),
+			Span::styled("P", Style::default().add_modifier(Modifier::UNDERLINED)),
+			Span::raw("revious level   "),
+		];
 
-		let mut menu_text = String::from("Quit   `reset   Next level   Previous level   ");
+		// Add the relevant movement commands
 		if !state.have_win_condition() {
 			let opts = &state.get_move_options();
 			for x in opts {
-				let xtra = match x.to_string().as_ref() {
-					"U" => "Up   ",
-					"D" => "Down   ",
-					"L" => "Left   ",
-					"R" => "Right   ",
-					_   => "",
+				let (ft, rt) = match x.to_string().as_ref() {
+					"U" => ("U", "p   "),
+					"D" => ("D", "own   "),
+					"L" => ("L", "eft   "),
+					"R" => ("R", "ight   "),
+					_   => ("", ""),
 				};
-				menu_text += xtra;
+				menu_text.push( Span::styled(ft, Style::default().add_modifier(Modifier::UNDERLINED)) );
+				menu_text.push( Span::raw(rt) );
 			}
 		}
 
-		let menu_col: Color;
-		let menu_title: &str;
-		if state.have_win_condition() {
-			menu_col = Color::LightGreen;
-			menu_title = "Level has been completed!";
+		// Menu widget title is based on if we have completed the level (or not)
+		let (menu_col, menu_title) = if state.have_win_condition() {
+			( Color::LightGreen, "Level has been completed!" )
 		} else {
-			menu_col = Color::White;
-			menu_title = "Commands"
-		}
+			( Color::White, "Commands" )
+		};
 
-		let menu_widget = Paragraph::new(menu_text)
+		// Create the menu widget
+		let menu_widget = Paragraph::new( vec![Spans::from(menu_text)] )
 			.style(Style::default().fg(Color::LightCyan))
 			.alignment(Alignment::Left)
 			.block(
@@ -191,8 +212,10 @@ fn tui_inner(state: &mut Game, current_level: &mut u32, use_emoji: bool) -> Resu
 					.border_type(BorderType::Plain),
 			);
 
+		// Render the menu widget
 		rect.render_widget(menu_widget, chunks[2]);
 
+		// Create the game widget
 		let base_str = state.get_level_string();
 		let game_text_vecs = level_str_to_vecs(&base_str, use_emoji);
 		let game_widget = Paragraph::new(game_text_vecs) 
@@ -201,15 +224,17 @@ fn tui_inner(state: &mut Game, current_level: &mut u32, use_emoji: bool) -> Resu
 				Block::default().style(Style::default().fg(Color::White)),
 			);		
 
+		// Render the game widget
 		rect.render_widget(game_widget, chunks[1]);
-
 	});
 	
+	// Check for error from drawing the screen
 	if r.is_err() {
 		return Err("terminal.draw() failed.".to_string());
 	}
 
-	// we don't do anything without user input (an event), so we can wait a long time
+	// Wait for an event to occur.
+	// We don't do anything without user input (an event), so we can wait a long time
 	let r = event::poll(Duration::from_millis(1000));
 	if r.is_err() {
 		return Err("Failed to poll() temrinal.".to_string());
@@ -220,6 +245,8 @@ fn tui_inner(state: &mut Game, current_level: &mut u32, use_emoji: bool) -> Resu
 	if r.is_err() {
 		return Err("Failed to read() terminal.".to_string())
 	}
+
+	// Process the event
 	match r.unwrap() {
 		Event::Key(ev) => match ev.code {
 			KeyCode::Char('Q') | KeyCode::Char('q') | KeyCode::Esc => { return Ok(false); },
@@ -244,7 +271,7 @@ fn tui_inner(state: &mut Game, current_level: &mut u32, use_emoji: bool) -> Resu
 		Event::Resize(_width, _height) => {},
 	}
 
-	return Ok(true); // keep going
+	return Ok(true); // Return to main loop, let it know we want to keep going
 }
 
 

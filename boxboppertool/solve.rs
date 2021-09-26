@@ -266,7 +266,8 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 		// Check if we've hit max_maps (our memory/resource limit)
 		if maps.len() > max_maps {
 			println!("--- Hit maximum maps ({}) ---",max_maps);
-			break;
+			println!("--- Purging lots of maps, solutions may be thrown out ---");
+			maps.truncate(max_maps/2);
 		}
 		
 		// Loop and check the next depth

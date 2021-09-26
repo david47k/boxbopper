@@ -1,14 +1,14 @@
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban-like game
 // Copyright David Atkinson 2020-2021
 //
 // vector.rs: has vector for points / moves / directions and paths
+//
+// A point and a direction can both be implemented as a Vector
 
 use wasm_bindgen::prelude::*;
 use js_sys::Array;
 
 use crate::stackstack::{StackStack8,StackStack64};
-
-// A point and a direction can both be implemented as a Vector
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq, Ord, PartialOrd, Eq)]

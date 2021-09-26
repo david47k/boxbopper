@@ -1,4 +1,4 @@
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban-like game
 // Copyright David Atkinson 2020-2021
 //
 // time.rs: basic get_time_ms for boxbopper

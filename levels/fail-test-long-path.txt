@@ -1,0 +1,17 @@
+##################################
+#   ##  #                        #
+# # * * # ###################### #
+#  @O#  # #          ##    ##### #
+## #O&O## ########## ##    ##### #
+##*###@##                  *O#   #
+#        ##################### ###
+#   ## #                       *O#
+######   #########################
+##################################
+
+title: test a large level (32x8) with lotsa moves
+comment: this will fail with default STACKSTACK settings as the path ends up too long
+depth: 50
+moves: 247
+path: LULUULLDDRDDUULUURRDRDDRRURUULDLLDDRRURULDDDDRRDDLLUULLLDLLURUUURLLUURRDULLDDRDDDRRRRDDRRUULLUUURUULDLLDURRDDDDRRDDLLUULLLDLLURUUURLLUURRDULLDDRDDDRRRRUDDDRRUULRDDLLUURRDRRRRRRRRRRRRRRRRRRRRRRRLUURRUUUULLLLLLLLLLLLLLLLLLLLLLLDDDDRRRRRRRRRRRRRRRRRR
+time: 0.40

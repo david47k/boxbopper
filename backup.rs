@@ -1,5 +1,5 @@
-
-// Box Bopper: Sokoban clone in rust
+// Box Bopper: Sokoban-like game
+// Copyright David Atkinson 2020-2021
 
 use std::io;
 use std::io::{BufReader,BufRead};
