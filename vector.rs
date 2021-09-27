@@ -214,7 +214,8 @@ impl Move {
 
 pub const ALLMOVES: [Move; 4] = [ Move::Up, Move::Right, Move::Down, Move::Left ];
 
-
+// ShrunkPath stores the path string (UDLRLRLR etc.) but with each direction stored as only 2 bits
+// It uses StackStack64, which has a limit to how long the path can be
 
 #[derive(Clone)]
 pub struct ShrunkPath {
@@ -232,7 +233,7 @@ impl ShrunkPath {
 	pub fn with_capacity(_c: usize) -> Self {
 		Self {
 			count: 0,
-			data: StackStack64::new(), //Vec::<u64>::with_capacity(c/32+1),
+			data: StackStack64::new(),
 		}
 	}
 	pub fn clear(&mut self) {
@@ -316,37 +317,6 @@ impl ShrunkPath {
 		for i in 0..ss.next {
 			self.push(&Move::from_u8_unchecked(ss.stack[i]));
 		}
-	}
-	pub fn _append_path_sp(&mut self, npath: &ShrunkPath) {	// BUGGY !!!!! OLD CODE 32-bit
-		// for each block to append
-		// split block at alignment point into two blocks
-		// 0xBBAAAAAA			length of B is self.length%16, length of A is 15-(self.length%16)
-		// 0xAAAAAA00           A gets shifted left appropriate amount
-		// 0x000000BB           B gets shifted right appropriate amount
-		// 0xAAAAdddd			A gets placed on existing data
-		// 0x0000BBBB			A new block gets added for B
-		// repeat
-		// set our count		self.count += path.count
-		if npath.count == 0 { return; }
-		for ni in 0..=(npath.count/16) as usize {
-			if ni == (npath.count/16) as usize && npath.count%16 == 0 { 
-				return 
-			};
-			let b_len = self.count%16;		// 0 to 15 i.e. might be all zeros if empty
-			let a_len = 16-b_len;			// 16 to 1 i.e. always exists, may take up entire u32
-			let b_shr = 32-(2*b_len); 		// will shr between 2 (len=15) and 32 (len=0)
-			let a_shl = 32-(2*a_len); 		// will shl between 30 (len=2) and 0  (len=16)
-			let block_a = npath.data.stack[ni] << a_shl;
-			let block_b = npath.data.stack[ni] >> b_shr;
-			if self.count % 16 == 0 { // perfect alignment, append new block, i.e. b_len will have length zero!
-				self.data.push(block_a);
-			} else {
-				self.data.stack[self.count as usize/16] |= block_a;
-				self.data.push(block_b);
-			}
-			self.count += if ni == (npath.count as usize/16) { npath.count%16 } else { 16 };
-		}
-		
 	}
 	pub fn to_path(&self) -> Vec::<Move> {
 		let mut path = Vec::<Move>::with_capacity(self.count as usize);

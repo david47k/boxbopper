@@ -188,9 +188,9 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 	let mut mapsr = Rc::new(bvec);
 	
 	let pool = TaskPoolBuilder::new()
-	.thread_name("Box Bopper Tool Thread Pool".to_string())
-	.num_threads(num_threads)
-	.build();
+		.thread_name("Box Bopper Tool Thread Pool".to_string())
+		.num_threads(num_threads)
+		.build();
 
 	let mut have_solution = false;
 	struct BestSolution {
@@ -225,7 +225,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			//mapsr.par_iter().for_each(|m| { non_contenders.insert(m.level.cmp_data, m.path.len()); });
 			non_contenders.par_extend(mapsr.par_iter().map(|m| (m.level.cmp_data, m.path.len()) ));
 		} else {
-			if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }
+			if verbosity > 0 { println!("--- Old maps hit max_maps limit, not adding more ---"); }				// Performance will drag after this point, as we'll probably end up repeating moves
 		}
 
 		// Perform next key moves
@@ -242,7 +242,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			if verbosity > 1 { println!("deduping: after  {:>7}", maps.len()); }
 		} 
 
-		// Remove from maps anything that is in non_contenders AND our path is equal/longer
+		// Remove from maps anything that is in non_contenders AND our path is equal/longer. (Our shorter paths will be updated/added at the next loop)
 		if verbosity > 1 { println!("deduping using n-c: before {:>7}", maps.len()); }		
 		maps = task_splitter_mut(&pool, num_threads, maps, |maps: &mut [PathMap]| {
 			for m in maps {
