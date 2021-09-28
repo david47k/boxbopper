@@ -8,7 +8,7 @@
 use wasm_bindgen::prelude::*;
 use js_sys::Array;
 
-use crate::stackstack::{StackStack8,StackStack64,StackStack128};
+use crate::stackstack::{StackStack8x64,StackStack};
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq, Ord, PartialOrd, Eq)]
@@ -221,7 +221,7 @@ impl Move {
 pub const ALLMOVES: [Move; 4] = [ Move::Up, Move::Right, Move::Down, Move::Left ];
 
 // ShrunkPath stores the path string (UDLRLRLR etc.) but with each direction stored as only 2 bits
-// It uses StackStack64, which has a limit to how long the path can be
+// It uses StackStack, which has a limit to how long the path can be
 
 // Using PathTrait allows us to swap out the underlying path storage method, more easily.
 
@@ -233,21 +233,21 @@ pub trait PathTrait {
 	fn push(&mut self, move1: &Move);
 	fn push_u8(&mut self, move1: u8);
 	fn append_path(&mut self, path: &Vec::<Move>);
-	fn append_path_ss8(&mut self, ss: &StackStack8);
+	fn append_path_ss8(&mut self, ss: &StackStack8x64);
 	fn to_string(&self) -> String;	
 }
 
 #[derive(Clone)]
 pub struct ShrunkPath {
 	count: u16,
-	data: StackStack64,
+	data: StackStack<u64>,
 }
 
 impl PathTrait for ShrunkPath {
 	fn new() -> Self {
 		Self {
 			count: 0,
-			data: StackStack64::new(),
+			data: StackStack::<u64>::new(),
 		}
 	}
 	fn clear(&mut self) {
@@ -257,7 +257,7 @@ impl PathTrait for ShrunkPath {
 		self.count
 	}
 	fn from_path(path: &Vec::<Move>) -> Self {
-		let mut data = StackStack64::new();
+		let mut data = StackStack::<u64>::new();
 		let mut x: u64 = 0;
 		for i in 0..path.len() {
 			if i % 32 == 0 && i != 0 {
@@ -315,7 +315,7 @@ impl PathTrait for ShrunkPath {
 			self.count += 1;
 		}
 	}	
-	fn append_path_ss8(&mut self, ss: &StackStack8) {
+	fn append_path_ss8(&mut self, ss: &StackStack8x64) {
 		for i in 0..ss.next {
 			self.push(&Move::from_u8_unchecked(ss.stack[i]));
 		}
@@ -334,7 +334,7 @@ impl ShrunkPath {
 	pub fn with_capacity(_c: usize) -> Self {
 		Self {
 			count: 0,
-			data: StackStack64::new(),
+			data: StackStack::<u64>::new(),
 		}
 	}
 	pub fn to_path(&self) -> Vec::<Move> {
@@ -421,7 +421,7 @@ impl SuperPrefix {
 pub struct SuperShrunkPath {    
     compressed_data: Option<u32>,
 	count: u16,
-	data: StackStack128,
+	data: StackStack::<u128>,
 }
 
 impl PathTrait for SuperShrunkPath {
@@ -429,7 +429,7 @@ impl PathTrait for SuperShrunkPath {
 		Self {
 			compressed_data: None,
 			count: 0,
-			data: StackStack128::new(),
+			data: StackStack::<u128>::new(),
 		}
 	}
 	fn clear(&mut self) {
@@ -441,7 +441,7 @@ impl PathTrait for SuperShrunkPath {
 		return self.count + x;
 	}
 	fn from_path(path: &Vec::<Move>) -> Self {
-		let mut data = StackStack128::new();
+		let mut data = StackStack::<u128>::new();
 		let mut x: u128 = 0;
 		for i in 0..path.len() {
 			if i % 64 == 0 && i != 0 {
@@ -492,7 +492,7 @@ impl PathTrait for SuperShrunkPath {
 			self.push(move1);
 		}
 	}	
-	fn append_path_ss8(&mut self, ss: &StackStack8) {
+	fn append_path_ss8(&mut self, ss: &StackStack8x64) {
 		for i in 0..ss.next {
 			self.push(&Move::from_u8_unchecked(ss.stack[i]));
 		}

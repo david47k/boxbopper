@@ -6,7 +6,7 @@
 use boxbopperbase::{Obj};
 use boxbopperbase::level::{Level,SpLevel,CmpData};
 use boxbopperbase::vector::{Vector,Move,ALLMOVES,ShrunkPath,SuperShrunkPath,PathTrait};
-use boxbopperbase::stackstack::{StackStack16,StackStack8};
+use boxbopperbase::stackstack::{StackStack16x64,StackStack8x64};
 
 #[derive(Clone,Copy)]
 pub struct PathNode {
@@ -78,8 +78,8 @@ impl PathMap {
 		let mut nodes = Vec::<PathNode>::with_capacity(256/(std::mem::size_of::<PathNode>()));
 		nodes.push(initial_pn);
 
-		let mut tail_nodes = StackStack16::new(); 
-		let mut new_tail_nodes = StackStack16::new(); 	// somewhere to store new tail nodes
+		let mut tail_nodes = StackStack16x64::new(); 
+		let mut new_tail_nodes = StackStack16x64::new(); 	// somewhere to store new tail nodes
 		tail_nodes.push(0);
 		while tail_nodes.len() != 0 {					// check if map is complete
 			for idx in 0..tail_nodes.len() {							// for each tail node
@@ -137,8 +137,8 @@ impl PathMap {
 		let mut nodes = Vec::<PathNode>::with_capacity(256/(std::mem::size_of::<PathNode>()));
 		nodes.push(initial_pn);
 		
-		let mut tail_nodes = StackStack16::new(); 
-		let mut new_tail_nodes = StackStack16::new();
+		let mut tail_nodes = StackStack16x64::new(); 
+		let mut new_tail_nodes = StackStack16x64::new();
 		tail_nodes.push(0);		
 		while tail_nodes.len() != 0 {					// check if map is complete
 			for idx in 0..tail_nodes.len() {
@@ -306,8 +306,8 @@ impl PathMap {
 	}
 	pub fn complete_map_solve(&self, base_level: &Level) -> PathNodeMap {
 		let mut pnm = self.to_pnm();					// we want complete_map to clone from self
-		let mut tail_nodes = StackStack16::new(); 
-		let mut new_tail_nodes = StackStack16::new(); 	// somewhere to store new tail nodes
+		let mut tail_nodes = StackStack16x64::new(); 
+		let mut new_tail_nodes = StackStack16x64::new(); 	// somewhere to store new tail nodes
 		tail_nodes.push(0);
 		while tail_nodes.len() != 0 {					// check if map is complete
 			for idx in 0..tail_nodes.len() {							// for each tail node
@@ -357,8 +357,8 @@ impl PathMap {
 	}
 	pub fn complete_map_unsolve(&self, base_level: &Level) -> PathNodeMap {
 		let mut pnm = self.to_pnm();					// we want complete_map to clone from self
-		let mut tail_nodes = StackStack16::new(); 
-		let mut new_tail_nodes = StackStack16::new();
+		let mut tail_nodes = StackStack16x64::new(); 
+		let mut new_tail_nodes = StackStack16x64::new();
 		tail_nodes.push(0);		
 		while tail_nodes.len() != 0 {					// check if map is complete
 			for idx in 0..tail_nodes.len() {
@@ -466,7 +466,7 @@ impl PathNodeMap {
 		nmaps
 	}
 	pub fn backtrace_moves(&self, pni: usize, spath: &mut impl PathTrait) {		// 5.5, 2.9
-		let mut path = StackStack8::new();
+		let mut path = StackStack8x64::new();
 		// start at pn and work backwards
 		let mut pnr = &self.nodes[pni];
 		loop {
@@ -492,7 +492,7 @@ impl PathNodeMap {
 
 
 pub fn backtrace_moves2(nodes: &Vec::<PathNode>, pni: usize, spath: &mut impl PathTrait) {		// 5.5, 2.9
-	let mut path = StackStack8::new();
+	let mut path = StackStack8x64::new();
 	// start at pn and work backwards
 	let mut pnr = nodes[pni];
 	loop {
