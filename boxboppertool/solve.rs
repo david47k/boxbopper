@@ -12,6 +12,7 @@ use std::collections::{BTreeMap};
 use std::cmp::Ordering;
 use itertools::Itertools;
 use crate::pathnodemap::{PathMap};
+use crate::shrunkpath::{ShrunkPath};
 
 extern crate rand;
 extern crate rand_chacha;

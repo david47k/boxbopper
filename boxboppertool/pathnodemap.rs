@@ -5,8 +5,9 @@
 
 use boxbopperbase::{Obj};
 use boxbopperbase::level::{Level,SpLevel,CmpData};
-use boxbopperbase::vector::{Vector,Move,ALLMOVES,ShrunkPath,SuperShrunkPath,PathTrait};
+use boxbopperbase::vector::{Vector,Move,ALLMOVES};
 use boxbopperbase::stackstack::{StackStack16x64,StackStack8x64};
+use crate::shrunkpath::{ShrunkPath,SuperShrunkPath,PathTrait};
 
 #[derive(Clone,Copy)]
 pub struct PathNode {
