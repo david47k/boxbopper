@@ -3,7 +3,7 @@
 //
 // shrunkpath.rs: store a path as a (smaller) list of moves
 
-use boxbopperbase::stackstack::{StackStack8x64,StackStack};
+use boxbopperbase::stackstack::{StackStack};
 use boxbopperbase::vector::{Move};
 
 // ShrunkPath stores the path string (UDLRLRLR etc.) but with each direction stored as only 2 bits
@@ -19,7 +19,6 @@ pub trait PathTrait {
 	fn push(&mut self, move1: &Move);
 	fn push_u8(&mut self, move1: u8);
 	fn append_path(&mut self, path: &Vec::<Move>);
-	fn append_path_ss8(&mut self, ss: &StackStack8x64);
 	fn to_string(&self) -> String;	
 }
 
@@ -101,11 +100,6 @@ impl PathTrait for ShrunkPath {
 			self.count += 1;
 		}
 	}	
-	fn append_path_ss8(&mut self, ss: &StackStack8x64) {
-		for i in 0..ss.next {
-			self.push(&Move::from_u8_unchecked(ss.stack[i]));
-		}
-	}
 	fn to_string(&self) -> String {
 		let path = self.to_path();
 		let mut s: String = "".to_string();
@@ -166,65 +160,24 @@ impl ShrunkPath {
 }
 
 
-
-// SuperShrunkPath stores part of the path as an index to existing path strings... thus allowing us to shorten the path data due to reuse... it'll use a lot more cpu though, to find matching path strings
-// Once we get more than 64 moves, we can store the original moves as a 'prefix' index... 64 moves is 128 bits, plus we get reduction in mem usage as there will be lots of repeats
-
 #[derive(Clone)]
-pub struct SuperPrefix {
-	data: Vec<u128>,
-}
-
-impl SuperPrefix {
-	pub fn new() -> Self {
-		Self {
-			data: Vec::new(),
-		}
-	}
-	pub fn get_by_index(&self, i: u32) -> u128 {
-		self.data[i as usize]
-	}
-	pub fn add_bits_without_searching(&mut self, d: u128) -> u32 {
-		let i = self.data.len();
-		self.data.insert(i, d);
-		return i as u32;
-	}
-	pub fn add_bits(&mut self, d: u128) -> u32 {
-		// basic linear search ugh
-		for idx in 0..self.data.len() {
-			if self.data[idx] == d {
-				return idx as u32;
-			}
-		}
-		self.add_bits_without_searching(d)
-	}
-	pub fn len(&self) -> usize {
-		self.data.len()
-	}
-}
-
-#[derive(Clone)]
-pub struct SuperShrunkPath {    
-    compressed_data: Option<u32>,
+pub struct ShrunkPath128 {    
 	count: u16,
 	data: StackStack::<u128>,
 }
 
-impl PathTrait for SuperShrunkPath {
+impl PathTrait for ShrunkPath128 {
 	fn new() -> Self {
 		Self {
-			compressed_data: None,
 			count: 0,
 			data: StackStack::<u128>::new(),
 		}
 	}
 	fn clear(&mut self) {
 		self.count = 0;
-		self.compressed_data = None;
 	}
 	fn len(&self) -> u16 {
-		let x = if self.compressed_data.is_none() { 0 } else { 64 };
-		return self.count + x;
+		self.count
 	}
 	fn from_path(path: &Vec::<Move>) -> Self {
 		let mut data = StackStack::<u128>::new();
@@ -239,7 +192,6 @@ impl PathTrait for SuperShrunkPath {
 		if path.len() > 0 { data.push(x); }
 
 		let rval = Self {
-			compressed_data: None,
 			count: path.len() as u16,
 			data: data,
 		};
@@ -278,11 +230,6 @@ impl PathTrait for SuperShrunkPath {
 			self.push(move1);
 		}
 	}	
-	fn append_path_ss8(&mut self, ss: &StackStack8x64) {
-		for i in 0..ss.next {
-			self.push(&Move::from_u8_unchecked(ss.stack[i]));
-		}
-	}
 	fn to_string(&self) -> String {
 		let path = self.to_path();
 		let mut s: String = "".to_string();
@@ -293,7 +240,7 @@ impl PathTrait for SuperShrunkPath {
 	}
 }
 
-impl SuperShrunkPath {
+impl ShrunkPath128 {
 	pub fn to_path(&self) -> Vec::<Move> {
 		let mut path = Vec::<Move>::with_capacity(self.len() as usize);
 		for i in 0..self.count as usize {
@@ -303,42 +250,4 @@ impl SuperShrunkPath {
 		}
 		path
 	}
-/*	pub fn get_u(&self, i: usize) -> u128 {
-		if i >= self.count as usize { panic!("ShrunkPath::get index is too high"); }
-		return (self.data.stack[i/64] >> (2*(i%64))) & 0x03;
-	}
-	pub fn set_u(&mut self, i: usize, val: u128) {
-		if i >= self.count as usize { panic!("ShrunkPath::set index is too high"); }
-		let bidx = 2*(i%64);
-		let mask: u128 = ! ( 0x03 << bidx );
-		let maskdata = self.data.stack[i/64] & mask;
-		let newdata = maskdata | (val << bidx);
-		self.data.stack[i/64] = newdata;
-	} *//*	pub fn pop(&mut self) -> Move {
-		if self.count == 0 { panic!("stack underflow in ShrunkPath::pop"); }
-		self.count -= 1;
-		let i = self.count as usize;
-		let block = self.data.stack[i/64];
-		let shr = block >> (2*(i%64));
-		return Move::from_u128_unchecked( shr & 0x03 );
-	} */
-/*	pub fn reverse(&mut self) {
-		if self.count < 2 { return; }
-		for i in 0..(self.count as usize / 2) {
-			let revi = self.count as usize - i - 1;
-			let iv = self.get_u(i);
-			let rv = self.get_u(revi);
-			self.set_u(i, rv);
-			self.set_u(revi, iv);
-		}		
-	} */
-	/* pub fn with_capacity(_c: usize) -> Self {
-		Self {
-			prefix_ptr: core::ptr::null_mut(),
-			prefix_path: None,
-			count: 0,
-			data: StackStack128::new(),
-		}
-	} */	
-	
 }

@@ -7,7 +7,7 @@ use boxbopperbase::{Obj};
 use boxbopperbase::level::{Level,SpLevel,CmpData};
 use boxbopperbase::vector::{Vector,Move,ALLMOVES};
 use boxbopperbase::stackstack::{StackStack16x64,StackStack8x64};
-use crate::shrunkpath::{ShrunkPath,PathTrait};
+use crate::shrunkpath::{ShrunkPath128,PathTrait};
 
 #[derive(Clone,Copy)]
 pub struct PathNode {
@@ -31,7 +31,7 @@ pub struct PathNodeMap {
 #[derive(Clone)]
 pub struct PathMap {
 	pub level: SpLevel,
-	pub path: ShrunkPath,
+	pub path: ShrunkPath128,
 	pub depth: u16,
 	pub flag: bool,
 }

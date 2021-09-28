@@ -5,8 +5,8 @@
 //
 // default multiplier is 1 (512 bits or path of 256) but it'll overflow with levels which can have long paths
 
-// This is the default for StackStack
-const STACKMAX: usize = 8;
+// This is the default for StackStack, currently the default is only used by shrunkpath
+const STACKMAX: usize = 4;
 
 #[derive(Copy,Clone)]
 pub struct StackStack<T: Copy> {
@@ -39,7 +39,7 @@ impl<T: Copy> StackStack<T> {
 	}
 }
 
-
+// Used to store tail nodes when solving and unsolving levels
 #[derive(Copy,Clone)]
 pub struct StackStack16x64 {
 	pub next: usize,
@@ -71,6 +71,7 @@ impl StackStack16x64 {
 	}
 }
 
+// Used when backtracing moves
 #[derive(Copy,Clone)]
 pub struct StackStack8x64 {
 	pub next: usize,
