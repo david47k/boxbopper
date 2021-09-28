@@ -48,6 +48,7 @@ Limits are:
 - Number of boxes should be < 12 to increase chance of success
 - Number of moves required to finish level must be < 256
 - The amount of free memory on your PC
+- Not too much open space (e.g. 3x4 and above)
 
 ### Building
 Use `cargo build --release` in the `boxboppertool` directory to build the (console) tool.

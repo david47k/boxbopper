@@ -5,8 +5,8 @@
 //
 // default multiplier is 1 (512 bits or path of 256) but it'll overflow with levels which can have long paths
 
-// This is the default for StackStack, currently the default is only used by shrunkpath
-const STACKMAX: usize = 4;
+const HARD_MAX_PATH: usize = 256;
+const STACKMAX: usize = HARD_MAX_PATH * 2 / 128;		// 2 bits per move, 128 bit blocks
 
 #[derive(Copy,Clone)]
 pub struct StackStack<T: Copy> {
