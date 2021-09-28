@@ -3,11 +3,11 @@
 A sokoban-style game in rust.
 
 It includes:
-- a web game (rust/wasm/javascript)
 - a console game
-- a tool that will create and solve levels (multithreaded and optimised, using an exhaustive search)
+- a web game (rust/wasm/javascript)
+- a tool that will create and solve levels 
 
-# boxbopperconsole (game)
+# boxboppertui (game for terminal)
 
 ### Building
 
@@ -21,22 +21,33 @@ Type `N` or `P` (followed by Enter) for next or previous level.
 Type \` (followed by Enter) to reset the level.  
 Type `Q` (followed by Enter) to quit.  
 
-# boxbopper-wasm-app
+# boxbopperweb (game for web)
 
 ### Building
 The web game requires node.js and webpack to build.
 
-Use `npm run build` in the `www` directory to build the web game.  
+Use `npm run build` in the `boxbopperweb` directory to build the web game.  
 
 Use `npm run start` to run the game locally, which can then be accessed from your web browser (typically http://localhost:8080/).
 
 ### Usage
 
-Use arrow keys (or WASD) to move around. You can also move (in straight lines only) with the mouse.
+Use arrow keys to move around. You can also move (in straight lines only) with the mouse.
 
 Press `R` to reset, `N` for next level, `P` for previous level, or click the appropriate buttons.
 
 # boxboppertool
+
+The tool can create and solve levels. It is multithreaded, and uses an exhaustive search. It is quite fast at solving levels,
+provided the level is within limits. If the level is not within limits, it'll probably fail.
+
+Limits are:
+- Width and height must both be <= 127
+- Width TIMES height must be <= 256
+- Number of boxes must be < 24
+- Number of boxes should be < 12 to increase chance of success
+- Number of moves required to finish level must be < 256
+- The amount of free memory on your PC
 
 ### Building
 Use `cargo build --release` in the `boxboppertool` directory to build the (console) tool.
@@ -55,7 +66,7 @@ vars for make:
   wall_density=n   wall density 1-99                             default: 20
   max_depth=n      maximum depth to try to reach 1+              default: 100
 vars for solve:
-  max_moves=n      maximum number of moves to try 1+             default: 200
+  max_moves=n      maximum number of moves to try 1-255          default: 200
   builtin=n        builtin level to solve
   filename=f       custom level filename to solve
 vars for speed_test:
