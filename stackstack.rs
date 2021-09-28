@@ -10,6 +10,46 @@ const STACKSTACK8_MAX: usize = 64 * STACKSTACKMUL;
 const STACKSTACK16_MAX: usize = 64;
 const STACKSTACK32_MAX: usize = 64;
 const STACKSTACK64_MAX: usize = 8 * STACKSTACKMUL;
+const STACKSTACK128_MAX: usize = 4 * STACKSTACKMUL;
+
+#[derive(Copy,Clone)]
+pub struct StackStack128 {
+	pub next: usize,
+	pub stack: [u128; STACKSTACK128_MAX],
+}
+
+impl StackStack128 {
+	pub fn new() -> Self {
+		Self {
+			next: 0,
+			stack: unsafe { std::mem::MaybeUninit::uninit().assume_init() },
+		}
+	}
+	pub fn push(&mut self, d: u128) {
+        if self.next == STACKSTACK128_MAX { panic!("StackStack128 overflow"); }
+        self.stack[self.next] = d;
+		self.next += 1;
+	}
+	pub fn pop(&mut self) -> u128 {
+        if self.next == 0 { panic!("StackStack128 underflow"); }
+		self.next -= 1;
+		self.stack[self.next]
+	}
+	pub fn len(&self) -> usize {
+		self.next
+	}
+	pub fn clear(&mut self) {
+		self.next = 0;
+	}
+	pub fn pluck_first_128(&mut self) -> Option<u128> {
+		if self.next < 1 { return None; }
+		let rval = self.stack[0];
+		for i in 1..=self.next {
+			self.stack[i-1] = self.stack[i];	// shift the whole stack to the left
+		}
+		return Some(rval);
+	}
+}
 
 #[derive(Copy,Clone)]
 pub struct StackStack64 {

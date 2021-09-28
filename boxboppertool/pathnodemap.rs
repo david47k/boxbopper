@@ -5,7 +5,7 @@
 
 use boxbopperbase::{Obj};
 use boxbopperbase::level::{Level,SpLevel,CmpData};
-use boxbopperbase::vector::{Vector,Move,ALLMOVES,ShrunkPath};
+use boxbopperbase::vector::{Vector,Move,ALLMOVES,ShrunkPath,SuperShrunkPath,PathTrait};
 use boxbopperbase::stackstack::{StackStack16,StackStack8};
 
 #[derive(Clone,Copy)]
@@ -30,11 +30,10 @@ pub struct PathNodeMap {
 #[derive(Clone)]
 pub struct PathMap {
 	pub level: SpLevel,
-	pub path: ShrunkPath,
+	pub path: SuperShrunkPath,
 	pub depth: u16,
 	pub flag: bool,
 }
-
 
 impl PathMap {
 	pub fn new() -> PathMap {
@@ -44,7 +43,7 @@ impl PathMap {
 				h: 0,
 				cmp_data: CmpData::new(),
 			},
-			path: ShrunkPath::new(),
+			path: PathTrait::new(),
 			depth: 0,
 			flag: false,
 		}
@@ -52,7 +51,7 @@ impl PathMap {
 	pub fn new_from_level(level: &Level) -> PathMap {
 		PathMap {
 			level: SpLevel::from_level(level),
-			path: ShrunkPath::new(),
+			path: PathTrait::new(),
 			depth: 0,
 			flag: false,
 		}
@@ -466,7 +465,7 @@ impl PathNodeMap {
 		}
 		nmaps
 	}
-	pub fn backtrace_moves(&self, pni: usize, spath: &mut ShrunkPath) {		// 5.5, 2.9
+	pub fn backtrace_moves(&self, pni: usize, spath: &mut impl PathTrait) {		// 5.5, 2.9
 		let mut path = StackStack8::new();
 		// start at pn and work backwards
 		let mut pnr = &self.nodes[pni];
@@ -492,7 +491,7 @@ impl PathNodeMap {
 }
 
 
-pub fn backtrace_moves2(nodes: &Vec::<PathNode>, pni: usize, spath: &mut ShrunkPath) {		// 5.5, 2.9
+pub fn backtrace_moves2(nodes: &Vec::<PathNode>, pni: usize, spath: &mut impl PathTrait) {		// 5.5, 2.9
 	let mut path = StackStack8::new();
 	// start at pn and work backwards
 	let mut pnr = nodes[pni];
@@ -515,5 +514,4 @@ pub fn backtrace_moves2(nodes: &Vec::<PathNode>, pni: usize, spath: &mut ShrunkP
 		spath.push_u8(path.stack[rev]);	//3.88%
 	}
 }
-
 

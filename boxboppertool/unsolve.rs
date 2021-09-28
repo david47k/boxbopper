@@ -4,7 +4,7 @@
 
 use boxbopperbase::{moves_to_string};
 use boxbopperbase::level::{Level,CmpData};
-use boxbopperbase::vector::{Move};
+use boxbopperbase::vector::{Move,PathTrait,SuperPrefix};
 
 use rayon::prelude::*;
 use std::rc::Rc;
@@ -239,8 +239,8 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 		let c = &contenders[idx];
 		let splevel = &c.level;
 		let moves = c.path.len();
-		
-		let mut path: Vec::<Move> = c.path.to_path().iter().map(|m| m.reverse()).clone().collect();
+		let store = SuperPrefix::new();
+		let mut path: Vec::<Move> = c.path.to_path(&store).iter().map(|m| m.reverse()).clone().collect();
 		path.reverse();
 		
 		if verbosity > 0 { println!("Selected level {}: depth {}, moves {}, path {}", idx, c.depth, moves, moves_to_string(&path)); }

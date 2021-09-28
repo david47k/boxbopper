@@ -4,6 +4,7 @@
 
 use boxbopperbase::level::{Level,CmpData};
 use boxbopperbase::time::{get_time_ms};
+use boxbopperbase::vector::{PathTrait,SuperPrefix};
 
 use rayon::prelude::*;
 use std::rc::Rc;
@@ -166,7 +167,6 @@ pub fn vec_unslice(mut from: Vec::<Vec::<PathMap>>) -> Vec::<PathMap> {
 	return from.swap_remove(0);
 }
 
-
 #[derive(Clone)]
 pub struct Solution {
 	pub moves: u16,
@@ -180,6 +180,9 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 	let mut max_moves = max_moves_requested+1;
 	let base_level1 = base_level_in.clear_human_cloned();
 	let base_map = PathMap::new_from_level(&base_level1);
+	
+	let mut compressed_store = SuperPrefix::new();
+	
 	let base_level = base_level1.clear_boxxes_cloned();
 	let mut non_contenders = BTreeMap::<CmpData,u16>::new();
 
@@ -212,7 +215,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 				have_solution = true;
 				max_moves = m.path.len();
 				best_solution.depth = depth;
-				best_solution.s = format!("{}", &m.path.to_string());
+				best_solution.s = format!("{}", m.path.to_string(&compressed_store));
 				if verbosity > 0 { 
 					println!("-- Solution found in {} moves --", m.path.len());
 				}
@@ -270,6 +273,24 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 			maps.truncate(max_maps/2);
 		}
 		
+		// Compress long paths
+		// We don't want to run this all the time, as it is slow
+		// it basically stores 128 bits of path, in the 32 bits assigned for a lookup index
+		// this allows for the path length to exceed that allocated in the stackstack by an extra 128 bits (64 moves)
+		if depth >= 10 {
+			println!("Running compress on maps...");
+			let mut count = 0;
+			let mut ccount = 0;
+			for m in maps.iter_mut() {
+				m.path.compress_path(&mut compressed_store);
+				if m.path.is_compressed() {
+					ccount += 1;
+				}
+				count += 1;
+			}
+			println!("{} of {} maps are compressed", ccount, count);
+		}
+
 		// Loop and check the next depth
 		mapsr = Rc::new(maps);
 		depth += 1;
