@@ -30,7 +30,7 @@ pub struct PathNodeMap {
 #[derive(Clone)]
 pub struct PathMap {
 	pub level: SpLevel,
-	pub path: SuperShrunkPath,
+	pub path: ShrunkPath,
 	pub depth: u16,
 	pub flag: bool,
 }

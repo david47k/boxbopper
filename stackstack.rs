@@ -12,6 +12,40 @@ const STACKSTACK32_MAX: usize = 64;
 const STACKSTACK64_MAX: usize = 8 * STACKSTACKMUL;
 const STACKSTACK128_MAX: usize = 4 * STACKSTACKMUL;
 
+const STACKMAX: usize = 8;
+
+#[derive(Copy,Clone)]
+pub struct StackStack<T: Copy> {
+	pub next: usize,
+	pub stack: [T; STACKMAX],
+}
+
+impl<T: Copy> StackStack<T> {
+	pub fn new() -> Self {
+		Self {
+			next: 0,
+			stack: unsafe { std::mem::MaybeUninit::uninit().assume_init() },
+		}
+	}
+	pub fn push(&mut self, d: T) {
+        if self.next == self.stack.len() { panic!("StackStack overflow"); }
+        self.stack[self.next] = d;
+		self.next += 1;
+	}
+	pub fn pop(&mut self) -> T {
+        if self.next == 0 { panic!("StackStack underflow"); }
+		self.next -= 1;
+		self.stack[self.next]
+	}
+	pub fn len(&self) -> usize {
+		self.next
+	}
+	pub fn clear(&mut self) {
+		self.next = 0;
+	}
+}
+
+
 #[derive(Copy,Clone)]
 pub struct StackStack128 {
 	pub next: usize,

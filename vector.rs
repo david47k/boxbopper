@@ -223,6 +223,7 @@ pub const ALLMOVES: [Move; 4] = [ Move::Up, Move::Right, Move::Down, Move::Left 
 // ShrunkPath stores the path string (UDLRLRLR etc.) but with each direction stored as only 2 bits
 // It uses StackStack64, which has a limit to how long the path can be
 
+// Using PathTrait allows us to swap out the underlying path storage method, more easily.
 
 pub trait PathTrait {
 	fn new() -> Self;
@@ -233,12 +234,8 @@ pub trait PathTrait {
 	fn push_u8(&mut self, move1: u8);
 	fn append_path(&mut self, path: &Vec::<Move>);
 	fn append_path_ss8(&mut self, ss: &StackStack8);
-	// fn to_path(&self, store: &SuperPrefix) -> Vec::<Move>;					// only used internally as part of to_string
-	fn to_string(&self, store: &SuperPrefix) -> String;
-	fn compress_path(&mut self, store: &mut SuperPrefix);
-	fn is_compressed(&self) -> bool;	
+	fn to_string(&self) -> String;	
 }
-
 
 #[derive(Clone)]
 pub struct ShrunkPath {
@@ -323,20 +320,13 @@ impl PathTrait for ShrunkPath {
 			self.push(&Move::from_u8_unchecked(ss.stack[i]));
 		}
 	}
-
-	fn to_string(&self, _store: &SuperPrefix) -> String {
+	fn to_string(&self) -> String {
 		let path = self.to_path();
 		let mut s: String = "".to_string();
 		for m in path.iter() {
 			s = s + &m.to_string();
 		}
 		return s;
-	}
-	fn compress_path(&mut self, _store: &mut SuperPrefix) {
-		// do nothing
-	}
-	fn is_compressed(&self) -> bool {
-		false
 	}
 }
 
@@ -354,7 +344,6 @@ impl ShrunkPath {
 			let shr = block >> (2*(i%32));
 			path.push( Move::from_u64_unchecked( shr & 0x03 ) );
 		}
-
 		path
 	}
 	pub fn get_u(&self, i: usize) -> u64 {
@@ -369,8 +358,6 @@ impl ShrunkPath {
 		let newdata = maskdata | (val << bidx);
 		self.data.stack[i/32] = newdata;
 	}
-	
-	
 	pub fn pop(&mut self) -> Move {
 		if self.count == 0 { panic!("stack underflow in ShrunkPath::pop"); }
 		self.count -= 1;
@@ -449,11 +436,10 @@ impl PathTrait for SuperShrunkPath {
 		self.count = 0;
 		self.compressed_data = None;
 	}
-	fn len(&self) -> u16 {											// MUST use LEN if we want the ACTUAL PATH LENGTH, otherwise we use COUNT to see whats stored in the STACKSTACK
+	fn len(&self) -> u16 {
 		let x = if self.compressed_data.is_none() { 0 } else { 64 };
 		return self.count + x;
 	}
-	
 	fn from_path(path: &Vec::<Move>) -> Self {
 		let mut data = StackStack128::new();
 		let mut x: u128 = 0;
@@ -501,7 +487,6 @@ impl PathTrait for SuperShrunkPath {
 		}
 		self.count += 1;
 	}
-
 	fn append_path(&mut self, path: &Vec::<Move>) {
 		for move1 in path {		// not the fastest way but reduces code spaghetti
 			self.push(move1);
@@ -512,41 +497,19 @@ impl PathTrait for SuperShrunkPath {
 			self.push(&Move::from_u8_unchecked(ss.stack[i]));
 		}
 	}
-
-	fn to_string(&self, store: &SuperPrefix) -> String {
-		let path = self.to_path(store);
+	fn to_string(&self) -> String {
+		let path = self.to_path();
 		let mut s: String = "".to_string();
 		for m in path.iter() {
 			s = s + &m.to_string();
 		}
 		return s;
 	}
-	fn compress_path(&mut self, store: &mut SuperPrefix) {
-		if self.compressed_data.is_some() || self.count < 64 {
-			// we can't shrink it because it's already been shrunk, or we don't have enough data to shrink it
-			return;
-		}
-		// basically we take the first u128, send it off, then adjust our data accordingly
-		let bits: u128 = self.data.pluck_first_128().expect("failed to pluck_first_128");
-		let r = store.add_bits(bits);
-		self.compressed_data = Some(r);
-		self.count -= 64;
-	}
-	fn is_compressed(&self) -> bool {
-		self.compressed_data.is_some()
-	}	
 }
 
 impl SuperShrunkPath {
-	pub fn to_path(&self, store: &SuperPrefix) -> Vec::<Move> {
+	pub fn to_path(&self) -> Vec::<Move> {
 		let mut path = Vec::<Move>::with_capacity(self.len() as usize);
-		if self.compressed_data.is_some() {
-			let block = store.get_by_index(self.compressed_data.unwrap());
-			for i in 0..64 as usize {
-				let shr = block >> (2*(i%64));
-				path.push( Move::from_u128_unchecked( shr & 0x03 ) );
-			}
-		}
 		for i in 0..self.count as usize {
 			let block = self.data.stack[i/64];
 			let shr = block >> (2*(i%64));
