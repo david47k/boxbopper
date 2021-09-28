@@ -4,15 +4,15 @@
 
 use boxbopperbase::{moves_to_string};
 use boxbopperbase::level::{Level,CmpData};
-use boxbopperbase::vector::{Move,PathTrait};
+use boxbopperbase::vector::Move;
 
 use rayon::prelude::*;
 use std::rc::Rc;
 use std::collections::BTreeMap;
 
 use crate::solve::{task_splitter,task_splitter_mut,task_splitter_sort};
-
 use crate::pathnodemap::{PathMap};
+use crate::shrunkpath::{PathTrait};
 
 extern crate rand;
 extern crate rand_chacha;

@@ -4,20 +4,21 @@
 
 use boxbopperbase::level::{Level,CmpData};
 use boxbopperbase::time::{get_time_ms};
-use boxbopperbase::vector::{PathTrait};
+
+use crate::pathnodemap::{PathMap};
+use crate::shrunkpath::{PathTrait};
 
 use rayon::prelude::*;
 use std::rc::Rc;
 use std::collections::{BTreeMap};
 use std::cmp::Ordering;
 use itertools::Itertools;
-use crate::pathnodemap::{PathMap};
-use crate::shrunkpath::{ShrunkPath};
+use bevy_tasks::{TaskPool,TaskPoolBuilder};
 
 extern crate rand;
 extern crate rand_chacha;
 
-use bevy_tasks::{TaskPool,TaskPoolBuilder};
+
 
 pub fn task_splitter(pool: &TaskPool, spl_into: usize, from: &Vec::<PathMap>, func: impl Fn(&[PathMap], &mut Vec::<PathMap>) + Send + Copy + Sync) -> Vec::<PathMap> {
 	// break up vecs

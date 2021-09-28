@@ -3,10 +3,8 @@
 //
 // shrunkpath.rs: store a path as a (smaller) list of moves
 
-use wasm_bindgen::prelude::*;
-use js_sys::Array;
-
 use boxbopperbase::stackstack::{StackStack8x64,StackStack};
+use boxbopperbase::vector::{Move};
 
 // ShrunkPath stores the path string (UDLRLRLR etc.) but with each direction stored as only 2 bits
 // It uses StackStack, which limits how long a path can be

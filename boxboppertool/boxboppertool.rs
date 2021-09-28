@@ -4,6 +4,7 @@
 
 use std::fs::File;
 use std::io::prelude::*;
+use rand::{Rng, SeedableRng};
 
 use boxbopperbase::{Obj};
 use boxbopperbase::level::{Level,verify_builtins};
@@ -20,10 +21,12 @@ use unsolve::{unsolve_level};
 
 pub mod pathnodemap;
 
+pub mod shrunkpath;
+
 extern crate rand;
 extern crate rand_chacha;
 
-use rand::{Rng, SeedableRng};
+
 
 fn is_pullable(level: &Level, pos: &Vector) -> bool {
 	// check all four directions, and see if we can pull in that direction

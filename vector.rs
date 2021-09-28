@@ -8,8 +8,6 @@
 use wasm_bindgen::prelude::*;
 use js_sys::Array;
 
-use crate::stackstack::{StackStack8x64,StackStack};
-
 #[wasm_bindgen]
 #[derive(Clone, Copy, PartialEq, Ord, PartialOrd, Eq)]
 pub struct Vector (pub i32, pub i32);
