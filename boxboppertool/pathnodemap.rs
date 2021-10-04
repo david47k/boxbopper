@@ -7,7 +7,7 @@ use boxbopperbase::{Obj};
 use boxbopperbase::level::{Level,SpLevel,CmpData};
 use boxbopperbase::vector::{Vector,Move,ALLMOVES};
 use boxbopperbase::stackstack::{StackStack16x64,StackStack8x64};
-use crate::shrunkpath::{ShrunkPath128,PathTrait};
+use crate::shrunkpath::{TreeNodeRef}; // ShrunkPath128, PathTrait,
 
 #[derive(Clone,Copy)]
 pub struct PathNode {
@@ -31,7 +31,7 @@ pub struct PathNodeMap {
 #[derive(Clone)]
 pub struct PathMap {
 	pub level: SpLevel,
-	pub path: ShrunkPath128,
+	pub path: TreeNodeRef,
 	pub depth: u16,
 	pub flag: bool,
 }
@@ -44,7 +44,7 @@ impl PathMap {
 				h: 0,
 				cmp_data: CmpData::new(),
 			},
-			path: PathTrait::new(),
+			path: TreeNodeRef::new_root(),
 			depth: 0,
 			flag: false,
 		}
@@ -52,7 +52,7 @@ impl PathMap {
 	pub fn new_from_level(level: &Level) -> PathMap {
 		PathMap {
 			level: SpLevel::from_level(level),
-			path: PathTrait::new(),
+			path: TreeNodeRef::new_root(),
 			depth: 0,
 			flag: false,
 		}
@@ -209,8 +209,8 @@ impl PathMap {
 
 		map_b.level.set_human_pos(&np);				// move human
 		
-		backtrace_moves2(nodes, km.pni as usize, &mut map_b.path);
-		map_b.path.push(&km.move_dir);
+		map_b.path = backtrace_moves2(nodes, km.pni as usize, map_b.path);
+		map_b.path = map_b.path.push(km.move_dir as u8);
 		
 		map_b
 	}
@@ -240,8 +240,8 @@ impl PathMap {
 		let np = nodes[km.pni as usize].pt.add_dir(&km.move_dir);
 		map_b.level.set_human_pos(&np);
 
-		backtrace_moves2(nodes, km.pni as usize, &mut map_b.path);
-		map_b.path.push(&km.move_dir);
+		map_b.path = backtrace_moves2(nodes, km.pni as usize, map_b.path);
+		map_b.path = map_b.path.push(km.move_dir as u8);
 
 		map_b
 	}	
@@ -269,8 +269,8 @@ impl PathMap {
 
 		map_b.level.set_human_pos(&np);				// move human
 		
-		pnm.backtrace_moves(km.pni as usize, &mut map_b.path);
-		map_b.path.push(&km.move_dir);
+		map_b.path = pnm.backtrace_moves(km.pni as usize, map_b.path);
+		map_b.path = map_b.path.push(km.move_dir as u8);
 		
 		map_b
 	}
@@ -300,8 +300,8 @@ impl PathMap {
 		let np = pnm.nodes[km.pni as usize].pt.add_dir(&km.move_dir);
 		map_b.level.set_human_pos(&np);
 
-		pnm.backtrace_moves(km.pni as usize, &mut map_b.path);
-		map_b.path.push(&km.move_dir);
+		map_b.path = pnm.backtrace_moves(km.pni as usize, map_b.path);
+		map_b.path = map_b.path.push(km.move_dir as u8);
 
 		map_b
 	}
@@ -466,7 +466,7 @@ impl PathNodeMap {
 		}
 		nmaps
 	}
-	pub fn backtrace_moves(&self, pni: usize, spath: &mut impl PathTrait) {		// 5.5, 2.9
+	pub fn backtrace_moves(&self, pni: usize, spath: TreeNodeRef) -> TreeNodeRef {		// 5.5, 2.9
 		let mut path = StackStack8x64::new();
 		// start at pn and work backwards
 		let mut pnr = &self.nodes[pni];
@@ -484,15 +484,17 @@ impl PathNodeMap {
 			}
 		}
 		
+		let mut spath2 = spath;
 		for i in 1..=path.next {
 			let rev = path.next - i;
-			spath.push_u8(path.stack[rev]);	//3.88%
+			spath2 = spath2.push(path.stack[rev]);
 		}
+		spath2
 	}
 }
 
 
-pub fn backtrace_moves2(nodes: &Vec::<PathNode>, pni: usize, spath: &mut impl PathTrait) {		// 5.5, 2.9
+pub fn backtrace_moves2(nodes: &Vec::<PathNode>, pni: usize, spath: TreeNodeRef) -> TreeNodeRef {		// 5.5, 2.9
 	let mut path = StackStack8x64::new();
 	// start at pn and work backwards
 	let mut pnr = nodes[pni];
@@ -510,9 +512,11 @@ pub fn backtrace_moves2(nodes: &Vec::<PathNode>, pni: usize, spath: &mut impl Pa
 		}
 	}
 	
+	let mut spath2 = spath;
 	for i in 1..=path.next {
 		let rev = path.next - i;
-		spath.push_u8(path.stack[rev]);	//3.88%
+		spath2 = spath2.push(path.stack[rev]);
 	}
+	spath2
 }
 

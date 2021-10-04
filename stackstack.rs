@@ -5,7 +5,7 @@
 //
 // default multiplier is 1 (512 bits or path of 256) but it'll overflow with levels which can have long paths
 
-const HARD_MAX_PATH: usize = 256;
+const HARD_MAX_PATH: usize = 512;
 const STACKMAX: usize = HARD_MAX_PATH * 2 / 128;		// 2 bits per move, 128 bit blocks
 
 #[derive(Copy,Clone)]

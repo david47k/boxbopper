@@ -55,8 +55,8 @@ fn random_string(rng: &mut rand_chacha::ChaCha8Rng) -> String {
 
 	let mut s = String::new();
 	for _ in 0..5 {
-		s += &k[rng.gen_range(0,k.len())].to_string();
-		s += &v[rng.gen_range(0,v.len())].to_string();
+		s += &k[rng.gen_range(0..k.len())].to_string();
+		s += &v[rng.gen_range(0..v.len())].to_string();
 	}
 	s
 }
@@ -74,15 +74,15 @@ fn random_level_creator(width: u16, height: u16, wall_density: u32, box_density:
 	}
 
 	// randomly place us
-	let x = rng.gen_range(0,width);
-	let y = rng.gen_range(0,height);
+	let x = rng.gen_range(0..width);
+	let y = rng.gen_range(0..height);
 	data[(y*width + x) as usize] = Obj::Human;
 	let human_pos = Vector(x as i32,y as i32);
 	
 	// randomly place walls - not on anything else
 	for y in 0..height as usize {
 		for x in 0..width as usize {
-			if data[y*width as usize+x] == Obj::Space && rng.gen_range(0,100) <= wall_density {
+			if data[y*width as usize+x] == Obj::Space && rng.gen_range(0..100) <= wall_density {
 				data[y*width as usize+x] = Obj::Wall;
 			}
 		}
@@ -103,8 +103,8 @@ fn random_level_creator(width: u16, height: u16, wall_density: u32, box_density:
 	let mut i = 0;
 	let mut insane = 0;
 	while i < num_boxxes && insane < max_squares * 10 { // don't let it run forever
-		let x = rng.gen_range(0,width);
-		let y = rng.gen_range(0,height);
+		let x = rng.gen_range(0..width);
+		let y = rng.gen_range(0..height);
 		let v = Vector(x as i32, y as i32);
 		if level.get_obj_at_pt(&v) == Obj::Space {
 			if is_pullable(&level, &v) {

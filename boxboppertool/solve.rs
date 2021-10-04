@@ -6,7 +6,7 @@ use boxbopperbase::level::{Level,CmpData};
 use boxbopperbase::time::{get_time_ms};
 
 use crate::pathnodemap::{PathMap};
-use crate::shrunkpath::{PathTrait};
+//use crate::shrunkpath::{TreeNode};
 
 use rayon::prelude::*;
 use std::rc::Rc;
@@ -182,6 +182,7 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 	let mut max_moves = max_moves_requested+1;
 	let base_level1 = base_level_in.clear_human_cloned();
 	let base_map = PathMap::new_from_level(&base_level1);
+	let _path_root = base_map.path.clone(); 	// we have to keep reference so the root doesn't dissappear
 	let base_level = base_level1.clear_boxxes_cloned();
 	let mut non_contenders = BTreeMap::<CmpData,u16>::new();
 
@@ -210,13 +211,15 @@ pub fn solve_level(base_level_in: &Level, max_moves_requested: u16, max_maps: us
 		// Check for level complete / having solution
 		if verbosity > 1 { println!("solution check..."); }
 		mapsr.iter().filter(|m| m.level.have_win_condition(&base_level)).for_each(|m| {
-			if m.path.len() < max_moves {
+			let len = m.path.len();
+			if len < max_moves {
 				have_solution = true;
-				max_moves = m.path.len();
+				max_moves = len;
 				best_solution.depth = depth;
 				best_solution.s = format!("{}", m.path.to_string());
 				if verbosity > 0 { 
-					println!("-- Solution found in {} moves --", m.path.len());
+					println!("-- Solution found in {} moves --", len);
+					m.path.print_tree_size();
 				}
 			}
 		});

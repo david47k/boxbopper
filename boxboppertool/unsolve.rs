@@ -6,13 +6,15 @@ use boxbopperbase::{moves_to_string};
 use boxbopperbase::level::{Level,CmpData};
 use boxbopperbase::vector::Move;
 
-use rayon::prelude::*;
 use std::rc::Rc;
 use std::collections::BTreeMap;
 
-use crate::solve::{task_splitter,task_splitter_mut,task_splitter_sort};
+use rayon::iter::IntoParallelRefMutIterator;
+use rayon::prelude::*;
+
+use crate::solve::{task_splitter,task_splitter_sort};	// task_splitter_mut
 use crate::pathnodemap::{PathMap};
-use crate::shrunkpath::{PathTrait};
+use crate::shrunkpath::{TreeNodeRef};	// PathTrait
 
 extern crate rand;
 extern crate rand_chacha;
@@ -27,14 +29,14 @@ pub fn select_unique_n_from(count: usize, len: usize, rng: &mut rand_chacha::Cha
 		return (0..len).collect();
 	} else if len < 100000 {
 		let mut range: Vec::<usize> = (0..len).collect();
-		range.sort_by_cached_key(|_x| rng.gen_range(0,usize::MAX));
+		range.sort_by_cached_key(|_x| rng.gen_range(0..usize::MAX));
 		return Vec::from(&range[0..count]);
 	} else {
 		// use less ram for big ranges
 		let mut selected_idx = Vec::<usize>::with_capacity(count);		
 		let mut everloop_count = 0;
 		while selected_idx.len() < count && everloop_count < 10000 {
-			let idx = rng.gen_range(0,len);
+			let idx = rng.gen_range(0..len);
 			if !selected_idx.iter().any(|i| *i==idx) {
 				selected_idx.push(idx);
 			} else {
@@ -49,6 +51,7 @@ pub fn select_unique_n_from(count: usize, len: usize, rng: &mut rand_chacha::Cha
 pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng: &mut rand_chacha::ChaCha8Rng, verbosity: u32, num_threads: usize) -> Vec::<Level> {
 	let base_level1 = base_level_in.clear_human_cloned();
 	let base_map = PathMap::new_from_level(&base_level1);
+	let _path_root = base_map.path.clone(); 	// we have to keep reference so the root doesn't dissappear
 	let base_level = base_level1.clear_boxxes_cloned();
 
 	let pool = TaskPoolBuilder::new()
@@ -68,7 +71,7 @@ pub fn unsolve_level(base_level_in: &Level, max_depth: u16, max_maps: usize, rng
 	maps1.iter().for_each(|m| m.complete_solve_2(&base_level, &mut maps2));
 	let mut mapsr: Vec<PathMap> = maps2.iter().filter(|m| m.level.have_win_condition(&base_level) ).cloned().collect();
 	mapsr.iter_mut().for_each(|map| { 			// reset the move count
-		map.path.clear(); 
+		map.path = TreeNodeRef::new_root();			// .clear(); 
 	});
 	if verbosity > 1 { 
 		println!("final maps found: {}", mapsr.len()); 
