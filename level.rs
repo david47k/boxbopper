@@ -465,7 +465,7 @@ impl Level {
 	}
 	pub fn from_parts(title: String, w: u16, h: u16, human_pos: Vector, data: Vec::<Obj>) -> Level {
 		let mut level = Level {
-			keyvals: HashMap::from( [("title".to_string(),title)].iter().cloned().collect() ),
+			keyvals: HashMap::new(),
 			w: w as u16,
 			h: h as u16,
 			human_pos: human_pos,
@@ -477,6 +477,7 @@ impl Level {
 			win_data: [0_u64; 4],
 			cleared_of_human: false,
 		};
+		level.keyvals.insert("title".to_string(), title);
 		if level.confirm_no_human() {
 			level.place_human();
 		}
