@@ -7,7 +7,7 @@ o  tool: Add optimisations to unsolve
 o  tool: Better warnings on tool when running out of memory (currently tends to get killed by host when it uses too much)
 o  tool: Better handling when hitting max_depth limits (keep going but with warning that some have been discarded)
 o  web: Check css media brackets on chrome
-o  general: add copyright notice and code comments
+o  general: add more code comments
 
 
 LOW PRIORITY

@@ -1,27 +1,15 @@
 # BoxBopper
 
-A sokoban-style game in rust.
+A sokoban-style game, written in rust.
 
-It includes:
-- a console game
-- a web game (rust/wasm/javascript)
-- a tool that will create and solve levels 
-
-# boxboppertui (game for terminal)
-
-### Building
-
-Use `cargo build --release` in the `boxbopperconsole` directory to build the console game.  
-(You may first need to run `cargo build --release` in the root directory to build the `boxbopperbase` library.)
-
-### Usage
-
-Type `U`, `D`, `L`, `R` (followed by Enter) to move around.  
-Type `N` or `P` (followed by Enter) for next or previous level.  
-Type \` (followed by Enter) to reset the level.  
-Type `Q` (followed by Enter) to quit.  
+There is:
+- a version for the web (boxbopperweb, written in rust/wasm/javascript)
+- a version for a terminal (boxboppertui)
+- a tool to create and solves level (boxboppertool)
 
 # boxbopperweb (game for web)
+
+![Screenshot of game for web](screenshot-boxbopperweb.png)
 
 ### Building
 The web game requires node.js and webpack to build.
@@ -32,13 +20,42 @@ Use `npm run start` to run the game locally, which can then be accessed from you
 
 ### Usage
 
+Pardon the basic graphics!
+
 Use arrow keys to move around. You can also move (in straight lines only) with the mouse.
 
 Press `R` to reset, `N` for next level, `P` for previous level, or click the appropriate buttons.
 
+# boxboppertui (game for terminal)
+
+![Screenshot of game for terminal](screenshot-boxboppertui.png)
+
+### Building
+
+Use `cargo build --release` in the `boxboppertui` directory to build the terminal game.  
+(You may first need to run `cargo build --release` in the root directory to build the `boxbopperbase` library.)
+
+### Usage
+
+#### Command-line options:
+
+```
+filename=FILENAME      load level from FILENAME
+builtin=NUM            start with builtin level NUM       0-78
+use_emoji=true         use emoji for display              true / false
+basic_ui=true          use a basic ui only                true / false
+```
+
+#### Playing the game:
+
+Type `U`, `D`, `L`, `R` to move around.  
+Type `N` or `P` for next or previous level.  
+Type \` to reset the level.  
+Type `Q` to quit.  
+
 # boxboppertool
 
-The tool can create and solve levels. It is multithreaded, and uses an exhaustive search. It is quite fast at solving levels,
+This tool can create and solve levels. It is multithreaded, and uses an exhaustive search. It is quite fast at solving levels,
 provided the level is within limits. If the level is not within limits, it'll probably fail.
 
 Limits are:
@@ -85,4 +102,4 @@ lower max_moves to improve performance (but it will not solve if more moves are 
 
 # License
 
-Copyright 2020-2021 David Atkinson.
+Copyright 2020-2021 David Atkinson. 
