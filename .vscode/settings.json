@@ -1,4 +1,0 @@
-{
-    "remote.WSL.fileWatcher.polling": true,
-    "remote.WSL.fileWatcher.pollingInterval": 3000
-}
