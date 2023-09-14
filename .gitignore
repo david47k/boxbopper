@@ -1,13 +1,6 @@
 target
 pkg
-*.lock
-www/package-lock.json
-www/node_modules
-boxbopperconsole/target
-boxboppertool/target
-boxboppersolver_old
-boxboppertool/.vs
-boxboppertool/.vs/
-boxboppertool/.vs/slnx.sqlite
-boxboppertool/.vs/boxboppertool/v16/.suo
-boxbopperconsole/target/.rustc_info.json
+node_modules
+.vs
+.vscode
+Cargo.lock
