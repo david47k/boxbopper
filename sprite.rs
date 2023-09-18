@@ -49,7 +49,6 @@ pub struct Sprite {
 	pub initial_time: f64,
 	pub final_xy: Vector,
 	pub duration: f64,
-	priv_is_moving: u32,
 }
 
 impl Sprite {
@@ -61,7 +60,6 @@ impl Sprite {
 			duration,
 			initial_xy,
 			final_xy,
-			priv_is_moving: 0,
 		}
 	}
 	pub fn apply_trans(&mut self, trans: Trans) {		

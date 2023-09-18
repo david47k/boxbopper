@@ -1,16 +1,13 @@
 {
   "name": "boxbopper-wasm-app",
   "version": "0.2.0",
-  "description": "a sokoban clone",
+  "description": "a sokoban-like puzzle game",
   "main": "index.js",
-  "bin": {
-    "create-wasm-app": ".bin/create-wasm-app.js"
-  },
   "scripts": {
     "build": "webpack --config webpack.config.js",
-    "start": "webpack serve"
+    "serve": "webpack serve"
   },
-  "author": "David Atkinson <>",
+  "author": "David Atkinson <david47k@d47.co>",
   "license": "undefined",
   "devDependencies": {
     "@webpack-cli/serve": "^2.0.5",

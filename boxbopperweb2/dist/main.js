@@ -85,7 +85,7 @@ eval("// A dependency graph that contains any wasm must all be imported\n// asyn
 /******/ 		// This function allow to reference async chunks
 /******/ 		__webpack_require__.u = (chunkId) => {
 /******/ 			// return url for filenames based on template
-/******/ 			return "" + chunkId + ".bootstrap.js";
+/******/ 			return "" + chunkId + ".main.js";
 /******/ 		};
 /******/ 	})();
 /******/ 	
@@ -313,8 +313,6 @@ eval("// A dependency graph that contains any wasm must all be imported\n// asyn
 /******/ 		var wasmImportedFuncCache12;
 /******/ 		var wasmImportedFuncCache13;
 /******/ 		var wasmImportedFuncCache14;
-/******/ 		var wasmImportedFuncCache15;
-/******/ 		var wasmImportedFuncCache16;
 /******/ 		var wasmImportObjects = {
 /******/ 			"../pkg/boxbopperbase_bg.wasm": function() {
 /******/ 				return {
@@ -323,21 +321,21 @@ eval("// A dependency graph that contains any wasm must all be imported\n// asyn
 /******/ 							if(wasmImportedFuncCache0 === undefined) wasmImportedFuncCache0 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
 /******/ 							return wasmImportedFuncCache0["__wbindgen_number_new"](p0f64);
 /******/ 						},
-/******/ 						"__wbindgen_object_drop_ref": function(p0i32) {
+/******/ 						"__wbindgen_string_new": function(p0i32,p1i32) {
 /******/ 							if(wasmImportedFuncCache1 === undefined) wasmImportedFuncCache1 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache1["__wbindgen_object_drop_ref"](p0i32);
-/******/ 						},
-/******/ 						"__wbg_sprite_new": function(p0i32) {
-/******/ 							if(wasmImportedFuncCache2 === undefined) wasmImportedFuncCache2 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache2["__wbg_sprite_new"](p0i32);
+/******/ 							return wasmImportedFuncCache1["__wbindgen_string_new"](p0i32,p1i32);
 /******/ 						},
 /******/ 						"__wbg_spriteinfo_new": function(p0i32) {
-/******/ 							if(wasmImportedFuncCache3 === undefined) wasmImportedFuncCache3 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache3["__wbg_spriteinfo_new"](p0i32);
+/******/ 							if(wasmImportedFuncCache2 === undefined) wasmImportedFuncCache2 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
+/******/ 							return wasmImportedFuncCache2["__wbg_spriteinfo_new"](p0i32);
 /******/ 						},
-/******/ 						"__wbindgen_string_new": function(p0i32,p1i32) {
+/******/ 						"__wbg_sprite_new": function(p0i32) {
+/******/ 							if(wasmImportedFuncCache3 === undefined) wasmImportedFuncCache3 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
+/******/ 							return wasmImportedFuncCache3["__wbg_sprite_new"](p0i32);
+/******/ 						},
+/******/ 						"__wbindgen_object_drop_ref": function(p0i32) {
 /******/ 							if(wasmImportedFuncCache4 === undefined) wasmImportedFuncCache4 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache4["__wbindgen_string_new"](p0i32,p1i32);
+/******/ 							return wasmImportedFuncCache4["__wbindgen_object_drop_ref"](p0i32);
 /******/ 						},
 /******/ 						"__wbg_new_59cb74e423758ede": function() {
 /******/ 							if(wasmImportedFuncCache5 === undefined) wasmImportedFuncCache5 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
@@ -355,37 +353,29 @@ eval("// A dependency graph that contains any wasm must all be imported\n// asyn
 /******/ 							if(wasmImportedFuncCache8 === undefined) wasmImportedFuncCache8 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
 /******/ 							return wasmImportedFuncCache8["__wbg_log_16194a6847bbd628"](p0i32);
 /******/ 						},
-/******/ 						"__wbg_get_9ca243f6a0c3698a": function(p0i32,p1i32) {
-/******/ 							if(wasmImportedFuncCache9 === undefined) wasmImportedFuncCache9 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache9["__wbg_get_9ca243f6a0c3698a"](p0i32,p1i32);
-/******/ 						},
-/******/ 						"__wbg_length_6e10a2de7ea5c08f": function(p0i32) {
-/******/ 							if(wasmImportedFuncCache10 === undefined) wasmImportedFuncCache10 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache10["__wbg_length_6e10a2de7ea5c08f"](p0i32);
-/******/ 						},
 /******/ 						"__wbg_new_17534eac4df3cd22": function() {
-/******/ 							if(wasmImportedFuncCache11 === undefined) wasmImportedFuncCache11 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache11["__wbg_new_17534eac4df3cd22"]();
+/******/ 							if(wasmImportedFuncCache9 === undefined) wasmImportedFuncCache9 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
+/******/ 							return wasmImportedFuncCache9["__wbg_new_17534eac4df3cd22"]();
 /******/ 						},
 /******/ 						"__wbg_from_c205b0d4f5dc1441": function(p0i32) {
-/******/ 							if(wasmImportedFuncCache12 === undefined) wasmImportedFuncCache12 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache12["__wbg_from_c205b0d4f5dc1441"](p0i32);
+/******/ 							if(wasmImportedFuncCache10 === undefined) wasmImportedFuncCache10 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
+/******/ 							return wasmImportedFuncCache10["__wbg_from_c205b0d4f5dc1441"](p0i32);
 /******/ 						},
 /******/ 						"__wbg_push_7114ccbf1c58e41f": function(p0i32,p1i32) {
-/******/ 							if(wasmImportedFuncCache13 === undefined) wasmImportedFuncCache13 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache13["__wbg_push_7114ccbf1c58e41f"](p0i32,p1i32);
+/******/ 							if(wasmImportedFuncCache11 === undefined) wasmImportedFuncCache11 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
+/******/ 							return wasmImportedFuncCache11["__wbg_push_7114ccbf1c58e41f"](p0i32,p1i32);
 /******/ 						},
 /******/ 						"__wbg_now_ad54c8b6865a8103": function() {
-/******/ 							if(wasmImportedFuncCache14 === undefined) wasmImportedFuncCache14 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache14["__wbg_now_ad54c8b6865a8103"]();
-/******/ 						},
-/******/ 						"__wbindgen_number_get": function(p0i32,p1i32) {
-/******/ 							if(wasmImportedFuncCache15 === undefined) wasmImportedFuncCache15 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache15["__wbindgen_number_get"](p0i32,p1i32);
+/******/ 							if(wasmImportedFuncCache12 === undefined) wasmImportedFuncCache12 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
+/******/ 							return wasmImportedFuncCache12["__wbg_now_ad54c8b6865a8103"]();
 /******/ 						},
 /******/ 						"__wbindgen_throw": function(p0i32,p1i32) {
-/******/ 							if(wasmImportedFuncCache16 === undefined) wasmImportedFuncCache16 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
-/******/ 							return wasmImportedFuncCache16["__wbindgen_throw"](p0i32,p1i32);
+/******/ 							if(wasmImportedFuncCache13 === undefined) wasmImportedFuncCache13 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
+/******/ 							return wasmImportedFuncCache13["__wbindgen_throw"](p0i32,p1i32);
+/******/ 						},
+/******/ 						"__wbindgen_rethrow": function(p0i32) {
+/******/ 							if(wasmImportedFuncCache14 === undefined) wasmImportedFuncCache14 = __webpack_require__.c["../pkg/boxbopperbase_bg.js"].exports;
+/******/ 							return wasmImportedFuncCache14["__wbindgen_rethrow"](p0i32);
 /******/ 						}
 /******/ 					}
 /******/ 				};
@@ -414,7 +404,7 @@ eval("// A dependency graph that contains any wasm must all be imported\n// asyn
 /******/ 					promises.push(installedWasmModuleData);
 /******/ 				else {
 /******/ 					var importObject = wasmImportObjects[wasmModuleId]();
-/******/ 					var req = fetch(__webpack_require__.p + "" + {"index_js":{"../pkg/boxbopperbase_bg.wasm":"c31574892ba3b82f14dd"}}[chunkId][wasmModuleId] + ".module.wasm");
+/******/ 					var req = fetch(__webpack_require__.p + "" + {"index_js":{"../pkg/boxbopperbase_bg.wasm":"3f3be7429b56886ae37c"}}[chunkId][wasmModuleId] + ".module.wasm");
 /******/ 					var promise;
 /******/ 					if(importObject && typeof importObject.then === 'function' && typeof WebAssembly.compileStreaming === 'function') {
 /******/ 						promise = Promise.all([WebAssembly.compileStreaming(req), importObject]).then(function(items) {

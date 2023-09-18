@@ -253,9 +253,9 @@ impl Game {
 		(BUILTIN_LEVELS.len() - 1) as u32
 	}
 
-	pub fn process_keys(&mut self, keys: Array) {
-		// which keys are currently held down
-		if keys.length()==1 {
+	/* DEPRECATED
+	pub fn process_keys(&mut self, keys: Array) {				// keys is an array of scancodes, which keys are currently held down
+		if keys.length()==1 {									// can only press one key at a time
 			match keys.get(0).as_f64().unwrap() as u32 {		// or something like .get(0).dyn_into::<u32>.unwrap()
 				87 | 38 => self.append_move(&Move::Up),
 			 	68 | 39 => self.append_move(&Move::Right),
@@ -264,7 +264,7 @@ impl Game {
 				_       => {},
 			}
 		}
-	}
+	} */
 
 	pub fn get_move_history(&self) -> Array {
 		self.move_history.clone().into_iter().map(|m| JsValue::from(m as u32)).collect()

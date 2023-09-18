@@ -3,28 +3,38 @@
 A sokoban-style game, written in rust.
 
 There is:
-- a version for the web (boxbopperweb, written in rust/wasm/javascript)
+- a version for the web (boxbopperweb, written in rust/javascript)
 - a version for a terminal (boxboppertui)
-- a tool to create and solves level (boxboppertool)
+- a tool to create and solve levels (boxboppertool)
 
 # boxbopperweb (game for web)
 
-![Screenshot of game for web](screenshot-boxbopperweb.png)
+[Play the game!](https://boxbopper.tacticat.co/)
+
+![Screenshot of game for web](boxbopperweb/public/screenshot-boxbopperweb.png)
 
 ### Building
-The web game requires node.js and webpack to build.
 
-Use `npm run build` in the `boxbopperweb` directory to build the web game.  
+Tested using Rust 1.72 and nodejs 18.17 LTS.
 
-Use `npm run start` to run the game locally, which can then be accessed from your web browser (typically http://localhost:8080/).
+The web game requires wasm-pack to build.
 
-### Usage
+Use `wasm-pack build` in the root directory to build the required wasm module and javascript interface.
 
-Pardon the basic graphics!
+Use `npm run build` in the `boxbopperweb2` directory to build the web game.
 
-Use arrow keys to move around. You can also move (in straight lines only) with the mouse.
+Use `npm run serve` to run the game locally.
 
-Press `R` to reset, `N` for next level, `P` for previous level, or click the appropriate buttons.
+e.g.
+```
+cd boxbopper
+cargo install wasm-pack
+cargo build
+wasm-pack build
+cd boxbopperweb2
+npm run build
+npm run serve
+```
 
 # boxboppertui (game for terminal)
 
@@ -32,12 +42,19 @@ Press `R` to reset, `N` for next level, `P` for previous level, or click the app
 
 ### Building
 
-Use `cargo build --release` in the `boxboppertui` directory to build the terminal game.  
-(You may first need to run `cargo build --release` in the root directory to build the `boxbopperbase` library.)
+Use `cargo build` in the `boxboppertui` directory to build the terminal game.  
+(You may first need to run `cargo build` in the root directory to build the `boxbopperbase` library.)
 
-### Usage
+e.g.
+```
+cd boxbopper
+cargo build
+cd boxboppertui
+cargo build
+./target/debug/boxboppertui
+```
 
-#### Command-line options:
+### Command-line options
 
 ```
 filename=FILENAME      load level from FILENAME
@@ -45,13 +62,6 @@ builtin=NUM            start with builtin level NUM       0-78
 use_emoji=true         use emoji for display              true / false
 basic_ui=true          use a basic ui only                true / false
 ```
-
-#### Playing the game:
-
-Type `U`, `D`, `L`, `R` to move around.  
-Type `N` or `P` for next or previous level.  
-Type \` to reset the level.  
-Type `Q` to quit.  
 
 # boxboppertool
 
@@ -68,7 +78,7 @@ Limits are:
 - Not too much open space (e.g. 3x4 and above)
 
 ### Building
-Use `cargo build --release` in the `boxboppertool` directory to build the (console) tool.
+Use `cargo build` in the `boxboppertool` directory to build the (console) tool.
 
 ### Usage
 ```
