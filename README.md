@@ -11,7 +11,7 @@ There is:
 
 [Play the game!](https://boxbopper.tacticat.co/)
 
-![Screenshot of game for web](boxbopperweb/public/screenshot-boxbopperweb.png)
+![Screenshot of game for web](boxbopperweb2/public/screenshot-boxbopperweb.png)
 
 ### Building
 
