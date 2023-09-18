@@ -43,13 +43,10 @@ npm run serve
 ### Building
 
 Use `cargo build` in the `boxboppertui` directory to build the terminal game.  
-(You may first need to run `cargo build` in the root directory to build the `boxbopperbase` library.)
 
 e.g.
 ```
-cd boxbopper
-cargo build
-cd boxboppertui
+cd boxbopper/boxboppertui
 cargo build
 ./target/debug/boxboppertui
 ```
@@ -78,7 +75,15 @@ Limits are:
 - Not too much open space (e.g. 3x4 and above)
 
 ### Building
+
 Use `cargo build` in the `boxboppertool` directory to build the (console) tool.
+
+e.g.
+```
+cd boxbopper/boxboppertui
+cargo build --release
+./target/release/boxboppertool speed_test max_level=10
+```
 
 ### Usage
 ```
