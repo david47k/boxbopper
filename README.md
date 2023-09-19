@@ -115,6 +115,39 @@ lower max_maps to reduce memory usage (but it may not solve)
 lower max_moves to improve performance (but it will not solve if more moves are required)
 ```
 
+### Puzzle solving algorithm
+
+```
+create a map_array (just the starting map to begin with)
+
+loop start:
+
+check if any maps are solved (all the boxes are in the right spot)
+  if it is the best solution so far, save the solution
+ 
+for each map in map_array:
+  explore the level (breadth-first) by making moves, until there are no more moves able to be made (without backtracking)
+	if the move results in the movement of a box, save the map and the moves taken to get there
+
+map_array = the saved maps
+
+deduplicate map_array, keeping the shortest path versions
+ 
+continue the loop unless:
+   map_array is empty, or
+   we've hit resource limits
+
+display the best solution
+```
+
+### Performance improvements made
+
+* Avoiding unpredictable branching based on profiling results. Sometimes it's faster to perform unnecessary calculations, than to perform a branch to skip them!
+* Storing maps using as few bits as possible (i.e. 1 bit bitmap for box location), and not duplicating constants (i.e. walls and holes).
+* Storing paths using either 2 bits per move, or in a tree structure, to reduce memory use.
+* Storing small arrays on the stack to avoid expensive memory allocations.
+* Running tasks on large arrays by dividing them into parts (equal to the number of threads available), without copying, then running in parallel. Faster than having a queue.
+
 # License
 
 Copyright 2020-2021 David Atkinson. 
