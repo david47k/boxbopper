@@ -9,8 +9,8 @@ export class View {
 		this.container = document.getElementById('container');
 		this.scoreboard = document.getElementById('scoreboard');
 		
-		this.srcBlockSize = 64; // a default
-		this.srcImage = new Image();   // Create new img element
+		this.srcBlockSize = 0; 			// force loading of bitmap
+		this.srcImage = new Image();	// Create new img element
 		this.srcImage.loading = "eager";
 		this.srcImage.addEventListener('load', function() {
 			console.log("image loaded"); 
@@ -37,9 +37,10 @@ export class View {
 		for (let i=0; i<to_hide.length; i++) {
 			to_hide[i].style.display = "none";
 		}
-
+		
 		let { width, height } = this.container.getBoundingClientRect();
-		this.unitOnScreen = Math.floor(Math.min( width / gameWidth,	height / gameHeight ));
+		height = Math.floor(height) - 1; width = Math.floor(width) - 1; 
+		this.unitOnScreen = Math.floor(Math.min( width / gameWidth, height / gameHeight ));
 		this.unitOnScreen = ( Math.floor(this.unitOnScreen / 4) * 4 );	// canvas drawImage is crappy, reduce aliasing artifacts
 		
 		// don't upscale, it creates aliasing artifacts

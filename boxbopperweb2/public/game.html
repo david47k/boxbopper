@@ -9,9 +9,11 @@
       * { box-sizing: border-box; outline: 0; margin: 0; }
       body { background: #000; color: #aaa; font-family: sans-serif; font-size: 18px; 
         display: flex; flex-direction: column; 
-        height: 100vh; }      
+        height: 99.5vh; }      
 
+	  #nojs { flex: none; } 
       #container { flex: 1 1 auto; }
+	  #scriptloader { flex: none; }
 
       #controlbar {
         flex: 0 0 auto;
@@ -21,7 +23,7 @@
       }
       #controlbar > div { padding: 5px; margin-top: auto; margin-bottom: auto; }
       #cb_title { min-width: 6.5em; font-size: 34px; font-weight: bold; }
-      #cb_buttons { min-width: 180px; }
+      #cb_buttons { min-width: 180px; height: 61px; }
       #cb_levelname { min-width: 8em; }
       #cb_moves { min-width: 8em; }
       #cb_solved { min-width: 5em; font-size: 34px; font-weight: bold; color: #fff; }
@@ -82,7 +84,7 @@
         &nbsp;
       </div>
     </div>
-    <div id="container"></div>
-    <div id="scriptloader" class="hide_on_load"><script src="./main.js"></script></div>
+	<div id="container"></div>
+	<div id="scriptloader" class="hide_on_load"><script src="./main.js"></script></div>
   </body>
 </html>
