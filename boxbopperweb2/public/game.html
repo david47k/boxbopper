@@ -7,20 +7,25 @@
     <title>Box Bopper</title>
     <style>
       * { box-sizing: border-box; outline: 0; margin: 0; }
-      body { background: #0d0d47; color: #aaa; font-family: sans-serif; display: flex; flex-direction: column; }
-      canvas {
-        border: 1px solid black;
-      }
-      #pre  { flex: 0 0 5px; }
-      #post { flex: 0 1 5px; }
-      #vmid { flex: 1 0 95vh; display: flex; }
-      @media (height < 40em) { #vmid { flex: 1 0 90vh; } }      /* these give us roughly the right height for our canvas */
-      @media (height < 35em) { #vmid { flex: 1 0 85vh; } }      /* we override it but these are staying just in case */
-      @media (height < 16em) { #vmid { flex: 1 0 13em; } }
+      body { background: #000; color: #aaa; font-family: sans-serif; font-size: 18px; 
+        display: flex; flex-direction: column; 
+        height: 100vh; }      
 
-      #hleft     { flex: 0 0 12em; padding: 0 1em 0 1em; }
-      #hright    { flex: 0 1  1em; }
-      #container { flex: 1 1 40em; }
+      #container { flex: 1 1 auto; }
+
+      #controlbar { 
+        flex: 0 0 auto;
+        background: #0d0d27; 
+        display: flex;
+        flex-wrap: wrap;
+      }
+      #controlbar > div { padding: 5px; border: 1px solid #0d0d47; margin-top: auto; margin-bottom: auto;}
+      #cb_title { min-width: 6.5em; font-size: 34px; font-weight: bold; }
+      #cb_buttons { min-width: 180px; }
+      #cb_levelname { min-width: 8em; }
+      #cb_moves { min-width: 8em; }
+      #cb_solved { min-width: 5em; font-size: 34px; font-weight: bold; color: #fff; }
+      #level_title { font-style: italic; }
 
       #moves_taken { font-family: 'Courier New', Courier, monospace; }
       
@@ -34,18 +39,17 @@
     </style>
   </head>
   <body>
-    <div id="pre"><noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript></div>
-    <div id="vmid">
-      <div id="hleft">
-        <h3>Box Bopper!</h3>
-        <br>
+    <div id="nojs" class="hide_on_load"><noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript></div>
+    <div id="controlbar">
+      <div id="cb_title">BoxBopper</div>
+      <div id="cb_buttons">
         <button id="prev_button" title="prev level (p)" type="button">
           <svg width="32" height="32" version="1.1" viewBox="0 0 8.4666 8.4666" xmlns="http://www.w3.org/2000/svg">
           <g stroke-linecap="square" stroke-width=".26458">
-           <rect width="8.4666" height="8.4666" fill-opacity=".20161"/>
-           <path d="m5.5427 1.0397-3.175 3.175-0.00517 0.00516 0.5612 0.5612 0.00517-0.00516 2.6194 2.6189 0.5612-0.5612-2.6194-2.6189 2.6138-2.6138z"/>
+          <rect width="8.4666" height="8.4666" fill-opacity=".20161"/>
+          <path d="m5.5427 1.0397-3.175 3.175-0.00517 0.00516 0.5612 0.5612 0.00517-0.00516 2.6194 2.6189 0.5612-0.5612-2.6194-2.6189 2.6138-2.6138z"/>
           </g>
-         </svg>
+        </svg>
         </button>
         <button id="retry_button" title="retry (r)" type="button">
           <svg width="32" height="32" version="1.1" viewBox="0 0 8.4666 8.4666" xmlns="http://www.w3.org/2000/svg">
@@ -63,17 +67,22 @@
             </g>
           </svg>
         </button>
-        <br><br>
-        Level <span id="level_num"></span><br>
-        <span id="level_title"></span><br>
-        Best score: <span id="best_score"></span><br><br>
+      </div>
+      <div id="cb_levelname">
+        Level: <span id="level_num"></span><br>
+        &lsquo;<span id="level_title"></span>&rsquo;
+      </div>
+      <div id="cb_moves">
         Moves: <span id="num_moves"></span><br>
+        Best: <span id="best_score"></span>
+      </div>
+      <div id="cb_solved">
         <span id="solved"></span>
         <span id="moves_taken"></span>
+        &nbsp;
       </div>
-      <div id="container"></div>
-      <div id="hright"></div>
     </div>
-    <div id="post"><script src="./main.js"></script></div>
+    <div id="container"></div>
+    <div id="scriptloader" class="hide_on_load"><script src="./main.js"></script></div>
   </body>
 </html>

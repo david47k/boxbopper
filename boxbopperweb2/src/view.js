@@ -26,36 +26,37 @@ export class View {
 	setUp(gameWidth, gameHeight) {
 		console.log('setting up ...')
 
+		// get rid of the old canvas, so it doesn't mess with our calculations
 		const [child] = this.container.children;
 		if(child) {
 			this.container.removeChild(child);
 		}
 
+		// we need to hide all divs that have the class "hide_on_load"
+		let to_hide = document.getElementsByClassName('hide_on_load');
+		for (let i=0; i<to_hide.length; i++) {
+			to_hide[i].style.display = "none";
+		}
+
 		let { width, height } = this.container.getBoundingClientRect();
-		height = document.documentElement.clientHeight - 15; // override the above height estimate: 10px padding 2px border 3px unknown
 		this.unitOnScreen = Math.floor(Math.min( width / gameWidth,	height / gameHeight ));
 		this.unitOnScreen = ( Math.floor(this.unitOnScreen / 4) * 4 );	// canvas drawImage is crappy, reduce aliasing artifacts
-		if(this.unitOnScreen > 256) this.unitOnScreen = 256; // reducing aliasing artifacts - can also split src into individual sprites
-		console.log("screen unit:", this.unitOnScreen)
+		
+		// don't upscale, it creates aliasing artifacts
+		if(this.unitOnScreen > 256) this.unitOnScreen = 256;
 
-/*		*** not yet supported by browsers other than chrome
-		this.srcImageBitmapPromise = createImageBitmap(this.srcImage, 0, 0, (4*this.srcBlockSize), (8*this.srcBlockSize), { resizeWidth: (4*this.unitOnScreen), resizeHeight: (8*this.unitOnScreen), resizeQuality: "high" })
-		.then( function(ib) {
-			document.gameManager.view.srcImageBitmap = ib;
-		}, function() {
-			console.log("Failed to create ImageBitmap");
-		}); 
-*/
+		// The minimum size that really works for touch devices is 8 blocks per 320 screen pixels,
+		// or about 40x40 for a unitOnScreen. The player will have to scroll the screen to see
+		// all the level, but that's better than being unable to touch a box accurately.
+		if(this.unitOnScreen < 40) this.unitOnScreen = 40;
+
+		console.log("screen unit:", this.unitOnScreen)
 
 		// Because ImageBitmap options & imageSmoothingQuality aren't yet widely supported, and OffscreenCanvas isn't widely supported,
 		// we are using pre-sized images. we can scale down and it looks OK, but we can't scale up.
-		// blocksizes 64, 128, 192, 256
+		// blocksizes: 128, 192, 256
 		// we return because this method will get called again once the image is loaded
-/*		if(this.unitOnScreen <= 64 && this.srcBlockSize != 64) {
-			this.srcBlockSize = 64;
-			this.srcImage.src = 'bitmap_64.png';
-			return;
-		} else */ if(this.unitOnScreen > 0 && this.unitOnScreen <= 128 && this.srcBlockSize != 128) {
+		if(this.unitOnScreen > 0 && this.unitOnScreen <= 128 && this.srcBlockSize != 128) {
 			this.srcBlockSize = 128;
 			this.srcImage.src = 'bitmap_128.png';
 			return;
@@ -71,7 +72,6 @@ export class View {
 
 		this.scaleToScreen = distance => Math.round(distance * this.unitOnScreen);
 
-	
 		const canvas = document.createElement('canvas');
 		this.container.appendChild(canvas);
 		this.context = canvas.getContext('2d');
@@ -141,7 +141,7 @@ export class View {
 				else if(c==3) { mt += 'L' }
 			}); */
 			document.getElementById("moves_taken").innerHTML = mt;
-			document.getElementById("solved").innerHTML = "You solved the puzzle!";
+			document.getElementById("solved").innerHTML = "Solved!";
 		} else {
 			document.getElementById("moves_taken").innerHTML = "";
 			document.getElementById("solved").innerHTML = "";
